@@ -127,7 +127,10 @@ int main(void)
 //			HAL_GPIO_WritePin(POWERSAVE_GPIO_Port, POWERSAVE_Pin, GPIO_PIN_RESET);
 //		}
 		HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
-		HAL_Delay(100);
+		HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
+		USBD_NEX_LINK_Transmit(&hUSB, grambuff, 512);
+		HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }

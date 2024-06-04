@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include "usbd_nex_link.h"
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "stm32f4xx_hal.h"
 #include "usbd_desc.h"
 #include "usbd_ctlreq.h"
@@ -39,17 +40,12 @@ typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
 
 	__IO uint32_t TxState;
+	bool isconnect;
 
 	USBD_SetupReqTypedef last_setup_request;
 
-	struct nex_host_config host_config;
-	
-//	queue_t *q_frame_pool;
-//	queue_t *q_from_host;
 	uint8_t* grambuff;
 	uint32_t gramdetail;
-
-	struct nex_host_frame *from_host_buf;
 
 	uint32_t out_requests;
 	uint32_t out_requests_fail;
@@ -58,7 +54,7 @@ typedef struct {
 	bool dfu_detach_requested;
 
 	bool timestamps_enabled;
-	uint32_t sof_timestamp_us;
+	uint64_t timestamp_s;
 
 	bool pad_pkts_to_max_pkt_size;
 } USBD_NEX_LINK_HandleTypeDef __attribute__ ((aligned (4)));
@@ -254,35 +250,6 @@ static __ALIGN_BEGIN uint8_t USBD_MS_EXT_PROP_FEATURE_DESC[] __ALIGN_END = {
 };
 
 
-// device info
-static const struct nex_device_config USBD_NEX_LINK_dconf = {
-	0, // reserved 1
-	0, // reserved 2
-	0, // reserved 3
-	0, // interface count (0=1, 1=2..)
-	2, // software version
-	1  // hardware version
-};
-
-// bit timing constraints
-static const struct nex_device_bt_const USBD_NEX_LINK_btconst = {
-	NEX_LINK_FEATURE_LISTEN_ONLY  // supported features
-	| NEX_LINK_FEATURE_LOOP_BACK
-	| NEX_LINK_FEATURE_HW_TIMESTAMP
-	| NEX_LINK_FEATURE_IDENTIFY
-	| NEX_LINK_FEATURE_USER_ID
-	| NEX_LINK_FEATURE_PAD_PKTS_TO_MAX_PKT_SIZE,
-	42000000, // can timing base clock
-	1, // tseg1 min
-	16, // tseg1 max
-	1, // tseg2 min
-	8, // tseg2 max
-	4, // sjw max
-	1, // brp min
-	1024, //brp_max
-	1, // brp increment;
-};
-
 uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint8_t *grambuff)
 {
 	uint8_t ret = USBD_FAIL;
@@ -295,7 +262,6 @@ uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint8_t *grambuff)
 		hnex->grambuff = grambuff;
 		hnex->gramdetail = 0;
 		pdev->pClassData = hnex;
-		hnex->from_host_buf = NULL;
 
 		ret = USBD_OK;
 	} else {
@@ -317,6 +283,7 @@ static uint8_t USBD_NEX_LINK_Start(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 		USBD_LL_OpenEP(pdev, GSUSB_ENDPOINT_OUT, USBD_EP_TYPE_BULK, CAN_DATA_MAX_PACKET_SIZE);
 //		hnex->from_host_buf = queue_pop_front(hnex->q_frame_pool);
 		hnex->gramdetail = 0;
+		hnex->isconnect = false;
 		USBD_NEX_LINK_PrepareReceive(pdev);
 		ret = USBD_OK;
 	} else {
@@ -353,44 +320,25 @@ static uint8_t USBD_NEX_LINK_SOF(struct _USBD_HandleTypeDef *pdev)
 
 
 static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
-
+	struct tm *tm_local;
+	char time_str[32];
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
-
 	dbmsg("USBD_NEX_LINK_EP0_RxReady");	
-	struct nex_device_bittiming *timing;
-	struct nex_device_mode *mode;
-	uint32_t param_u32;
-
 	USBD_SetupReqTypedef *req = &hnex->last_setup_request;
 
 	switch (req->bRequest) {
 
-		case GS_USB_BREQ_HOST_FORMAT:
-			// TODO process host data (expect 0x0000beef in byte_order)
-			memcpy(&hnex->host_config, hnex->ep0_buf, sizeof(hnex->host_config));
-			break;
-
-		case GS_USB_BREQ_IDENTIFY:
-			memcpy(&param_u32, hnex->ep0_buf, sizeof(param_u32));
-			break;
-
-		case GS_USB_BREQ_SET_USER_ID:
-			memcpy(&param_u32, hnex->ep0_buf, sizeof(param_u32));
-			// if (flash_set_user_id(req->wValue, param_u32)) {
-			// 	flash_flush();
-			// }
-			break;
-
-		case GS_USB_BREQ_MODE:
-			if (req->wValue < NUM_CAN_CHANNEL) {
-			}
-			break;
-
-		case GS_USB_BREQ_BITTIMING:
-			timing = (struct nex_device_bittiming*)hnex->ep0_buf;
-			if (req->wValue < NUM_CAN_CHANNEL) {
-			}
+		case NEX_TIMESTAMP_SET:
+			memcpy(&hnex->timestamp_s, hnex->ep0_buf, sizeof(hnex->timestamp_s));
 			hnex->gramdetail = 0;//reset pic
+			tm_local = localtime((const time_t *)&hnex->timestamp_s); // 转换时间戳
+	 
+			// 格式化时间为字符串
+			if (strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_local) != 0) {
+					dbmsg("Formatted time: %s\n", time_str); // 打印时间
+			} else {
+					dbmsg("Failed to format time\n");
+			}
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 
@@ -431,45 +379,31 @@ static uint8_t USBD_NEX_LINK_DFU_Request(USBD_HandleTypeDef *pdev, USBD_SetupReq
 static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
-	uint32_t d32;
 	dbmsg("USBD_NEX_LINK_Config_Request");	
 
+	hnex->isconnect = true;
 	switch (req->bRequest) {
 
-		case GS_USB_BREQ_HOST_FORMAT:
-		case GS_USB_BREQ_MODE:
-		case GS_USB_BREQ_BITTIMING:
-		case GS_USB_BREQ_IDENTIFY:
-		case GS_USB_BREQ_SET_USER_ID:
+		case NEX_TIMESTAMP_SET:
 			hnex->last_setup_request = *req;
 			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
+			hnex->TxState = 0;
+			break;
+		case NEX_TIMESTAMP_GET:
+			memcpy(hnex->ep0_buf, &hnex->timestamp_s, sizeof(hnex->timestamp_s));
+			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->timestamp_s));
 			break;
 
-		case GS_USB_BREQ_DEVICE_CONFIG:
-			memcpy(hnex->ep0_buf, &USBD_NEX_LINK_dconf, sizeof(USBD_NEX_LINK_dconf));
-			USBD_CtlSendData(pdev, hnex->ep0_buf, req->wLength);
-			break;
-
-		case GS_USB_BREQ_BT_CONST:
-			memcpy(hnex->ep0_buf, &USBD_NEX_LINK_btconst, sizeof(USBD_NEX_LINK_btconst));
-			USBD_CtlSendData(pdev, hnex->ep0_buf, req->wLength);
-			break;
-
-		case GS_USB_BREQ_TIMESTAMP:
-			memcpy(hnex->ep0_buf, &hnex->sof_timestamp_us, sizeof(hnex->sof_timestamp_us));
-			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->sof_timestamp_us));
-			break;
-
-		case GS_USB_BREQ_GET_USER_ID:
-			if (req->wValue < NUM_CAN_CHANNEL) {
-				// d32 = flash_get_user_id(req->wValue);
-				d32 = 0xDEADBEEF;
-				memcpy(hnex->ep0_buf, &d32, sizeof(d32));
-				USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(d32));
-			} else {
-				USBD_CtlError(pdev, req);
-			}
-			break;
+//		case GS_USB_BREQ_GET_USER_ID:
+//			if (req->wValue < NUM_CAN_CHANNEL) {
+//				// d32 = flash_get_user_id(req->wValue);
+//				d32 = 0xDEADBEEF;
+//				memcpy(hnex->ep0_buf, &d32, sizeof(d32));
+//				USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(d32));
+//			} else {
+//				USBD_CtlError(pdev, req);
+//			}
+//			break;
 
 
 		default:
@@ -535,7 +469,6 @@ bool USBD_NEX_LINK_CustomInterfaceRequest(USBD_HandleTypeDef *pdev, USBD_SetupRe
 static uint8_t USBD_NEX_LINK_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
 	static uint8_t ifalt = 0;
-
 	HAL_GPIO_TogglePin(RED_LED_GPIO_Port, RED_LED_Pin);
 	dbmsg("USBD_NEX_LINK_Setup");	
 	switch (req->bmRequest & USB_REQ_TYPE_MASK) {
@@ -622,10 +555,9 @@ bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev)
 uint8_t USBD_NEX_LINK_Transmit(USBD_HandleTypeDef *pdev, uint8_t *buf, uint16_t len)
 {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	dbmsg("USBD_NEX_LINK_Transmit");	
-	if (hnex->TxState == 0) 
-//	if(true)
+	if (hnex->TxState == 0 && hnex->isconnect) 
 		{
+		dbmsg("USBD_NEX_LINK_Transmit");	
 		hnex->TxState = 1;
 		USBD_LL_Transmit(pdev, GSUSB_ENDPOINT_IN, buf, len);
 		return USBD_OK;
@@ -635,49 +567,49 @@ uint8_t USBD_NEX_LINK_Transmit(USBD_HandleTypeDef *pdev, uint8_t *buf, uint16_t 
 	}
 }
 
-uint8_t USBD_NEX_LINK_GetProtocolVersion(USBD_HandleTypeDef *pdev)
-{
-	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	if (hnex->timestamps_enabled) {
-		return 2;
-	} else {
-		return 1;
-	}
-}
+//uint8_t USBD_NEX_LINK_GetProtocolVersion(USBD_HandleTypeDef *pdev)
+//{
+//	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
+//	if (hnex->timestamps_enabled) {
+//		return 2;
+//	} else {
+//		return 1;
+//	}
+//}
 
-uint8_t USBD_NEX_LINK_GetPadPacketsToMaxPacketSize(USBD_HandleTypeDef *pdev)
-{
-	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	return hnex->pad_pkts_to_max_pkt_size;
-}
+//uint8_t USBD_NEX_LINK_GetPadPacketsToMaxPacketSize(USBD_HandleTypeDef *pdev)
+//{
+//	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
+//	return hnex->pad_pkts_to_max_pkt_size;
+//}
 
-uint8_t USBD_NEX_LINK_SendFrame(USBD_HandleTypeDef *pdev, struct nex_host_frame *frame)
-{
-	uint8_t buf[CAN_DATA_MAX_PACKET_SIZE],*send_addr;
+//uint8_t USBD_NEX_LINK_SendFrame(USBD_HandleTypeDef *pdev, struct nex_host_frame *frame)
+//{
+//	uint8_t buf[CAN_DATA_MAX_PACKET_SIZE],*send_addr;
 
-	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	size_t len = sizeof(struct nex_host_frame);
+//	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
+//	size_t len = sizeof(struct nex_host_frame);
 
-	if (!hnex->timestamps_enabled)
-		len -= 4;
+//	if (!hnex->timestamps_enabled)
+//		len -= 4;
 
-	send_addr = (uint8_t *)frame;
+//	send_addr = (uint8_t *)frame;
 
-	if(hnex->pad_pkts_to_max_pkt_size){
-		// When talking to WinUSB it seems to help a lot if the
-		// size of packet you send equals the max packet size.
-		// In this mode, fill packets out to max packet size and
-		// then send.
-		memcpy(buf, frame, len);
+//	if(hnex->pad_pkts_to_max_pkt_size){
+//		// When talking to WinUSB it seems to help a lot if the
+//		// size of packet you send equals the max packet size.
+//		// In this mode, fill packets out to max packet size and
+//		// then send.
+//		memcpy(buf, frame, len);
 
-		// zero rest of buffer
-		memset(buf + len, 0, sizeof(buf) - len);
-		send_addr = buf;
-		len = sizeof(buf);
-	}
+//		// zero rest of buffer
+//		memset(buf + len, 0, sizeof(buf) - len);
+//		send_addr = buf;
+//		len = sizeof(buf);
+//	}
 
-	return USBD_NEX_LINK_Transmit(pdev, send_addr, len);
-}
+//	return USBD_NEX_LINK_Transmit(pdev, send_addr, len);
+//}
 
 uint8_t *USBD_NEX_LINK_GetStrDesc(USBD_HandleTypeDef *pdev, uint8_t index, uint16_t *length)
 {
