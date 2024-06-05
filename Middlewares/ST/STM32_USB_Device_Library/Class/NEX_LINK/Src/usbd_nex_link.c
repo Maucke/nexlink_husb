@@ -34,7 +34,7 @@ THE SOFTWARE.
 #include "usbd_ioreq.h"
 #include "nex_usb.h"
 #include "main.h"
-#include "oled.h"
+#include "lcd.h"
 
 typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
@@ -44,7 +44,7 @@ typedef struct {
 
 	USBD_SetupReqTypedef last_setup_request;
 
-	uint8_t* grambuff;
+	uint16_t* grambuff;
 	uint32_t gramdetail;
 
 	uint32_t out_requests;
@@ -250,7 +250,7 @@ static __ALIGN_BEGIN uint8_t USBD_MS_EXT_PROP_FEATURE_DESC[] __ALIGN_END = {
 };
 
 
-uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint8_t *grambuff)
+uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff)
 {
 	uint8_t ret = USBD_FAIL;
 	USBD_NEX_LINK_HandleTypeDef *hnex = calloc(1, sizeof(USBD_NEX_LINK_HandleTypeDef));
@@ -517,12 +517,12 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 //	dbmsg("%d,%02X,%02X,%02X,%02X",rxlen,(hnex->grambuff + hnex->gramdetail)[0],(hnex->grambuff + hnex->gramdetail)[1],(hnex->grambuff + hnex->gramdetail)[62],(hnex->grambuff + hnex->gramdetail)[63]);
 //	if (rxlen == 256) 
 	{
-		hnex->gramdetail=(hnex->gramdetail+rxlen)%(160*128*2);
+		hnex->gramdetail=(hnex->gramdetail+rxlen)%(LCD_W*LCD_H);
 //		dbmsg("hnex->gramdetail:%d",hnex->gramdetail);
 		if(hnex->gramdetail==0)
 		{
 			HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-//			Refrash_Screen();
+			Refrash_Screen(0);
 //			dbmsg("Refrash_Screen");
 		}
 			
