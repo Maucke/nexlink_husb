@@ -35,6 +35,7 @@ THE SOFTWARE.
 #include "nex_usb.h"
 #include "main.h"
 #include "lcd.h"
+#include "spi.h"
 
 typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
@@ -45,7 +46,8 @@ typedef struct {
 	USBD_SetupReqTypedef last_setup_request;
 
 	uint16_t* grambuff;
-	uint32_t gramdetail;
+	uint16_t* grambuffhalf;
+	long gramdetail;
 
 	uint32_t out_requests;
 	uint32_t out_requests_fail;
@@ -260,6 +262,10 @@ uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff)
 //		hnex->q_frame_pool = q_frame_pool;
 //		hnex->q_from_host = q_from_host;
 		hnex->grambuff = grambuff;
+		hnex->grambuffhalf = grambuff + 240*240/2;
+		
+		dbmsg("grambuff:%p",hnex->grambuff);	
+		dbmsg("grambuffhalf:%p",hnex->grambuffhalf);	
 		hnex->gramdetail = 0;
 		pdev->pClassData = hnex;
 
@@ -495,6 +501,7 @@ static uint8_t USBD_NEX_LINK_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypede
 	return USBD_OK;
 }
 
+uint8_t refrash_screen(void);
 static uint8_t USBD_NEX_LINK_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	(void) epnum;
 
@@ -514,19 +521,17 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	hnex->out_requests++;
 
 	uint32_t rxlen = USBD_LL_GetRxDataSize(pdev, epnum);
+	rxlen = 960;
 //	dbmsg("%d,%02X,%02X,%02X,%02X",rxlen,(hnex->grambuff + hnex->gramdetail)[0],(hnex->grambuff + hnex->gramdetail)[1],(hnex->grambuff + hnex->gramdetail)[62],(hnex->grambuff + hnex->gramdetail)[63]);
 //	if (rxlen == 256) 
-	{
-		hnex->gramdetail=(hnex->gramdetail+rxlen)%(LCD_W*LCD_H);
+		hnex->gramdetail=(hnex->gramdetail+rxlen/2)%(LCD_W*LCD_H);
 //		dbmsg("hnex->gramdetail:%d",hnex->gramdetail);
 		if(hnex->gramdetail==0)
 		{
 			HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-//			Refrash_Screen(0);
-//			dbmsg("Refrash_Screen");
+			refrash_screen();
 		}
-			
-	}
+		
 	USBD_NEX_LINK_PrepareReceive(pdev);
 		
 	return retval;

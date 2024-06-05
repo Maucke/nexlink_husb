@@ -1,7 +1,9 @@
 #include "lcd.h"
 #include "spi.h"
+#include "stdbool.h"
 
 #define delay HAL_Delay
+volatile long remainsize = 0;
 
 // LCD串行数据写入
 static void LCD_Writ_Bus(uint8_t dat)
@@ -84,7 +86,7 @@ void LCD_Init(void)
 
     //------------------------------display and color format setting--------------------------------//
     LCD_WR_REG(0X36); // Memory Access Control
-    LCD_WR_DATA8(0x08);
+    LCD_WR_DATA8(0x00);
 
     LCD_WR_REG(0X3A);
     LCD_WR_DATA8(0X55);
@@ -236,25 +238,44 @@ void LCD_Fill(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint16
 
     // 其余部分见HAL_SPI_TxCpltCallback()函数
 }
+
+
 // 把指定区域的显示缓冲区写入屏幕
 void LCD_Color_Fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t *buf)
 {
     while (hspi1.State != HAL_SPI_STATE_READY)
         ; // 等待SPI空闲
-
-    uint16_t num;
-    num = (x1 - x0) * (y1 - y0);
+		
+    long num;
+    num = (x1 - x0) * (y1 - y0)*2;
     LCD_Address_Set(x0, y0, x1 - 1, y1 - 1);
     LCD_CS_OUT(0);
 
-    LCD_DMA_Transfer16Bit((uint8_t *)buf, num*2, DMA_MEMINC_ENABLE); // 启用DMA发送
+	if(num > 65535)
+	{
+		remainsize=num-65535;
+		num = 65535;
+	}
+	else
+		remainsize=0;
+    LCD_DMA_Transfer16Bit((uint8_t *)buf, num, DMA_MEMINC_ENABLE); // 启用DMA发送
 
     // 其余部分见HAL_SPI_TxCpltCallback()函数
 }
-
+extern uint16_t grambuff[];
 // SPI传输完成回调函数
 // 此函数会在DMA SPITX传输完成后被调用
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-    LCD_CS_OUT(1);
+	if(remainsize>0)
+	{
+		LCD_DMA_Transfer16Bit((uint8_t *)(grambuff)+65535, remainsize, DMA_MEMINC_ENABLE); // 启用DMA发送
+		remainsize=0;
+		dbmsg("next:%d",HAL_GetTick());
+	}
+	else
+	{
+		dbmsg("done:%d",HAL_GetTick());
+		LCD_CS_OUT(1);
+	}
 }
