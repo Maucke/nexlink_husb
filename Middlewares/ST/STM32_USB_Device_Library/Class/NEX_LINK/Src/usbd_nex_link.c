@@ -522,7 +522,7 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 		if(hnex->gramdetail==0)
 		{
 			HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-			Refrash_Screen(0);
+//			Refrash_Screen(0);
 //			dbmsg("Refrash_Screen");
 		}
 			

@@ -1,484 +1,273 @@
 #include "lcd.h"
-#include "stdlib.h"
-#include "lcdfont.h"
 #include "spi.h"
-#include <stdbool.h>
 
-volatile bool spibusy = false;
-uint16_t BACK_COLOR, POINT_COLOR;   //背景色，画笔色
-void LCD_Writ_Bus(uint8_t dat)   //串行数据写入
+#define delay HAL_Delay
+
+// LCD串行数据写入
+static void LCD_Writ_Bus(uint8_t dat)
 {
-    while(spibusy) __NOP();
-    HAL_SPI_Transmit(&hspi1, &dat, 1, 0xFFFF);
+    HAL_SPI_Transmit(&hspi1, &dat, 1, 100);
 }
 
-//void HAL_SPI_TxHalfCpltCallback(SPI_HandleTypeDef *hspi)
-//{
-//  if(hspi->Instance==SPI1)
-//  {
-//    // 半传输完成时执行的操作
-//	  dbmsg("HAL_SPI_TxHalfCpltCallback");
-//  }
-//}
-
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi)
+// LCD写入8位数据
+void LCD_WR_DATA8(uint8_t dat)
 {
-    if(hspi->Instance == SPI1)
-    {
-        // 全传输完成时执行的操作
-        dbmsg("HAL_SPI_TxCpltCallback");
-        spibusy = false;
-    }
+    LCD_CS_OUT(0);
+
+    LCD_Writ_Bus(dat);
+	
+    LCD_CS_OUT(1);
 }
 
-void LCD_WR_DATA8(uint8_t da) //发送数据-8位参数
+// LCD写入16位数据
+void LCD_WR_DATA(uint16_t dat)
 {
-    while(spibusy) __NOP();
-    OLED_DC_Set();
-    LCD_Writ_Bus(da);
+    LCD_CS_OUT(0);
+	
+    LCD_Writ_Bus(dat >> 8);
+    LCD_Writ_Bus(dat);
+	
+    LCD_CS_OUT(1);
 }
 
-void LCD_WR_DATA(uint16_t da)
+// LCD写入命令
+void LCD_WR_REG(uint8_t dat)
 {
-    while(spibusy) __NOP();
-    OLED_DC_Set();
-    LCD_Writ_Bus(da >> 8);
-    LCD_Writ_Bus(da);
+    LCD_CS_OUT(0);
+
+    LCD_DC_OUT(0); // 写命令
+    LCD_Writ_Bus(dat);
+    LCD_DC_OUT(1); // 写数据
+
+    LCD_CS_OUT(1);
 }
 
-void LCD_WR_DATAS(uint8_t* da, uint16_t len)
+// 启用SPI DMA连续发送单个16bit数据
+void LCD_DMA_Transfer16Bit(uint8_t *pData, uint16_t size, DMA_MEMINC_STATE state)
 {
-    while(spibusy) __NOP();
-    OLED_DC_Set();
-    spibusy = true;
-    HAL_SPI_Transmit_DMA(&hspi1, da, len);
+////	// 清除 DMA 控制寄存器的相关设置
+//    LCD_SPI_TX_DMA->CR &= ~(DMA_SxCR_MINC | DMA_SxCR_MSIZE | DMA_SxCR_PSIZE); 
+
+//    // 设置 DMA 存储器和外设数据长度为半字(16bit)
+//    LCD_SPI_TX_DMA->CR |= DMA_SxCR_MSIZE_0 | DMA_SxCR_PSIZE_0; 
+
+//    // 根据传入的状态设置是否使能存储器地址增量
+//    if (state == DMA_MEMINC_ENABLE)
+//        LCD_SPI_TX_DMA->CR |= DMA_SxCR_MINC; 
+
+    HAL_SPI_Transmit_DMA(&hspi1, pData, size); // 启用DMA传输
 }
 
-void LCD_WR_REG(uint8_t da)
+/*
+ *功能: 设置起始和结束地址
+ *参数1: @x1,x2 - 设置列的起始和结束地址
+ *参数1: @y1,y2 - 设置行的起始和结束地址
+ */
+void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
-    while(spibusy) __NOP();
-    OLED_CS_Set();
-    OLED_CS_Clr();
-    OLED_DC_Clr();
-    LCD_Writ_Bus(da);
+    LCD_WR_REG(0x2a); // 列地址设置
+    LCD_WR_DATA(x1);
+    LCD_WR_DATA(x2);
+    LCD_WR_REG(0x2b); // 行地址设置
+    LCD_WR_DATA(y1);
+    LCD_WR_DATA(y2);
+    LCD_WR_REG(0x2c); // 储存器写
 }
 
-void LCD_WR_REG_DATA(uint16_t reg, uint16_t da)
+// LCD初始化
+void LCD_Init(void)
 {
-    LCD_WR_REG(reg);
-    LCD_WR_DATA(da);
-}
+    LCD_WR_REG(0x01);
+    delay(150);
+    LCD_WR_REG(0x11);
+    delay(120);
 
-void Address_set(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2)
-{
-    LCD_WR_REG(0x2a);
-    LCD_WR_DATA8(x1 >> 8);
-    LCD_WR_DATA8(x1);
-    LCD_WR_DATA8(x2 >> 8);
-    LCD_WR_DATA8(x2);
+    //------------------------------display and color format setting--------------------------------//
+    LCD_WR_REG(0X36); // Memory Access Control
+    LCD_WR_DATA8(0x08);
 
-    LCD_WR_REG(0x2b);
-    LCD_WR_DATA8(y1 >> 8);
-    LCD_WR_DATA8(y1);
-    LCD_WR_DATA8(y2 >> 8);
-    LCD_WR_DATA8(y2);
-
-    LCD_WR_REG(0x2C);
-}
-
-uint16_t* LCD_GRAM;
-
-void LCD_Init(uint16_t* gram)
-{
-    LCD_GRAM = gram;
-    OLED_CS_Clr();  //打开片选使能
-    OLED_RST_Clr();
-    HAL_Delay(20);
-    OLED_RST_Set();
-    HAL_Delay(20);
-//    OLED_BLK_Set();
-
-//************* Start Initial Sequence **********//
-    LCD_WR_REG(0x36);
-    LCD_WR_DATA8(0x00);
-
-    LCD_WR_REG(0x3A);
-    LCD_WR_DATA8(0x05);
-
-    LCD_WR_REG(0xB2);
-    LCD_WR_DATA8(0x0C);
-    LCD_WR_DATA8(0x0C);
-    LCD_WR_DATA8(0x00);
-    LCD_WR_DATA8(0x33);
-    LCD_WR_DATA8(0x33);
-
-    LCD_WR_REG(0xB7);
-    LCD_WR_DATA8(0x35);
-
-    LCD_WR_REG(0xBB);
-    LCD_WR_DATA8(0x19);
-
-    LCD_WR_REG(0xC0);
-    LCD_WR_DATA8(0x2C);
-
-    LCD_WR_REG(0xC2);
-    LCD_WR_DATA8(0x01);
-
-    LCD_WR_REG(0xC3);
-    LCD_WR_DATA8(0x12);
-
-    LCD_WR_REG(0xC4);
-    LCD_WR_DATA8(0x20);
-
-    LCD_WR_REG(0xC6);
-    LCD_WR_DATA8(0x0F);
-
-    LCD_WR_REG(0xD0);
-    LCD_WR_DATA8(0xA4);
-    LCD_WR_DATA8(0xA1);
-
-    LCD_WR_REG(0xE0);
-    LCD_WR_DATA8(0xD0);
-    LCD_WR_DATA8(0x04);
-    LCD_WR_DATA8(0x0D);
-    LCD_WR_DATA8(0x11);
-    LCD_WR_DATA8(0x13);
-    LCD_WR_DATA8(0x2B);
-    LCD_WR_DATA8(0x3F);
-    LCD_WR_DATA8(0x54);
-    LCD_WR_DATA8(0x4C);
-    LCD_WR_DATA8(0x18);
-    LCD_WR_DATA8(0x0D);
-    LCD_WR_DATA8(0x0B);
-    LCD_WR_DATA8(0x1F);
-    LCD_WR_DATA8(0x23);
-
-    LCD_WR_REG(0xE1);
-    LCD_WR_DATA8(0xD0);
-    LCD_WR_DATA8(0x04);
-    LCD_WR_DATA8(0x0C);
-    LCD_WR_DATA8(0x11);
-    LCD_WR_DATA8(0x13);
-    LCD_WR_DATA8(0x2C);
-    LCD_WR_DATA8(0x3F);
-    LCD_WR_DATA8(0x44);
-    LCD_WR_DATA8(0x51);
-    LCD_WR_DATA8(0x2F);
-    LCD_WR_DATA8(0x1F);
-    LCD_WR_DATA8(0x1F);
-    LCD_WR_DATA8(0x20);
-    LCD_WR_DATA8(0x23);
+    LCD_WR_REG(0X3A);
+    LCD_WR_DATA8(0X55);
+    delay(10);
 
     LCD_WR_REG(0x21);
 
-    LCD_WR_REG(0x11);
+    //--------------------------------ST7789S Frame rate setting-------------------------
+    LCD_WR_REG(0xb2);
+    LCD_WR_DATA8(0x0c);
+    LCD_WR_DATA8(0x0c);
+    LCD_WR_DATA8(0x00);
+    LCD_WR_DATA8(0x33);
+    LCD_WR_DATA8(0x33);
+
+    LCD_WR_REG(0xb3);
+    LCD_WR_DATA8(0x00);
+    LCD_WR_DATA8(0x0f);
+    LCD_WR_DATA8(0x0f);
+
+    LCD_WR_REG(0xb7);
+    LCD_WR_DATA8(0x35);
+
+    //---------------------------------ST7789S Power setting-----------------------------
+    LCD_WR_REG(0xbb);
+    LCD_WR_DATA8(0x35);
+    LCD_WR_REG(0xc0);
+    LCD_WR_DATA8(0x2c);
+    LCD_WR_REG(0xc2);
+    LCD_WR_DATA8(0x01);
+    LCD_WR_REG(0xc3);
+    LCD_WR_DATA8(0x13);
+    LCD_WR_REG(0xc4);
+    LCD_WR_DATA8(0x20);
+    LCD_WR_REG(0xc6);
+    LCD_WR_DATA8(0x1e);
+    LCD_WR_REG(0xca);
+    LCD_WR_DATA8(0x0f);
+    LCD_WR_REG(0xc8);
+    LCD_WR_DATA8(0x08);
+    LCD_WR_REG(0x55);
+    LCD_WR_DATA8(0x90);
+    LCD_WR_REG(0xd0);
+    LCD_WR_DATA8(0xa4);
+    LCD_WR_DATA8(0xa1);
+    //--------------------------------ST7789S gamma setting------------------------------
+    LCD_WR_REG(0xe0);
+    LCD_WR_DATA8(0xd0);
+    LCD_WR_DATA8(0x00);
+    LCD_WR_DATA8(0x06);
+    LCD_WR_DATA8(0x09);
+    LCD_WR_DATA8(0x0b);
+    LCD_WR_DATA8(0x2a);
+    LCD_WR_DATA8(0x3c);
+    LCD_WR_DATA8(0x55);
+    LCD_WR_DATA8(0x4b);
+    LCD_WR_DATA8(0x08);
+    LCD_WR_DATA8(0x16);
+    LCD_WR_DATA8(0x14);
+    LCD_WR_DATA8(0x19);
+    LCD_WR_DATA8(0x20);
+    LCD_WR_REG(0xe1);
+    LCD_WR_DATA8(0xd0);
+    LCD_WR_DATA8(0x00);
+    LCD_WR_DATA8(0x06);
+    LCD_WR_DATA8(0x09);
+    LCD_WR_DATA8(0x0b);
+    LCD_WR_DATA8(0x29);
+    LCD_WR_DATA8(0x36);
+    LCD_WR_DATA8(0x54);
+    LCD_WR_DATA8(0x4b);
+    LCD_WR_DATA8(0x0d);
+    LCD_WR_DATA8(0x16);
+    LCD_WR_DATA8(0x14);
+    LCD_WR_DATA8(0x21);
+    LCD_WR_DATA8(0x20);
 
     LCD_WR_REG(0x29);
-
 }
 
-//清屏函数
-//Color:要清屏的填充色
-void LCD_Clear(uint16_t Color)
+uint16_t LCD_ReadScanLine(void)
 {
-    for(long i = 0; i < LCD_W * LCD_H / 2; i++)
-        LCD_GRAM[i] = (Color >> 8) | (Color << 8);
-}
+    while (hspi1.State != HAL_SPI_STATE_READY)
+        ; // 等待SPI空闲
 
-void Refrash_Screen(unsigned char index)
-{
-    if(index > 1)
-        return;
-    Address_set(0, index * (LCD_H / 2), LCD_W - 1, index * (LCD_H / 2) + LCD_H / 2 - 1);
-    LCD_WR_DATAS((uint8_t*)LCD_GRAM, LCD_W * LCD_H); //RAM data clear
-}
+    __HAL_SPI_DISABLE(&hspi1);
+    hspi1.Instance->CR1 &= ~SPI_CR1_BR;
+    hspi1.Instance->CR1 |= SPI_BAUDRATEPRESCALER_16;
+    __HAL_SPI_ENABLE(&hspi1);
+    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
 
-//在指定位置显示一个汉字(32*33大小)
-//dcolor为内容颜色，gbcolor为背静颜色
-void showhanzi(unsigned int x, unsigned int y, unsigned char index)
-{
-    unsigned char i, j;
-    const unsigned char* temp = hanzi;
-    Address_set(x, y, x + 31, y + 31); //设置区域
-    temp += index * 128;
-    for(j = 0; j < 128; j++)
+    LCD_CS_OUT(0);
+    LCD_DC_OUT(0);
+
+    uint8_t cmd = 0x45;
+    HAL_SPI_Transmit(&hspi1, &cmd, 1, 100);
+
+    LCD_DC_OUT(1);
+
+    __HAL_SPI_DISABLE(&hspi1);
+    SPI_1LINE_RX(&hspi1);
+    __HAL_SPI_ENABLE(&hspi1);
+
+    uint8_t data[3] = {0};
+    int i = 0;
+    while(i < 2)
     {
-        for(i = 0; i < 8; i++)
-        {
-            if((*temp & (1 << i)) != 0)
-            {
-                LCD_WR_DATA(POINT_COLOR);
-            }
-            else
-            {
-                LCD_WR_DATA(BACK_COLOR);
-            }
-        }
-        temp++;
+        if (hspi1.Instance->SR & SPI_FLAG_RXNE)
+            data[i++] = *(__IO uint8_t *)&hspi1.Instance->DR;
     }
+    
+    __DSB();
+    __HAL_SPI_DISABLE(&hspi1);
+
+    while ((hspi1.Instance->SR & SPI_FLAG_RXNE) != SPI_FLAG_RXNE);
+    /* read the received data */
+    data[2] = *(__IO uint8_t *)&hspi1.Instance->DR;
+    while ((hspi1.Instance->SR & SPI_FLAG_BSY) == SPI_FLAG_BSY);
+
+    LCD_CS_OUT(1);
+
+    __HAL_SPI_DISABLE(&hspi1);
+    hspi1.Instance->CR1 &= ~SPI_CR1_BR;
+    hspi1.Instance->CR1 |= SPI_BAUDRATEPRESCALER_2;
+    SPI_1LINE_TX(&hspi1);
+    __HAL_SPI_ENABLE(&hspi1);
+    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+
+    return data[1] << 1 | !!data[2];
 }
-//画点
-//POINT_COLOR:此点的颜色
-void LCD_DrawPoint(uint16_t x, uint16_t y)
-{
-    Address_set(x, y, x, y); //设置光标位置
-    LCD_WR_DATA(POINT_COLOR);
-}
-//画一个大点
-//POINT_COLOR:此点的颜色
-void LCD_DrawPoint_big(uint16_t x, uint16_t y)
-{
-    LCD_Fill(x - 1, y - 1, x + 1, y + 1, POINT_COLOR);
-}
-//在指定区域内填充指定颜色
-//区域大小:
-//  (xend-xsta)*(yend-ysta)
+
 void LCD_Fill(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint16_t color)
 {
-    uint16_t i, j;
-    Address_set(xsta, ysta, xend, yend);   //设置光标位置
-    for(i = ysta; i <= yend; i++)
-    {
-        for(j = xsta; j <= xend; j++)LCD_WR_DATA(color); //设置光标位置
-    }
+    while (hspi1.State != HAL_SPI_STATE_READY)
+        ; // 等待SPI空闲
+
+    static uint16_t color1[1];
+    uint16_t num;
+    color1[0] = color;
+    num = (xend - xsta) * (yend - ysta);
+    LCD_Address_Set(xsta, ysta, xend - 1, yend - 1); // 设置显示范围
+    LCD_CS_OUT(0);
+//	for(int i=0;i<num*2;i++)
+//	LCD_WR_DATA(color);
+//    LCD_CS_OUT(1);
+//    __HAL_SPI_DISABLE(&hspi1);       // 失能SPI
+//    hspi1.Instance->CR2 |= SPI_DATASIZE_16BIT; // 设置SPI16位传输模式
+//    __HAL_SPI_ENABLE(&hspi1);        // 使能SPI
+//    hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
+
+    LCD_DMA_Transfer16Bit((uint8_t *)color1, num, DMA_MEMINC_DISABLE); // 启用DMA发送
+
+    // 其余部分见HAL_SPI_TxCpltCallback()函数
 }
-//画线
-//x1,y1:起点坐标
-//x2,y2:终点坐标
-void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+// 把指定区域的显示缓冲区写入屏幕
+void LCD_Color_Fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t *buf)
 {
-    uint16_t t;
-    int xerr = 0, yerr = 0, delta_x, delta_y, distance;
-    int incx, incy, uRow, uCol;
+    while (hspi1.State != HAL_SPI_STATE_READY)
+        ; // 等待SPI空闲
 
-    delta_x = x2 - x1; //计算坐标增量
-    delta_y = y2 - y1;
-    uRow = x1;
-    uCol = y1;
-    if(delta_x > 0)incx = 1; //设置单步方向
-    else if(delta_x == 0)incx = 0; //垂直线
-    else
-    {
-        incx = -1;
-        delta_x = -delta_x;
-    }
-    if(delta_y > 0)incy = 1;
-    else if(delta_y == 0)incy = 0; //水平线
-    else
-    {
-        incy = -1;
-        delta_y = -delta_y;
-    }
-    if(delta_x > delta_y)distance = delta_x; //选取基本增量坐标轴
-    else distance = delta_y;
-    for(t = 0; t <= distance + 1; t++) //画线输出
-    {
-        LCD_DrawPoint(uRow, uCol); //画点
-        xerr += delta_x ;
-        yerr += delta_y ;
-        if(xerr > distance)
-        {
-            xerr -= distance;
-            uRow += incx;
-        }
-        if(yerr > distance)
-        {
-            yerr -= distance;
-            uCol += incy;
-        }
-    }
+    uint16_t num;
+    num = (x1 - x0 + 1) * (y1 - y0 + 1);
+    LCD_Address_Set(x0, y0, x1, y1);
+    LCD_CS_OUT(0);
+
+//    __HAL_SPI_DISABLE(&hspi1);       // 失能SPI
+//    hspi1.Instance->CR2 |= SPI_DATASIZE_16BIT; // 设置SPI16位传输模式
+//    __HAL_SPI_ENABLE(&hspi1);        // 使能SPI
+//    hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
+
+//    LCD_DMA_Transfer16Bit((uint8_t *)buf, num*2, DMA_MEMINC_ENABLE); // 启用DMA发送
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t *)buf, 240*240); // 启用DMA传输
+
+    // 其余部分见HAL_SPI_TxCpltCallback()函数
 }
-//画矩形
-void LCD_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+
+// SPI传输完成回调函数
+// 此函数会在DMA SPITX传输完成后被调用
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-    LCD_DrawLine(x1, y1, x2, y1);
-    LCD_DrawLine(x1, y1, x1, y2);
-    LCD_DrawLine(x1, y2, x2, y2);
-    LCD_DrawLine(x2, y1, x2, y2);
+    LCD_CS_OUT(1);
+//	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+//	hspi1.Instance->CR1 &= ~SPI_CR1_SPE; // 失能SPI
+//	hspi1.Instance->CR1 &= ~SPI_CR1_DFF;  // 设置为8位传输模式
+//	hspi1.Instance->CR1 |= SPI_CR1_SPE; // 使能SPI
 }
-//在指定位置画一个指定大小的圆
-//(x,y):中心点
-//r    :半径
-void Draw_Circle(uint16_t x0, uint16_t y0, uint8_t r)
-{
-    int a, b;
-    int di;
-    a = 0;
-    b = r;
-    di = 3 - (r << 1);       //判断下个点位置的标志
-    while(a <= b)
-    {
-        LCD_DrawPoint(x0 - b, y0 - a);        //3
-        LCD_DrawPoint(x0 + b, y0 - a);        //0
-        LCD_DrawPoint(x0 - a, y0 + b);        //1
-        LCD_DrawPoint(x0 - b, y0 - a);        //7
-        LCD_DrawPoint(x0 - a, y0 - b);        //2
-        LCD_DrawPoint(x0 + b, y0 + a);        //4
-        LCD_DrawPoint(x0 + a, y0 - b);        //5
-        LCD_DrawPoint(x0 + a, y0 + b);        //6
-        LCD_DrawPoint(x0 - b, y0 + a);
-        a++;
-        //使用Bresenham算法画圆
-        if(di < 0)di += 4 * a + 6;
-        else
-        {
-            di += 10 + 4 * (a - b);
-            b--;
-        }
-        LCD_DrawPoint(x0 + a, y0 + b);
-    }
-}
-//在指定位置显示一个字符
-
-//num:要显示的字符:" "--->"~"
-//mode:叠加方式(1)还是非叠加方式(0)
-//在指定位置显示一个字符
-
-//num:要显示的字符:" "--->"~"
-
-//mode:叠加方式(1)还是非叠加方式(0)
-void LCD_ShowChar(uint16_t x, uint16_t y, uint8_t num, uint8_t mode)
-{
-    uint8_t temp;
-    uint8_t pos, t;
-    uint16_t x0 = x;
-    uint16_t colortemp = POINT_COLOR;
-    if(x > LCD_W - 16 || y > LCD_H - 16)return;
-    //设置窗口
-    num = num - ' '; //得到偏移后的值
-    Address_set(x, y, x + 8 - 1, y + 16 - 1); //设置光标位置
-    if(!mode) //非叠加方式
-    {
-        for(pos = 0; pos < 16; pos++)
-        {
-            temp = asc2_1608[(uint16_t)num * 16 + pos];		 //调用1608字体
-            for(t = 0; t < 8; t++)
-            {
-                if(temp & 0x01)POINT_COLOR = colortemp;
-                else POINT_COLOR = BACK_COLOR;
-                LCD_WR_DATA(POINT_COLOR);
-                temp >>= 1;
-                x++;
-            }
-            x = x0;
-            y++;
-        }
-    }
-    else //叠加方式
-    {
-        for(pos = 0; pos < 16; pos++)
-        {
-            temp = asc2_1608[(uint16_t)num * 16 + pos];		 //调用1608字体
-            for(t = 0; t < 8; t++)
-            {
-                if(temp & 0x01)LCD_DrawPoint(x + t, y + pos); //画一个点
-                temp >>= 1;
-            }
-        }
-    }
-    POINT_COLOR = colortemp;
-}
-//m^n函数
-uint32_t mypow(uint8_t m, uint8_t n)
-{
-    uint32_t result = 1;
-    while(n--)result *= m;
-    return result;
-}
-//显示2个数字
-//x,y :起点坐标
-//len :数字的位数
-//color:颜色
-//num:数值(0~4294967295);
-void LCD_ShowNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len)
-{
-    uint8_t t, temp;
-    uint8_t enshow = 0;
-    num = (uint16_t)num;
-    for(t = 0; t < len; t++)
-    {
-        temp = (num / mypow(10, len - t - 1)) % 10;
-        if(enshow == 0 && t < (len - 1))
-        {
-            if(temp == 0)
-            {
-                LCD_ShowChar(x + 8 * t, y, ' ', 0);
-                continue;
-            }
-            else enshow = 1;
-
-        }
-        LCD_ShowChar(x + 8 * t, y, temp + 48, 0);
-    }
-}
-//显示2个数字
-//x,y:起点坐标
-//num:数值(0~99);
-void LCD_Show2Num(uint16_t x, uint16_t y, uint16_t num, uint8_t len)
-{
-    uint8_t t, temp;
-    for(t = 0; t < len; t++)
-    {
-        temp = (num / mypow(10, len - t - 1)) % 10;
-        LCD_ShowChar(x + 8 * t, y, temp + '0', 0);
-    }
-}
-//显示字符串
-//x,y:起点坐标
-//*p:字符串起始地址
-//用16字体
-void LCD_ShowString(uint16_t x, uint16_t y, const uint8_t* p)
-{
-    while(*p != '\0')
-    {
-        if(x > LCD_W - 16)
-        {
-            x = 0;
-            y += 16;
-        }
-        if(y > LCD_H - 16)
-        {
-            y = x = 0;
-            LCD_Clear(RED);
-        }
-        LCD_ShowChar(x, y, *p, 0);
-        x += 8;
-        p++;
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
