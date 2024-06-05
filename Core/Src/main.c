@@ -83,18 +83,18 @@ uint8_t st7789_basic_test(void)
   {
     uint16_t line = 0;
 
-//    do
-//    {
-//      line = LCD_ReadScanLine();
-//    }while(line != 240);  // 轮询扫描线
+    do
+    {
+      line = LCD_ReadScanLine();
+    }while(line != 240);  // 轮询扫描线
 //    memset(grambuff,colors[i++ % 4],LCD_W * LCD_H/2);
 	  for(long i=0;i<LCD_W * LCD_H/2;i++)
 		grambuff[i]=colors[p % 4];
-	  p;
     LCD_Color_Fill(0, 0, 240, 120,grambuff);
-//    LCD_Fill(0, 120, 240, 240, colors[i % 4]);
-    printf("line: %d\n", line);
-    HAL_Delay(500);
+    LCD_Color_Fill(0, 120, 240, 240,grambuff);
+//    LCD_Fill(0, 120, 240, 240, colors[p % 4]);
+    printf("line: %d\n", line);p++;
+    HAL_Delay(50);
   }
     return 0;
 }

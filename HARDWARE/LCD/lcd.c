@@ -45,15 +45,15 @@ void LCD_WR_REG(uint8_t dat)
 // 启用SPI DMA连续发送单个16bit数据
 void LCD_DMA_Transfer16Bit(uint8_t *pData, uint16_t size, DMA_MEMINC_STATE state)
 {
-////	// 清除 DMA 控制寄存器的相关设置
-//    LCD_SPI_TX_DMA->CR &= ~(DMA_SxCR_MINC | DMA_SxCR_MSIZE | DMA_SxCR_PSIZE); 
+	// 清除 DMA 控制寄存器的相关设置
+    LCD_SPI_TX_DMA->CR &= ~DMA_SxCR_MINC; 
 
 //    // 设置 DMA 存储器和外设数据长度为半字(16bit)
 //    LCD_SPI_TX_DMA->CR |= DMA_SxCR_MSIZE_0 | DMA_SxCR_PSIZE_0; 
 
-//    // 根据传入的状态设置是否使能存储器地址增量
-//    if (state == DMA_MEMINC_ENABLE)
-//        LCD_SPI_TX_DMA->CR |= DMA_SxCR_MINC; 
+    // 根据传入的状态设置是否使能存储器地址增量
+    if (state == DMA_MEMINC_ENABLE)
+        LCD_SPI_TX_DMA->CR |= DMA_SxCR_MINC; 
 
     HAL_SPI_Transmit_DMA(&hspi1, pData, size); // 启用DMA传输
 }
@@ -171,6 +171,9 @@ uint16_t LCD_ReadScanLine(void)
         ; // 等待SPI空闲
 
     __HAL_SPI_DISABLE(&hspi1);
+    hspi1.Instance->CR1 &= ~(SPI_CR1_RXONLY | SPI_CR1_BIDIMODE);
+    hspi1.Instance->CR1 |= SPI_CR1_BIDIMODE;
+	
     hspi1.Instance->CR1 &= ~SPI_CR1_BR;
     hspi1.Instance->CR1 |= SPI_BAUDRATEPRESCALER_16;
     __HAL_SPI_ENABLE(&hspi1);
@@ -210,6 +213,7 @@ uint16_t LCD_ReadScanLine(void)
     hspi1.Instance->CR1 &= ~SPI_CR1_BR;
     hspi1.Instance->CR1 |= SPI_BAUDRATEPRESCALER_2;
     SPI_1LINE_TX(&hspi1);
+    hspi1.Instance->CR1 &= ~(SPI_CR1_RXONLY | SPI_CR1_BIDIMODE);
     __HAL_SPI_ENABLE(&hspi1);
     hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
 
@@ -227,15 +231,8 @@ void LCD_Fill(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint16
     num = (xend - xsta) * (yend - ysta);
     LCD_Address_Set(xsta, ysta, xend - 1, yend - 1); // 设置显示范围
     LCD_CS_OUT(0);
-//	for(int i=0;i<num*2;i++)
-//	LCD_WR_DATA(color);
-//    LCD_CS_OUT(1);
-//    __HAL_SPI_DISABLE(&hspi1);       // 失能SPI
-//    hspi1.Instance->CR2 |= SPI_DATASIZE_16BIT; // 设置SPI16位传输模式
-//    __HAL_SPI_ENABLE(&hspi1);        // 使能SPI
-//    hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
 
-    LCD_DMA_Transfer16Bit((uint8_t *)color1, num, DMA_MEMINC_DISABLE); // 启用DMA发送
+    LCD_DMA_Transfer16Bit((uint8_t *)color1, num*2, DMA_MEMINC_DISABLE); // 启用DMA发送
 
     // 其余部分见HAL_SPI_TxCpltCallback()函数
 }
@@ -246,17 +243,11 @@ void LCD_Color_Fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t
         ; // 等待SPI空闲
 
     uint16_t num;
-    num = (x1 - x0 + 1) * (y1 - y0 + 1);
-    LCD_Address_Set(x0, y0, x1, y1);
+    num = (x1 - x0) * (y1 - y0);
+    LCD_Address_Set(x0, y0, x1 - 1, y1 - 1);
     LCD_CS_OUT(0);
 
-//    __HAL_SPI_DISABLE(&hspi1);       // 失能SPI
-//    hspi1.Instance->CR2 |= SPI_DATASIZE_16BIT; // 设置SPI16位传输模式
-//    __HAL_SPI_ENABLE(&hspi1);        // 使能SPI
-//    hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
-
-//    LCD_DMA_Transfer16Bit((uint8_t *)buf, num*2, DMA_MEMINC_ENABLE); // 启用DMA发送
-	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t *)buf, 240*240); // 启用DMA传输
+    LCD_DMA_Transfer16Bit((uint8_t *)buf, num*2, DMA_MEMINC_ENABLE); // 启用DMA发送
 
     // 其余部分见HAL_SPI_TxCpltCallback()函数
 }
@@ -266,8 +257,4 @@ void LCD_Color_Fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     LCD_CS_OUT(1);
-//	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-//	hspi1.Instance->CR1 &= ~SPI_CR1_SPE; // 失能SPI
-//	hspi1.Instance->CR1 &= ~SPI_CR1_DFF;  // 设置为8位传输模式
-//	hspi1.Instance->CR1 |= SPI_CR1_SPE; // 使能SPI
 }
