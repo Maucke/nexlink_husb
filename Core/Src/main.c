@@ -141,7 +141,7 @@ int main(void)
 	
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
   LCD_Init();
-	a = lv_anim_start(&a, 999,0,set_brightness_value,1000);
+	a = lv_anim_start(999,0,set_brightness_value,1000);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -151,19 +151,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	Clear_Screen(i+=100);
-
-//		if(HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin) == GPIO_PIN_SET)
-//		{
-//			HAL_GPIO_WritePin(POWERSAVE_GPIO_Port, POWERSAVE_Pin, GPIO_PIN_RESET);
-//		}
     HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
-//        USBD_NEX_LINK_Transmit(&hUSB, (uint8_t*)grambuff, 512);
-//		refrash_screen();
-//	  Set_PWM_DutyCycle(i%1000);
-//		i+=50;
 		lv_anim_run(&a);
     HAL_Delay(5);
 	  

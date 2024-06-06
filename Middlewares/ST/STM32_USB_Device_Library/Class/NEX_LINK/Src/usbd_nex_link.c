@@ -303,19 +303,11 @@ static uint8_t USBD_NEX_LINK_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 
 static uint8_t USBD_NEX_LINK_SOF(struct _USBD_HandleTypeDef *pdev)
 {
-	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
+//	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
 	dbmsg("USBD_NEX_LINK_SOF");	
 //	hnex->sof_timestamp_us = timer_get();
 	return USBD_OK;
 }
-
-//void USBD_NEX_LINK_SetChannel(USBD_HandleTypeDef *pdev, uint8_t channel, can_data_t* handle) {
-//	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
-//	if ((hnex!=NULL) && (channel < NUM_CAN_CHANNEL)) {
-////		hnex->channels[channel] = handle;
-//	}
-//}
-
 
 static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	struct tm *tm_local;
@@ -344,7 +336,7 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			memcpy(&hnex->des->brides, hnex->ep0_buf, sizeof(hnex->des->brides));
 			dbmsg("Brightness: %d\n", hnex->des->brides.brightness); // 打印亮度
 			extern lv_anim_t a;
-			a = lv_anim_start(&a, hnex->des->brides.brightness,last_brightness,set_brightness_value,hnex->des->brides.damp);
+			a = lv_anim_start(hnex->des->brides.brightness,last_brightness,set_brightness_value,hnex->des->brides.damp);
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 		case NEX_CLEAR_FLAG:
