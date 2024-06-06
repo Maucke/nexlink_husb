@@ -436,6 +436,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\Src\tim.c</FilePath>
             </File>
+            <File>
+              <FileName>lv_anim_light.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\lv_anim_light.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1494,6 +1499,11 @@
               <FileName>tim.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\tim.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_anim_light.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\lv_anim_light.c</FilePath>
             </File>
           </Files>
         </Group>

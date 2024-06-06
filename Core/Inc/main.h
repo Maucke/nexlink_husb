@@ -55,6 +55,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void set_brightness_value(void *obj, int32_t value);
 
 /* USER CODE END EFP */
 

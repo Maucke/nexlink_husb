@@ -35,6 +35,7 @@
 #include "stdio.h"
 #include "queue.h"
 #include "lcd.h"
+#include "lv_anim_light.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -73,6 +74,7 @@ int fputc(int ch, FILE* f)
 }
 
 uint16_t grambuff[240 * 240 + 512];
+nex_usb_des des;
 
 uint8_t refrash_screen(void)
 {
@@ -87,6 +89,12 @@ uint8_t refrash_screen(void)
   LCD_Color_Fill(0, 0, 240, 240, grambuff);
 //  dbmsg("start:%d", HAL_GetTick());
   return 0;
+}
+
+lv_anim_t a;
+void set_brightness_value(void *obj, int32_t value)
+{
+	dbmsg("brightness: %d", value);
 }
 /* USER CODE END 0 */
 
@@ -127,9 +135,9 @@ int main(void)
 
   USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
   USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
-  USBD_NEX_LINK_Init(&hUSB, grambuff);
+  USBD_NEX_LINK_Init(&hUSB, grambuff, &des);
   USBD_Start(&hUSB);
-  // Device_Init(grambuff);
+	
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
   LCD_Init();
   /* USER CODE END 2 */
@@ -154,6 +162,7 @@ int main(void)
 //		refrash_screen();
 //	  Set_PWM_DutyCycle(i%1000);
 //		i+=50;
+		lv_anim_run(&a);
     HAL_Delay(50);
 	  
   }

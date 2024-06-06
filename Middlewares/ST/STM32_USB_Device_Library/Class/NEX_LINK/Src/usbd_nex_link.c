@@ -49,7 +49,7 @@ typedef struct {
 	uint16_t* grambuff;
 	long gramdetail;
 	
-	nex_usb_des des;
+	nex_usb_des* des;
 	bool dfu_detach_requested;
 	
 } USBD_NEX_LINK_HandleTypeDef __attribute__ ((aligned (4)));
@@ -245,7 +245,7 @@ static __ALIGN_BEGIN uint8_t USBD_MS_EXT_PROP_FEATURE_DESC[] __ALIGN_END = {
 };
 
 
-uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff)
+uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff, nex_usb_des* des)
 {
 	uint8_t ret = USBD_FAIL;
 	USBD_NEX_LINK_HandleTypeDef *hnex = calloc(1, sizeof(USBD_NEX_LINK_HandleTypeDef));
@@ -255,6 +255,7 @@ uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff)
 //		hnex->q_frame_pool = q_frame_pool;
 //		hnex->q_from_host = q_from_host;
 		hnex->grambuff = grambuff;
+		hnex->des = des;
 		
 		dbmsg("grambuff:%p",hnex->grambuff);	
 		hnex->gramdetail = 0;
@@ -326,8 +327,8 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	switch (req->bRequest) {
 
 		case NEX_TIMESTAMP_SET:
-			memcpy(&hnex->des.timestamp_s, hnex->ep0_buf, sizeof(hnex->des.timestamp_s));
-			tm_local = localtime((const time_t *)&hnex->des.timestamp_s); // 转换时间戳
+			memcpy(&hnex->des->timestamp_s, hnex->ep0_buf, sizeof(hnex->des->timestamp_s));
+			tm_local = localtime((const time_t *)&hnex->des->timestamp_s); // 转换时间戳
 	 
 			// 格式化时间为字符串
 			if (strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_local) != 0) {
@@ -338,9 +339,9 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 		case NEX_BRIGHTNESS_SET:
-			memcpy(&hnex->des.brightness, hnex->ep0_buf, sizeof(hnex->des.brightness));
-			dbmsg("Brightness: %d\n", hnex->des.brightness); // 打印亮度
-			Set_PWM_DutyCycle(hnex->des.brightness%1000);
+			memcpy(&hnex->des->brightness, hnex->ep0_buf, sizeof(hnex->des->brightness));
+			dbmsg("Brightness: %d\n", hnex->des->brightness); // 打印亮度
+			Set_PWM_DutyCycle(hnex->des->brightness%1000);
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 		case NEX_CLEAR_FLAG:
@@ -399,13 +400,13 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
 			break;
 		case NEX_TIMESTAMP_GET:
-			memcpy(hnex->ep0_buf, &hnex->des.timestamp_s, sizeof(hnex->des.timestamp_s));
-			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des.timestamp_s));
+			memcpy(hnex->ep0_buf, &hnex->des->timestamp_s, sizeof(hnex->des->timestamp_s));
+			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->timestamp_s));
 			break;
 		
 		case NEX_BRIGHTNESS_GET:
-			memcpy(hnex->ep0_buf, &hnex->des.brightness, sizeof(hnex->des.brightness));
-			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des.brightness));
+			memcpy(hnex->ep0_buf, &hnex->des->brightness, sizeof(hnex->des->brightness));
+			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->brightness));
 			break;
 
 //		case GS_USB_BREQ_GET_USER_ID:
