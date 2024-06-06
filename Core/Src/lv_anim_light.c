@@ -114,7 +114,7 @@ void lv_anim_run(lv_anim_t* a)
   last_timer_run = HAL_GetTick();
 }
 
-lv_anim_t lv_anim_start(uint32_t end, int32_t start, lv_anim_exec_xcb_t exec_cb, uint32_t duration)
+lv_anim_t lv_anim_start(lv_anim_t* last, uint32_t end, int32_t start, lv_anim_exec_xcb_t exec_cb, uint32_t duration)
 {
   lv_anim_t a = {0};
   lv_anim_init(&a);

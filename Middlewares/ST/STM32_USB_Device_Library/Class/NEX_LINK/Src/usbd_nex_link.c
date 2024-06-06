@@ -37,7 +37,7 @@ THE SOFTWARE.
 #include "lcd.h"
 #include "spi.h"
 #include "tim.h"
-
+#include "lv_anim_light.h"
 typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
 
@@ -320,6 +320,7 @@ static uint8_t USBD_NEX_LINK_SOF(struct _USBD_HandleTypeDef *pdev)
 static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	struct tm *tm_local;
 	char time_str[32];
+	uint16_t last_brightness;
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
 	dbmsg("USBD_NEX_LINK_EP0_RxReady");	
 	USBD_SetupReqTypedef *req = &hnex->last_setup_request;
@@ -339,9 +340,11 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 		case NEX_BRIGHTNESS_SET:
-			memcpy(&hnex->des->brightness, hnex->ep0_buf, sizeof(hnex->des->brightness));
-			dbmsg("Brightness: %d\n", hnex->des->brightness); // 打印亮度
-			Set_PWM_DutyCycle(hnex->des->brightness%1000);
+			last_brightness = hnex->des->brides.brightness;
+			memcpy(&hnex->des->brides, hnex->ep0_buf, sizeof(hnex->des->brides));
+			dbmsg("Brightness: %d\n", hnex->des->brides.brightness); // 打印亮度
+			extern lv_anim_t a;
+			a = lv_anim_start(&a, hnex->des->brides.brightness,last_brightness,set_brightness_value,hnex->des->brides.damp);
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 		case NEX_CLEAR_FLAG:
@@ -400,13 +403,15 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
 			break;
 		case NEX_TIMESTAMP_GET:
+			dbmsg("timestamp_s: %d", sizeof(hnex->des->timestamp_s));
 			memcpy(hnex->ep0_buf, &hnex->des->timestamp_s, sizeof(hnex->des->timestamp_s));
 			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->timestamp_s));
 			break;
 		
 		case NEX_BRIGHTNESS_GET:
-			memcpy(hnex->ep0_buf, &hnex->des->brightness, sizeof(hnex->des->brightness));
-			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->brightness));
+			dbmsg("brightness: %d", sizeof(hnex->des->brides.brightness));
+			memcpy(hnex->ep0_buf, &hnex->des->brides, sizeof(hnex->des->brides));
+			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->brides));
 			break;
 
 //		case GS_USB_BREQ_GET_USER_ID:

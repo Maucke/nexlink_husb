@@ -36,6 +36,6 @@ typedef struct _lv_anim_t {
 #define LV_BEZIER_VAL_SHIFT 10 /**< log2(LV_BEZIER_VAL_MAX): used to normalize up scaled values*/
 
 void lv_anim_run(lv_anim_t* a);
-lv_anim_t lv_anim_start(uint32_t end, int32_t start, lv_anim_exec_xcb_t exec_cb, uint32_t duration);
+lv_anim_t lv_anim_start(lv_anim_t* last, uint32_t end, int32_t start, lv_anim_exec_xcb_t exec_cb, uint32_t duration);
 
 #endif

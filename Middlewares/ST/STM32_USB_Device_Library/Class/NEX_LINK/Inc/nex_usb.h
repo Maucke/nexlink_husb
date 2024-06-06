@@ -45,7 +45,14 @@ enum nex_usb_breq {
 };
 
 typedef struct {
-	uint64_t timestamp_s;
 	uint16_t brightness;
+	uint16_t damp;
+	
+}nex_brightness_des;
+
+
+typedef struct {
+	uint64_t timestamp_s;
+	nex_brightness_des brides;
 	
 }nex_usb_des;

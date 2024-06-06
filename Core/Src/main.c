@@ -95,6 +95,7 @@ lv_anim_t a;
 void set_brightness_value(void *obj, int32_t value)
 {
 	dbmsg("brightness: %d", value);
+	Set_PWM_DutyCycle(value%1000);
 }
 /* USER CODE END 0 */
 
@@ -140,6 +141,7 @@ int main(void)
 	
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
   LCD_Init();
+	a = lv_anim_start(&a, 999,0,set_brightness_value,1000);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -163,7 +165,7 @@ int main(void)
 //	  Set_PWM_DutyCycle(i%1000);
 //		i+=50;
 		lv_anim_run(&a);
-    HAL_Delay(50);
+    HAL_Delay(5);
 	  
   }
   /* USER CODE END 3 */
