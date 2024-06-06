@@ -5,7 +5,7 @@
 
 #define USE_HORIZONTAL 1		 //设置横屏或者竖屏显示 0或1为竖屏 2或3为横屏
 #define X_MAX 240				 //LCD排线朝下时的X和Y最大像素点
-#define Y_MAX 240
+#define Y_MAX 280
 
 #if USE_HORIZONTAL == 0 || USE_HORIZONTAL == 1
 #define LCD_W X_MAX

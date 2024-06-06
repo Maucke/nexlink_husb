@@ -530,12 +530,15 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	rxlen = 960;
 //	dbmsg("%d,%02X,%02X,%02X,%02X",rxlen,(hnex->grambuff + hnex->gramdetail)[0],(hnex->grambuff + hnex->gramdetail)[1],(hnex->grambuff + hnex->gramdetail)[62],(hnex->grambuff + hnex->gramdetail)[63]);
 //	if (rxlen == 256) 
+    LCD_CS_OUT(0);
+    LCD_DMA_Transfer16Bit((uint8_t *)hnex->grambuff, 960, DMA_MEMINC_ENABLE); // 启用DMA发送
+	
 		hnex->gramdetail=(hnex->gramdetail+rxlen/2)%(LCD_W*LCD_H);
 //		dbmsg("hnex->gramdetail:%d",hnex->gramdetail);
 		if(hnex->gramdetail==0)
 		{
 			HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-			refrash_screen();
+			LCD_Address_Set(0,0,LCD_W-1,LCD_H-1);
 		}
 		
 	USBD_NEX_LINK_PrepareReceive(pdev);
@@ -553,7 +556,7 @@ inline uint8_t USBD_NEX_LINK_PrepareReceive(USBD_HandleTypeDef *pdev)
 {
 //	dbmsg("USBD_NEX_LINK_PrepareReceive");	
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, (uint8_t*)(hnex->grambuff + hnex->gramdetail), 64);
+	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, (uint8_t*)(hnex->grambuff), 64);
 }
 
 bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev)
