@@ -323,7 +323,6 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	dbmsg("USBD_NEX_LINK_EP0_RxReady");	
 	USBD_SetupReqTypedef *req = &hnex->last_setup_request;
 
-	dbmsg("bRequest: %d\n", req->bRequest); // 打印亮度
 	switch (req->bRequest) {
 
 		case NEX_TIMESTAMP_SET:
@@ -340,17 +339,18 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			break;
 		case NEX_BRIGHTNESS_SET:
 			memcpy(&hnex->des.brightness, hnex->ep0_buf, sizeof(hnex->des.brightness));
-	 
 			dbmsg("Brightness: %d\n", hnex->des.brightness); // 打印亮度
 			Set_PWM_DutyCycle(hnex->des.brightness%1000);
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
-
 		case NEX_CLEAR_FLAG:
+			hnex->TxState = 0;            
 			hnex->gramdetail = 0;//reset pic
-			hnex->TxState = 0;
+			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
+
 		default:
+			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 	}
 
@@ -391,24 +391,34 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 
 	hnex->isconnect = true;
 	switch (req->bRequest) {
-
-		case NEX_TIMESTAMP_SET:
-			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
-			break;
-		case NEX_BRIGHTNESS_SET:
-			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
-			break;
+		
 		case NEX_CLEAR_FLAG:
+		case NEX_BRIGHTNESS_SET:
+		case NEX_TIMESTAMP_SET:
+			hnex->last_setup_request = *req;
 			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
 			break;
 		case NEX_TIMESTAMP_GET:
 			memcpy(hnex->ep0_buf, &hnex->des.timestamp_s, sizeof(hnex->des.timestamp_s));
 			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des.timestamp_s));
 			break;
+		
 		case NEX_BRIGHTNESS_GET:
 			memcpy(hnex->ep0_buf, &hnex->des.brightness, sizeof(hnex->des.brightness));
 			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des.brightness));
 			break;
+
+//		case GS_USB_BREQ_GET_USER_ID:
+//			if (req->wValue < NUM_CAN_CHANNEL) {
+//				// d32 = flash_get_user_id(req->wValue);
+//				d32 = 0xDEADBEEF;
+//				memcpy(hnex->ep0_buf, &d32, sizeof(d32));
+//				USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(d32));
+//			} else {
+//				USBD_CtlError(pdev, req);
+//			}
+//			break;
+
 
 		default:
 			USBD_CtlError(pdev, req);

@@ -78,14 +78,14 @@ uint8_t refrash_screen(void)
 {
   uint16_t line = 0;
 
-  dbmsg("wait:%d", HAL_GetTick());
+//  dbmsg("wait:%d", HAL_GetTick());
   do
   {
     line = LCD_ReadScanLine();
   }
   while(line < 200);   // 轮询
   LCD_Color_Fill(0, 0, 240, 240, grambuff);
-  dbmsg("start:%d", HAL_GetTick());
+//  dbmsg("start:%d", HAL_GetTick());
   return 0;
 }
 /* USER CODE END 0 */

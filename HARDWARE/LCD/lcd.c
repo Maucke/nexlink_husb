@@ -271,11 +271,11 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 	{
 		LCD_DMA_Transfer16Bit((uint8_t *)(grambuff)+65535, remainsize, DMA_MEMINC_ENABLE); // 启用DMA发送
 		remainsize=0;
-		dbmsg("next:%d",HAL_GetTick());
+//		dbmsg("next:%d",HAL_GetTick());
 	}
 	else
 	{
-		dbmsg("done:%d",HAL_GetTick());
+//		dbmsg("done:%d",HAL_GetTick());
 		LCD_CS_OUT(1);
 	}
 }
