@@ -279,3 +279,4 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 		LCD_CS_OUT(1);
 	}
 }
+   

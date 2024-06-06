@@ -36,6 +36,7 @@ THE SOFTWARE.
 #include "main.h"
 #include "lcd.h"
 #include "spi.h"
+#include "tim.h"
 
 typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
@@ -46,19 +47,11 @@ typedef struct {
 	USBD_SetupReqTypedef last_setup_request;
 
 	uint16_t* grambuff;
-	uint16_t* grambuffhalf;
 	long gramdetail;
-
-	uint32_t out_requests;
-	uint32_t out_requests_fail;
-	uint32_t out_requests_no_buf;
-
+	
+	nex_usb_des des;
 	bool dfu_detach_requested;
-
-	bool timestamps_enabled;
-	uint64_t timestamp_s;
-
-	bool pad_pkts_to_max_pkt_size;
+	
 } USBD_NEX_LINK_HandleTypeDef __attribute__ ((aligned (4)));
 
 static uint8_t USBD_NEX_LINK_Start(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
@@ -262,10 +255,8 @@ uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff)
 //		hnex->q_frame_pool = q_frame_pool;
 //		hnex->q_from_host = q_from_host;
 		hnex->grambuff = grambuff;
-		hnex->grambuffhalf = grambuff + 240*240/2;
 		
 		dbmsg("grambuff:%p",hnex->grambuff);	
-		dbmsg("grambuffhalf:%p",hnex->grambuffhalf);	
 		hnex->gramdetail = 0;
 		pdev->pClassData = hnex;
 
@@ -332,12 +323,12 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	dbmsg("USBD_NEX_LINK_EP0_RxReady");	
 	USBD_SetupReqTypedef *req = &hnex->last_setup_request;
 
+	dbmsg("bRequest: %d\n", req->bRequest); // 打印亮度
 	switch (req->bRequest) {
 
 		case NEX_TIMESTAMP_SET:
-			memcpy(&hnex->timestamp_s, hnex->ep0_buf, sizeof(hnex->timestamp_s));
-			hnex->gramdetail = 0;//reset pic
-			tm_local = localtime((const time_t *)&hnex->timestamp_s); // 转换时间戳
+			memcpy(&hnex->des.timestamp_s, hnex->ep0_buf, sizeof(hnex->des.timestamp_s));
+			tm_local = localtime((const time_t *)&hnex->des.timestamp_s); // 转换时间戳
 	 
 			// 格式化时间为字符串
 			if (strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_local) != 0) {
@@ -347,7 +338,18 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			}
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
+		case NEX_BRIGHTNESS_SET:
+			memcpy(&hnex->des.brightness, hnex->ep0_buf, sizeof(hnex->des.brightness));
+	 
+			dbmsg("Brightness: %d\n", hnex->des.brightness); // 打印亮度
+			Set_PWM_DutyCycle(hnex->des.brightness%1000);
+			USBD_NEX_LINK_PrepareReceive(pdev);
+			break;
 
+		case NEX_CLEAR_FLAG:
+			hnex->gramdetail = 0;//reset pic
+			hnex->TxState = 0;
+			break;
 		default:
 			break;
 	}
@@ -391,26 +393,22 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 	switch (req->bRequest) {
 
 		case NEX_TIMESTAMP_SET:
-			hnex->last_setup_request = *req;
 			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
-			hnex->TxState = 0;
+			break;
+		case NEX_BRIGHTNESS_SET:
+			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
+			break;
+		case NEX_CLEAR_FLAG:
+			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
 			break;
 		case NEX_TIMESTAMP_GET:
-			memcpy(hnex->ep0_buf, &hnex->timestamp_s, sizeof(hnex->timestamp_s));
-			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->timestamp_s));
+			memcpy(hnex->ep0_buf, &hnex->des.timestamp_s, sizeof(hnex->des.timestamp_s));
+			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des.timestamp_s));
 			break;
-
-//		case GS_USB_BREQ_GET_USER_ID:
-//			if (req->wValue < NUM_CAN_CHANNEL) {
-//				// d32 = flash_get_user_id(req->wValue);
-//				d32 = 0xDEADBEEF;
-//				memcpy(hnex->ep0_buf, &d32, sizeof(d32));
-//				USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(d32));
-//			} else {
-//				USBD_CtlError(pdev, req);
-//			}
-//			break;
-
+		case NEX_BRIGHTNESS_GET:
+			memcpy(hnex->ep0_buf, &hnex->des.brightness, sizeof(hnex->des.brightness));
+			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des.brightness));
+			break;
 
 		default:
 			USBD_CtlError(pdev, req);
@@ -518,7 +516,7 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
 
 //	dbmsg("USBD_NEX_LINK_DataOut");	
-	hnex->out_requests++;
+//	hnex->out_requests++;
 
 	uint32_t rxlen = USBD_LL_GetRxDataSize(pdev, epnum);
 	rxlen = 960;

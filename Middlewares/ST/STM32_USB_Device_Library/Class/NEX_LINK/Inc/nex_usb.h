@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 #pragma once
 
+#include <stdint.h>
+
 #define u32 uint32_t
 #define u8 uint8_t
 
@@ -36,21 +38,14 @@ enum nex_usb_breq {
         NEX_BREQ_HOST_FORMAT = 0,
         NEX_TIMESTAMP_SET,
         NEX_TIMESTAMP_GET,
+        NEX_BRIGHTNESS_SET,
+        NEX_BRIGHTNESS_GET,
+        NEX_CLEAR_FLAG,
         NEX_COMMAND_LEN,
 };
 
-enum nex_link_mode {
-	/* reset a channel. turns it off */
-	NEX_LINK_MODE_RESET = 0,
-	/* starts a channel */
-	NEX_LINK_MODE_START
-};
-
-enum nex_link_state {
-	NEX_LINK_STATE_ERROR_ACTIVE = 0,
-	NEX_LINK_STATE_ERROR_WARNING,
-	NEX_LINK_STATE_ERROR_PASSIVE,
-	NEX_LINK_STATE_BUS_OFF,
-	NEX_LINK_STATE_STOPPED,
-	NEX_LINK_STATE_SLEEPING
-};
+typedef struct {
+	uint64_t timestamp_s;
+	uint16_t brightness;
+	
+}nex_usb_des;
