@@ -3,7 +3,7 @@
 #include "stdbool.h"
 
 #define delay HAL_Delay
-volatile long remainsize = 0;
+__IO uint8_t lcd_direction = 0;
 
 // LCD串行数据写入
 static void LCD_Writ_Bus(uint8_t dat)
@@ -72,7 +72,7 @@ void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 	while (hspi1.State != HAL_SPI_STATE_READY)
 			; // 等待SPI空闲
     LCD_CS_OUT(1);
-	if(USE_HORIZONTAL==0)
+	if(lcd_direction==0)
 	{
 		LCD_WR_REG(0x2a);//列地址设置
 		LCD_WR_DATA(x1);
@@ -82,7 +82,7 @@ void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 		LCD_WR_DATA(y2+20);
 		LCD_WR_REG(0x2c);//储存器写
 	}
-	else if(USE_HORIZONTAL==1)
+	else if(lcd_direction==1)
 	{
 		LCD_WR_REG(0x2a);//列地址设置
 		LCD_WR_DATA(x1);
@@ -92,7 +92,7 @@ void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 		LCD_WR_DATA(y2+20);
 		LCD_WR_REG(0x2c);//储存器写
 	}
-	else if(USE_HORIZONTAL==2)
+	else if(lcd_direction==2)
 	{
 		LCD_WR_REG(0x2a);//列地址设置
 		LCD_WR_DATA(x1+20);
@@ -115,9 +115,23 @@ void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
     LCD_CS_OUT(0);
 }
 
+void LCD_SetRotation(uint8_t dir)
+{
+	lcd_direction = dir;
+	LCD_WR_REG(0x36);
+	if(lcd_direction==0)LCD_WR_DATA8(0x08);
+	else if(lcd_direction==1)LCD_WR_DATA8(0xC8);
+	else if(lcd_direction==2)LCD_WR_DATA8(0x78);
+	else LCD_WR_DATA8(0xA8);
+}
+
 // LCD初始化
 void LCD_Init(void)
 {
+	LCD_RST_OUT(0);
+	HAL_Delay(200);
+	LCD_RST_OUT(1);
+	HAL_Delay(10); 
 
 	LCD_WR_REG(0xfd);//private_access
 	LCD_WR_DATA8(0x06);
@@ -279,9 +293,9 @@ void LCD_Init(void)
 	LCD_WR_DATA8(0x00);
 
 	LCD_WR_REG(0x36);
-	if(USE_HORIZONTAL==0)LCD_WR_DATA8(0x08);
-	else if(USE_HORIZONTAL==1)LCD_WR_DATA8(0xC8);
-	else if(USE_HORIZONTAL==2)LCD_WR_DATA8(0x78);
+	if(lcd_direction==0)LCD_WR_DATA8(0x08);
+	else if(lcd_direction==1)LCD_WR_DATA8(0xC8);
+	else if(lcd_direction==2)LCD_WR_DATA8(0x78);
 	else LCD_WR_DATA8(0xA8);
 
 

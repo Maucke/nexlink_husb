@@ -50,6 +50,7 @@ typedef struct {
 	long gramdetail;
 	
 	nex_usb_des* des;
+	
 	bool dfu_detach_requested;
 	
 } USBD_NEX_LINK_HandleTypeDef __attribute__ ((aligned (4)));
@@ -339,9 +340,11 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			a = lv_anim_start(hnex->des->brides.brightness,last_brightness,set_brightness_value,hnex->des->brides.damp);
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
-		case NEX_CLEAR_FLAG:
+		case NEX_SCREEN_SET:
 			hnex->TxState = 0;            
 			hnex->gramdetail = 0;//reset pic
+			memcpy(&hnex->des->scrdes, hnex->ep0_buf, sizeof(hnex->des->scrdes));
+			dbmsg("Direction: %d\n", hnex->des->scrdes.direction); // 打印屏幕方向
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 
@@ -388,7 +391,7 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 	hnex->isconnect = true;
 	switch (req->bRequest) {
 		
-		case NEX_CLEAR_FLAG:
+		case NEX_SCREEN_SET:
 		case NEX_BRIGHTNESS_SET:
 		case NEX_TIMESTAMP_SET:
 			hnex->last_setup_request = *req;
@@ -404,6 +407,12 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 			dbmsg("brightness: %d", sizeof(hnex->des->brides.brightness));
 			memcpy(hnex->ep0_buf, &hnex->des->brides, sizeof(hnex->des->brides));
 			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->brides));
+			break;
+		
+		case NEX_SCREEN_GET:
+			dbmsg("screen: %d", sizeof(hnex->des->scrdes));
+			memcpy(hnex->ep0_buf, &hnex->des->scrdes, sizeof(hnex->des->scrdes));
+			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->scrdes));
 			break;
 
 //		case GS_USB_BREQ_GET_USER_ID:
@@ -531,7 +540,16 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	if(hnex->gramdetail==0)
 	{
 		HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-		LCD_Address_Set(0,0,LCD_W-1,LCD_H-1);
+		extern __IO uint8_t lcd_direction;
+		if(lcd_direction != hnex->des->scrdes.direction)
+		{
+			dbmsg("set dir: %d, last: %d", hnex->des->scrdes.direction, lcd_direction);
+			LCD_SetRotation(hnex->des->scrdes.direction);
+		}
+		if(lcd_direction==0||lcd_direction==1)
+			LCD_Address_Set(0,0,LCD_W-1,LCD_H-1);
+		else
+			LCD_Address_Set(0,0,LCD_H-1,LCD_W-1);
 	}
 	LCD_DMA_Transfer16Bit((uint8_t *)hnex->grambuff + ramindex*1024, 960, DMA_MEMINC_ENABLE); // 启用DMA发送
 		
@@ -552,7 +570,7 @@ inline uint8_t USBD_NEX_LINK_PrepareReceive(USBD_HandleTypeDef *pdev)
 //	dbmsg("USBD_NEX_LINK_PrepareReceive");	
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
 	ramindex = (ramindex+1)%2;
-	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, (uint8_t*)(hnex->grambuff) + ramindex*1024, 64);
+	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, (uint8_t*)(hnex->grambuff) + ramindex*1024, 1024);
 }
 
 bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev)

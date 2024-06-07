@@ -74,22 +74,23 @@ int fputc(int ch, FILE* f)
 }
 
 uint16_t grambuff[1024];
+uint8_t grambufftemp[1024];
 nex_usb_des des;
 
-uint8_t refrash_screen(void)
-{
-  uint16_t line = 0;
+//uint8_t refrash_screen(void)
+//{
+//  uint16_t line = 0;
 
-//  dbmsg("wait:%d", HAL_GetTick());
-  do
-  {
-    line = LCD_ReadScanLine();
-  }
-  while(line < 200);   // 轮询
-  LCD_Color_Fill(0, 0, 240, 240, grambuff);
-//  dbmsg("start:%d", HAL_GetTick());
-  return 0;
-}
+////  dbmsg("wait:%d", HAL_GetTick());
+//  do
+//  {
+//    line = LCD_ReadScanLine();
+//  }
+//  while(line < 200);   // 轮询
+//  LCD_Color_Fill(0, 0, 240, 240, grambuff);
+////  dbmsg("start:%d", HAL_GetTick());
+//  return 0;
+//}
 
 lv_anim_t a;
 void set_brightness_value(void *obj, int32_t value)
@@ -97,6 +98,8 @@ void set_brightness_value(void *obj, int32_t value)
 	dbmsg("brightness: %d", value);
 	Set_PWM_DutyCycle(value%1000);
 }
+
+
 /* USER CODE END 0 */
 
 /**
@@ -106,7 +109,8 @@ void set_brightness_value(void *obj, int32_t value)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint16_t i;
+//	long index = 0;
+//	long i,j,p;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -142,6 +146,21 @@ int main(void)
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
   LCD_Init();
 	a = lv_anim_start(999,0,set_brightness_value,1000);
+//	LCD_Address_Set(0,0,LCD_W-1,LCD_H-1);
+//	for(i = 0; i < (LCD_H * LCD_W * 2) / 960; i ++)
+//	{
+//		for (j = 0; j < 2; j++)
+//		{
+//				for (p = 0; p < 480; p++)
+//				{
+//						grambufftemp[p + j * 480] =( ((((index++) % (960 * 2))/ 960) == 1) ? 0xFF : 0);
+//				}
+//		}
+//    LCD_DMA_Transfer16Bit(grambufftemp, 960, DMA_MEMINC_ENABLE);
+//	}
+	
+  dbmsg("ok");
+	
   /* USER CODE END 2 */
 
   /* Infinite loop */

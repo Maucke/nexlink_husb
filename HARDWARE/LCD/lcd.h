@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-#define USE_HORIZONTAL 0		 //设置横屏或者竖屏显示 0或1为竖屏 2或3为横屏
+//#define USE_HORIZONTAL 0		 //设置横屏或者竖屏显示 0或1为竖屏 2或3为横屏
 #define X_MAX 240				 //LCD排线朝下时的X和Y最大像素点
 #define Y_MAX 280
 
@@ -29,10 +29,14 @@
 #define LCD_CS_GPIO GPIOA
 #define LCD_CS_PIN GPIO_PIN_4
 
+#define LCD_RST_GPIO GPIOC
+#define LCD_RST_PIN GPIO_PIN_9
+
 #define PIN_OUT(PORT, PIN, STATUS) (PORT)->BSRR = (STATUS) ? (PIN) : (uint32_t)(PIN) << 16
 
 #define LCD_DC_OUT(STATUS) PIN_OUT(LCD_DC_GPIO, LCD_DC_PIN, STATUS)
 #define LCD_CS_OUT(STATUS) PIN_OUT(LCD_CS_GPIO, LCD_CS_PIN, STATUS)
+#define LCD_RST_OUT(STATUS) PIN_OUT(LCD_RST_GPIO, LCD_RST_PIN, STATUS)
 
 typedef enum
 {
@@ -51,6 +55,6 @@ void LCD_Fill(uint16_t xsta,uint16_t ysta,uint16_t xend,uint16_t yend,uint16_t c
 void LCD_Color_Fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t *buf);
 uint16_t LCD_ReadScanLine(void);
 
-
+void LCD_SetRotation(uint8_t dir);
 
 #endif

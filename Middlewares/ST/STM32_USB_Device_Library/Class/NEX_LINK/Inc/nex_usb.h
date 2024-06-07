@@ -35,24 +35,28 @@ THE SOFTWARE.
 #define GSUSB_ENDPOINT_OUT         0x02
 
 enum nex_usb_breq {
-        NEX_BREQ_HOST_FORMAT = 0,
-        NEX_TIMESTAMP_SET,
-        NEX_TIMESTAMP_GET,
-        NEX_BRIGHTNESS_SET,
-        NEX_BRIGHTNESS_GET,
-        NEX_CLEAR_FLAG,
-        NEX_COMMAND_LEN,
+	NEX_BREQ_HOST_FORMAT = 0,
+	NEX_TIMESTAMP_SET,
+	NEX_TIMESTAMP_GET,
+	NEX_BRIGHTNESS_SET,
+	NEX_BRIGHTNESS_GET,
+	NEX_SCREEN_SET,
+	NEX_SCREEN_GET,
+	NEX_COMMAND_LEN,
 };
 
 typedef struct {
 	uint16_t brightness;
 	uint16_t damp;
-	
 }nex_brightness_des;
 
+typedef struct {
+	uint8_t direction:2;
+	uint8_t reserved:6;
+}nex_screen_des;
 
 typedef struct {
 	uint64_t timestamp_s;
 	nex_brightness_des brides;
-	
+	nex_screen_des scrdes;
 }nex_usb_des;
