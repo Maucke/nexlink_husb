@@ -27,3 +27,5 @@ x64/
 MDK-ARM/nexlink_f407_husb/nexlink_f407_husb.bin
 MDK-ARM/RTE/_nexlink_f407_husb_app/RTE_Components.h
 *.rej
+*.shihuafeng
+MDK-ARM/RTE/_nexlink_f407_husb/RTE_Components.h
