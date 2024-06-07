@@ -74,7 +74,7 @@ int fputc(int ch, FILE* f)
 }
 
 uint16_t grambuff[1024];
-uint8_t grambufftemp[1024];
+//uint8_t grambufftemp[1024];
 nex_usb_des des;
 
 //uint8_t refrash_screen(void)
