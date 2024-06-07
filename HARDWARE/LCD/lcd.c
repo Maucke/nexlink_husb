@@ -47,6 +47,8 @@ void LCD_WR_REG(uint8_t dat)
 // 启用SPI DMA连续发送单个16bit数据
 void LCD_DMA_Transfer16Bit(uint8_t *pData, uint16_t size, DMA_MEMINC_STATE state)
 {
+	while (hspi1.State != HAL_SPI_STATE_READY)
+			; // 等待SPI空闲
 	// 清除 DMA 控制寄存器的相关设置
     LCD_SPI_TX_DMA->CR &= ~DMA_SxCR_MINC; 
 
@@ -57,10 +59,9 @@ void LCD_DMA_Transfer16Bit(uint8_t *pData, uint16_t size, DMA_MEMINC_STATE state
     if (state == DMA_MEMINC_ENABLE)
         LCD_SPI_TX_DMA->CR |= DMA_SxCR_MINC; 
 
-    HAL_SPI_Transmit(&hspi1, pData, size,0xFFFF); // 启用DMA传输
+    HAL_SPI_Transmit_DMA(&hspi1, pData, size); // 启用DMA传输
 }
 
-#define USE_HORIZONTAL 0
 /*
  *功能: 设置起始和结束地址
  *参数1: @x1,x2 - 设置列的起始和结束地址
@@ -68,6 +69,9 @@ void LCD_DMA_Transfer16Bit(uint8_t *pData, uint16_t size, DMA_MEMINC_STATE state
  */
 void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
+	while (hspi1.State != HAL_SPI_STATE_READY)
+			; // 等待SPI空闲
+    LCD_CS_OUT(1);
 	if(USE_HORIZONTAL==0)
 	{
 		LCD_WR_REG(0x2a);//列地址设置
@@ -108,6 +112,7 @@ void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 		LCD_WR_DATA(y2);
 		LCD_WR_REG(0x2c);//储存器写
 	}
+    LCD_CS_OUT(0);
 }
 
 // LCD初始化
@@ -371,33 +376,16 @@ void LCD_Color_Fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t
     num = (x1 - x0) * (y1 - y0)*2;
     LCD_Address_Set(x0, y0, x1 - 1, y1 - 1);
     LCD_CS_OUT(0);
-
-	if(num > 65535)
-	{
-		remainsize=num-65535;
-		num = 65535;
-	}
-	else
-		remainsize=0;
+		
     LCD_DMA_Transfer16Bit((uint8_t *)buf, num, DMA_MEMINC_ENABLE); // 启用DMA发送
 
     // 其余部分见HAL_SPI_TxCpltCallback()函数
 }
-extern uint16_t grambuff[];
+
 // SPI传输完成回调函数
 // 此函数会在DMA SPITX传输完成后被调用
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-	if(remainsize>0)
-	{
-		LCD_DMA_Transfer16Bit((uint8_t *)(grambuff)+65535, remainsize, DMA_MEMINC_ENABLE); // 启用DMA发送
-		remainsize=0;
-//		dbmsg("next:%d",HAL_GetTick());
-	}
-	else
-	{
-//		dbmsg("done:%d",HAL_GetTick());
-		LCD_CS_OUT(1);
-	}
+//	LCD_CS_OUT(1);
 }
    
