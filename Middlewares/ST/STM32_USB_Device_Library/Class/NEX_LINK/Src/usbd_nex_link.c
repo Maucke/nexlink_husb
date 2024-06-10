@@ -34,7 +34,7 @@ THE SOFTWARE.
 #include "usbd_ioreq.h"
 #include "nex_usb.h"
 #include "main.h"
-#include "lcd.h"
+#include "nv3030b.h"
 #include "spi.h"
 #include "tim.h"
 #include "lv_anim_light.h"
@@ -540,18 +540,18 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	if(hnex->gramdetail==0)
 	{
 		HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-		extern __IO uint8_t lcd_direction;
-		if(lcd_direction != hnex->des->scrdes.direction)
+		extern __IO nv3030b_dir_enum nv3030b_display_dir;
+		if(nv3030b_display_dir != hnex->des->scrdes.direction)
 		{
-			dbmsg("set dir: %d, last: %d", hnex->des->scrdes.direction, lcd_direction);
-			LCD_SetRotation(hnex->des->scrdes.direction);
+			dbmsg("set dir: %d, last: %d", hnex->des->scrdes.direction, nv3030b_display_dir);
+			NV3030B_SetRotation((nv3030b_dir_enum)hnex->des->scrdes.direction);
 		}
-		if(lcd_direction==0||lcd_direction==1)
-			LCD_Address_Set(0,0,LCD_W-1,LCD_H-1);
+		if(nv3030b_display_dir==0||nv3030b_display_dir==1)
+			NV3030B_SetRegion(0,0,LCD_W-1,LCD_H-1);
 		else
-			LCD_Address_Set(0,0,LCD_H-1,LCD_W-1);
+			NV3030B_SetRegion(0,0,LCD_H-1,LCD_W-1);
 	}
-	LCD_DMA_Transfer16Bit((uint8_t *)hnex->grambuff + ramindex*1024, 960, DMA_MEMINC_ENABLE); // 启用DMA发送
+	NV3030B_DMA_Transfer((uint8_t *)hnex->grambuff + ramindex*1024, 960, DMA_MEMINC_ENABLE); // 启用DMA发送
 		
 	hnex->gramdetail=(hnex->gramdetail+rxlen/2)%(LCD_W*LCD_H);
 	USBD_NEX_LINK_PrepareReceive(pdev);

@@ -34,7 +34,7 @@
 #include "nex_usb.h"
 #include "stdio.h"
 #include "queue.h"
-#include "lcd.h"
+#include "nv3030b.h"
 #include "lv_anim_light.h"
 /* USER CODE END Includes */
 
@@ -144,20 +144,17 @@ int main(void)
   USBD_Start(&hUSB);
 	
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
-  LCD_Init();
+  NV3030B_Init(grambuff);
+	NV3030B_SetColor(RGB565_YELLOW, RGB565_RED);
+	set_brightness_value("",500);
+	for(int i=0;i<200;i++)
+	{
+	NV3030B_ClearBuffer();
+				NV3030B_DrawBox(5,20,100,i,RGB565_PURPLE);
+        NV3030B_ShowStr(5, i, "Hello World");
+	NV3030B_SendBuffer();
+	}
 	a = lv_anim_start(999,0,set_brightness_value,1000);
-//	LCD_Address_Set(0,0,LCD_W-1,LCD_H-1);
-//	for(i = 0; i < (LCD_H * LCD_W * 2) / 960; i ++)
-//	{
-//		for (j = 0; j < 2; j++)
-//		{
-//				for (p = 0; p < 480; p++)
-//				{
-//						grambufftemp[p + j * 480] =( ((((index++) % (960 * 2))/ 960) == 1) ? 0xFF : 0);
-//				}
-//		}
-//    LCD_DMA_Transfer16Bit(grambufftemp, 960, DMA_MEMINC_ENABLE);
-//	}
 	
   dbmsg("ok");
 	

@@ -211,7 +211,7 @@
             <Ra2Chk>0</Ra2Chk>
             <Ra3Chk>0</Ra3Chk>
             <Im1Chk>1</Im1Chk>
-            <Im2Chk>1</Im2Chk>
+            <Im2Chk>0</Im2Chk>
             <OnChipMemories>
               <Ocm1>
                 <Type>0</Type>
@@ -301,12 +301,12 @@
               <OCR_RVCT9>
                 <Type>0</Type>
                 <StartAddress>0x20000000</StartAddress>
-                <Size>0x1c000</Size>
+                <Size>0x20000</Size>
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
-                <StartAddress>0x2001c000</StartAddress>
-                <Size>0x4000</Size>
+                <StartAddress>0x0</StartAddress>
+                <Size>0x0</Size>
               </OCR_RVCT10>
             </OnChipMemories>
             <RvctStartVector></RvctStartVector>
@@ -429,11 +429,6 @@
               <FilePath>../Core/Src/stm32f4xx_hal_msp.c</FilePath>
             </File>
             <File>
-              <FileName>lcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\LCD\lcd.c</FilePath>
-            </File>
-            <File>
               <FileName>tim.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\tim.c</FilePath>
@@ -442,6 +437,26 @@
               <FileName>lv_anim_light.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\lv_anim_light.c</FilePath>
+            </File>
+            <File>
+              <FileName>nv3030b.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\nv3030b.c</FilePath>
+            </File>
+            <File>
+              <FileName>zf_common_font.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\zf_common_font.c</FilePath>
+            </File>
+            <File>
+              <FileName>my_math.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\my_math.c</FilePath>
+            </File>
+            <File>
+              <FileName>zf_common_function.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\zf_common_function.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1495,11 +1510,6 @@
               <FilePath>../Core/Src/stm32f4xx_hal_msp.c</FilePath>
             </File>
             <File>
-              <FileName>lcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\LCD\lcd.c</FilePath>
-            </File>
-            <File>
               <FileName>tim.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\tim.c</FilePath>
@@ -1508,6 +1518,26 @@
               <FileName>lv_anim_light.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\lv_anim_light.c</FilePath>
+            </File>
+            <File>
+              <FileName>nv3030b.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\nv3030b.c</FilePath>
+            </File>
+            <File>
+              <FileName>zf_common_font.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\zf_common_font.c</FilePath>
+            </File>
+            <File>
+              <FileName>my_math.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\my_math.c</FilePath>
+            </File>
+            <File>
+              <FileName>zf_common_function.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\zf_common_function.c</FilePath>
             </File>
           </Files>
         </Group>
