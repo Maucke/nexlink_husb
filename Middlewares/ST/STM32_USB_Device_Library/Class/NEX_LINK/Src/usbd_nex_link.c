@@ -525,7 +525,7 @@ static uint8_t USBD_NEX_LINK_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	hnex->TxState = 0;
 	return USBD_OK;
 }
-__IO bool ramindex = 0;
+static __IO bool ramindex = 0;
 static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 
 	uint8_t retval = USBD_FAIL;

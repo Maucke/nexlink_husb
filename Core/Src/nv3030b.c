@@ -153,6 +153,7 @@ __inline uint16_t color8to16(uint8_t color)
   return (color16>>8)|(color16<<8);
 }
 
+static __IO bool ramindex = 0;
 /*!
  * @brief   Send buffer to nv3030b
  *
@@ -162,15 +163,15 @@ __inline uint16_t color8to16(uint8_t color)
 void NV3030B_SendBuffer()
 {
 	uint8* re_buffer = (uint8*)NV3030B_buffer;
-    NV3030B_SetRegion(0, 0, nv3030b_x_max -1, nv3030b_y_max-1);
+	NV3030B_SetRegion(0, 0, nv3030b_x_max -1, nv3030b_y_max-1);
 
-		for(int i=0;i<(nv3030b_x_max*nv3030b_y_max)/960;i++)
-		{
-			for(int j=0;j<960;j++)
-				localgram[j] = color8to16(re_buffer[i*960+j]);
-			NV3030B_DMA_Transfer((uint8_t *)localgram, 960*2, DMA_MEMINC_ENABLE);
-		}
-
+	for(int i=0;i<(nv3030b_x_max*nv3030b_y_max)/480;i++)
+	{
+		ramindex = (ramindex+1)%2;
+		for(int j=0;j<480;j++)
+			localgram[j + ramindex*480] = color8to16(re_buffer[i*480+j]);
+		NV3030B_DMA_Transfer((uint8_t *)(localgram + ramindex*480), 480*2, DMA_MEMINC_ENABLE);
+	}
 }
 
 /*!
@@ -185,20 +186,8 @@ void NV3030B_SendBuffer()
  */
 void NV3030B_ClearBuffer()
 {
-    if (NV3030B_backgroundColor == RGB565_BLACK)
-    {
-        memset(NV3030B_buffer, 0, nv3030b_x_max * nv3030b_y_max * sizeof(uint8_t));
-    } else
-    {
-			uint8_t background = color16to8(NV3030B_backgroundColor);
-        for (int i = 0; i < nv3030b_x_max; i++)
-        {
-            for (int j = 0; j < nv3030b_y_max; j++)
-            {
-                NV3030B_buffer[j][i] = background;
-            }
-        }
-    }
+	uint8_t background = color16to8(NV3030B_backgroundColor);
+	memset(NV3030B_buffer, background, nv3030b_x_max * nv3030b_y_max * sizeof(uint8_t));
 }
 
 //-------------------------------------------------------------------------------------------------------------------

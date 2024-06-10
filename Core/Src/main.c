@@ -145,15 +145,17 @@ int main(void)
 	
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
   NV3030B_Init(grambuff);
-	NV3030B_SetColor(RGB565_YELLOW, RGB565_RED);
+	NV3030B_SetColor(RGB565_YELLOW, RGB565_GREEN);
 	set_brightness_value("",500);
+	dbmsg("%d",HAL_GetTick());
 	for(int i=0;i<200;i++)
 	{
-	NV3030B_ClearBuffer();
-				NV3030B_DrawBox(5,20,100,i,RGB565_PURPLE);
-        NV3030B_ShowStr(5, i, "Hello World");
-	NV3030B_SendBuffer();
+		NV3030B_ClearBuffer();
+		NV3030B_DrawBox(5,20,100,i,RGB565_PURPLE);
+		NV3030B_ShowStr(5, i, "Hello World");
+		NV3030B_SendBuffer();
 	}
+	dbmsg("%d",HAL_GetTick());
 	a = lv_anim_start(999,0,set_brightness_value,1000);
 	
   dbmsg("ok");
