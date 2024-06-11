@@ -149,6 +149,7 @@ int main(void)
 	MenuInit();
 	EasyUIInit(1);
   dbmsg("application initialized");
+// chipmunk_example_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -164,6 +165,7 @@ int main(void)
 		lv_anim_run(&a);
     HAL_Delay(5);
 		EasyUIEvent(5);
+//    chipmunk_example_update(0.005);
   }
   /* USER CODE END 3 */
 }
