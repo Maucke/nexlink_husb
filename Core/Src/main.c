@@ -41,6 +41,7 @@
 #include "easy_ui.h"
 #include "easy_ui_user_app.h"
 #include "easy_key.h"
+#include "easy_key.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -134,7 +135,7 @@ int main(void)
   MX_RNG_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  dbmsg("hello");
+  dbmsg("system initialized");
 
   USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
   USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
@@ -145,21 +146,10 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim3);
 	MenuInit();
 	EasyUIInit(1);
-//  NV3030B_Init(grambuff);
-//	NV3030B_SetColor(RGB565_YELLOW, RGB565_GREEN);
-//	set_brightness_value("",500);
-//	dbmsg("%d",HAL_GetTick());
-//	for(int i=0;i<200;i++)
-//	{
-//		NV3030B_ClearBuffer();
-//		NV3030B_DrawBox(5,20,100,i,RGB565_PURPLE);
-//		NV3030B_ShowStr(5, i, "Hello World");
-//		NV3030B_SendBuffer();
-//	}
-//	dbmsg("%d",HAL_GetTick());
 	a = lv_anim_start(999,0,set_brightness_value,1000);
-	
-  dbmsg("ok");
+//	set_brightness_value(NULL, 500);
+//	HAL_Delay(1000);
+  dbmsg("application initialized");
 	
   /* USER CODE END 2 */
 

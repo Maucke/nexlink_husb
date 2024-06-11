@@ -18,6 +18,7 @@ extern "C"
 #include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include "profile_photo_erbws.h"
 
 // Modify this to fit your EasyKeyInit
 #define KEY_UP          E4
@@ -45,15 +46,16 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define FONT_WIDTH              8
 #define FONT_HEIGHT             16
 #define ITEM_HEIGHT             20
+#define CHECK_BOX_OFFSET        2
 #define SCROLL_BAR_WIDTH        4
 #define ITEM_LINES              ((uint8_t)(SCREEN_HEIGHT / ITEM_HEIGHT))
 #define MAX_LAYER               10
 #define ICON_SIZE               50
 
 // Represent the time it takes to play the animation, smaller the quicker. Unit: ms
-#define INDICATOR_MOVE_TIME     140
-#define ITEM_MOVE_TIME          140
-#define TRANSITION_TIME         120
+#define INDICATOR_MOVE_TIME     70
+#define ITEM_MOVE_TIME          70
+#define TRANSITION_TIME         60
 
 #define EasyUIScreenInit(gram)                                  (NV3030B_Init(gram))
 #define EasyUIDisplayStr(x, y, str)                             (NV3030B_ShowStr(x, y, str))
