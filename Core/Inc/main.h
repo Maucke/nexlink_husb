@@ -74,6 +74,16 @@ void set_brightness_value(void *obj, int32_t value);
 #define LCD_RST_GPIO_Port GPIOC
 #define LCD_DC_Pin GPIO_PIN_8
 #define LCD_DC_GPIO_Port GPIOA
+#define BTN_FORWARD_Pin GPIO_PIN_15
+#define BTN_FORWARD_GPIO_Port GPIOA
+#define BTN_BACKWORD_Pin GPIO_PIN_10
+#define BTN_BACKWORD_GPIO_Port GPIOC
+#define BTN_CONFIRM_Pin GPIO_PIN_11
+#define BTN_CONFIRM_GPIO_Port GPIOC
+#define BTN_UP_Pin GPIO_PIN_8
+#define BTN_UP_GPIO_Port GPIOB
+#define BTN_DOWN_Pin GPIO_PIN_9
+#define BTN_DOWN_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

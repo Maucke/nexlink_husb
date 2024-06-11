@@ -14,12 +14,7 @@ extern "C"
 #endif
 
 #include "easy_key.h"
-#include "zf_driver_uart.h"
-#include "zf_driver_flash.h"
-#include "zf_driver_adc.h"
-#include "user_flash.h"
-#include "ips096.h"
-#include "profile_photo_erbws.h"
+#include "nv3030b.h"
 #include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -45,8 +40,8 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define BATTERY_ADC_PIN         ADC2_IN2_A2
 #define LOWEST_BATTERY_VOLTAGE  0.0f
 
-#define SCREEN_WIDTH            160
-#define SCREEN_HEIGHT           80
+#define SCREEN_WIDTH            LCD_W
+#define SCREEN_HEIGHT           LCD_H
 #define FONT_WIDTH              6
 #define FONT_HEIGHT             8
 #define ITEM_HEIGHT             12
@@ -60,23 +55,22 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define ITEM_MOVE_TIME          140
 #define TRANSITION_TIME         120
 
-#define EasyUIScreenInit()                                      (IPS096_Init())
-#define EasyUIDisplayStr(x, y, str)                             (IPS096_ShowStr(x, y, str))
-#define EasyUIDisplayFloat(x, y, dat, num, pointNum)            (IPS096_ShowFloat(x, y, dat, num, pointNum))
-#define EasyUIDrawDot(x, y, color)                              (IPS096_DrawPoint(x, y, color))
-#define EasyUIDrawBox(x, y, width, height, color)               (IPS096_DrawBox(x, y, width, height, color))
-#define EasyUIDrawFrame(x, y, width, height, color)             (IPS096_DrawFrame(x, y, width, height, color))
-#define EasyUIDrawRFrame(x, y, width, height, color, r)         (IPS096_DrawRFrame(x, y, width, height, color, r))
-#define EasyUIDrawRBox(x, y, width, height, color, r)           (IPS096_DrawRBox(x, y, width, height, color, r))
-#define EasyUIClearBuffer()                                     (IPS096_ClearBuffer())
-#define EasyUISendBuffer()                                      (IPS096_SendBuffer())
-#define EasyUISetDrawColor(mode)                                (IPS096_SetDrawColor(mode))
-#define EasyUIDisplayBMP(x, y, width, height, pic)              (IPS096_ShowBMP(x, y, width, height, pic))
-#define EasyUIModifyColor()                                     (IPS096_ModifyColor())
+#define EasyUIScreenInit(gram)                                  (NV3030B_Init(gram))
+#define EasyUIDisplayStr(x, y, str)                             (NV3030B_ShowStr(x, y, str))
+#define EasyUIDisplayFloat(x, y, dat, num, pointNum)            (NV3030B_ShowFloat(x, y, dat, num, pointNum))
+#define EasyUIDrawDot(x, y, color)                              (NV3030B_DrawPoint(x, y, color))
+#define EasyUIDrawBox(x, y, width, height, color)               (NV3030B_DrawBox(x, y, width, height, color))
+#define EasyUIDrawFrame(x, y, width, height, color)             (NV3030B_DrawFrame(x, y, width, height, color))
+#define EasyUIDrawRFrame(x, y, width, height, color, r)         (NV3030B_DrawRFrame(x, y, width, height, color, r))
+#define EasyUIDrawRBox(x, y, width, height, color, r)           (NV3030B_DrawRBox(x, y, width, height, color, r))
+#define EasyUIClearBuffer(void)                                     (NV3030B_ClearBuffer())
+#define EasyUISendBuffer(void)                                      (NV3030B_SendBuffer())
+#define EasyUISetDrawColor(mode)                                (NV3030B_SetDrawColor(mode))
+#define EasyUIDisplayBMP(x, y, width, height, pic)              (NV3030B_ShowBMP(x, y, width, height, pic))
+#define EasyUIModifyColor(void)                                     (NV3030B_ModifyColor())
 
-extern float GetBatteryVoltage();
-#define EasyUIGetBatVoltage()                                   (GetBatteryVoltage())
-#define EasyUIDelay_ms(time)                                    (system_delay_ms(time))
+#define EasyUIGetBatVoltage(void)                                   (4.2f)
+#define EasyUIDelay_ms(time)                                    (HAL_Delay(time))
 
 typedef     float      paramType;
 
@@ -138,12 +132,12 @@ extern EasyUIPage_t *pageHead, *pageTail;
 
 void EasyUIAddItem(EasyUIPage_t *page, EasyUIItem_t *item, char *_title, EasyUIItem_e func, ...);
 void EasyUIAddPage(EasyUIPage_t *page, EasyUIPage_e func, ...);
-void EasyUITransitionAnim();
-void EasyUIBackgroundBlur();
-void EasyUIKeyActionMonitor();
+void EasyUITransitionAnim(void);
+void EasyUIBackgroundBlur(void);
+void EasyUIKeyActionMonitor(void);
 
 void EasyUIDrawMsgBox(char *msg);
-float EasyUIGetBatteryVoltage();
+float EasyUIGetBatteryVoltage(void);
 
 void EasyUIEventChangeUint(EasyUIItem_t *item);
 void EasyUIEventChangeInt(EasyUIItem_t *item);

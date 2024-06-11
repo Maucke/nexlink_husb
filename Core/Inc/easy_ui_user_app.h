@@ -17,13 +17,8 @@ extern "C"
 #include <string.h>
 #include "easy_ui.h"
 #include "easy_key.h"
-#include "zf_driver_uart.h"
-#include "inc_all.h"
 
-void MenuInit();
-
-extern uint64_t uid;
-extern uint8 yawflag;
+void MenuInit(void);
 
 #ifdef __cplusplus
 }

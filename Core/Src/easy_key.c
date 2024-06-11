@@ -112,17 +112,15 @@ void EasyKeyUserApp()
  * @param       _pin        Gpio pin
  * @return      void
  */
-void EasyKeyInit(EasyKey_t *key, gpio_pin_enum _pin)
+void EasyKeyInit(EasyKey_t *key, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
 {
     key->state = released;
     key->next = NULL;
     key->holdTime = 0;
     key->intervalTime = 0;
-    key->pin = _pin;
+    key->GPIOx = GPIOx;
+    key->GPIO_Pin = GPIO_Pin;
     key->preValue = 1;
-
-    // GPIO init
-    gpio_init(_pin, GPI, 0,GPI_PULL_UP);
 
     if(head == NULL)
     {
@@ -139,22 +137,22 @@ void EasyKeyInit(EasyKey_t *key, gpio_pin_enum _pin)
 /*!
  * @brief   Dither elimination
  *
- * @param   timeUs      Delay time(us)
+ * @param   timeUs      Delay time(ms)
  * @return  void
  */
-void DebounceFilter(uint8_t timeUs)
+void DebounceFilter(uint8_t timems)
 {
     for (EasyKey_t *key = head; key != NULL; key = key->next)
     {
-        key->cacheValue = gpio_get_level(key->pin);
+        key->cacheValue = HAL_GPIO_ReadPin(key->GPIOx, key->GPIO_Pin);
     }
 
-    system_delay_us(timeUs);
+    HAL_Delay(timems);
 
     uint8_t mask;
     for (EasyKey_t *key = head; key != NULL; key = key->next)
     {
-        key->value = gpio_get_level(key->pin);
+        key->value = HAL_GPIO_ReadPin(key->GPIOx, key->GPIO_Pin);
         mask = key->value ^ key->cacheValue;
         key->value |= mask;
     }
@@ -169,7 +167,7 @@ void DebounceFilter(uint8_t timeUs)
  */
 void EasyKeyScanKeyState()
 {
-    DebounceFilter(FILTER_TIME_US);
+    DebounceFilter(FILTER_TIME_MS);
 
     for (EasyKey_t *key = head; key != NULL; key = key->next)
     {

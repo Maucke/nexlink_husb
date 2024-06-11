@@ -11,10 +11,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "zf_driver_gpio.h"
-#include "zf_driver_delay.h"
+#include "main.h"
 
-#define FILTER_TIME_US          100     // Dithering elimination
+#define FILTER_TIME_MS          1     // Dithering elimination
 #define UPDATE_KEY_STATE_MS     10       // Update key state once per (x) ms
 #define HOLD_THRESHOLD_MS       500     // Time longer than this is considered as "hold"
 #define INTERVAL_THRESHOLD_MS   240     // Trigger time interval less than this is considered as "multiClick"
@@ -25,7 +24,8 @@ typedef struct EasyKey_typedef
     uint8_t value, cacheValue;      // Press:0  Not press:1
     uint8_t preValue;
     struct EasyKey_typedef *next;
-    gpio_pin_enum pin;
+    GPIO_TypeDef* GPIOx;
+		uint16_t GPIO_Pin;
     uint32_t holdTime, intervalTime;
 
     enum
@@ -43,11 +43,11 @@ typedef struct EasyKey_typedef
     uint8_t clickState;
 } EasyKey_t;
 
-void EasyKeyInit(EasyKey_t *key, gpio_pin_enum _pin);
-void EasyKeyScanKeyState();
+void EasyKeyInit(EasyKey_t *key, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
+void EasyKeyScanKeyState(void);
 
 extern bool multiClickSwitch;
-void EasyKeyUserApp();
+void EasyKeyUserApp(void);
 
 extern EasyKey_t keyL, keyC, keyR;
 #endif

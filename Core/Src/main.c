@@ -18,7 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "crc.h"
 #include "dma.h"
+#include "rng.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -36,6 +38,8 @@
 #include "queue.h"
 #include "nv3030b.h"
 #include "lv_anim_light.h"
+#include "easy_ui.h"
+#include "easy_ui_user_app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -135,6 +139,8 @@ int main(void)
   MX_DMA_Init();
   MX_SPI1_Init();
   MX_TIM13_Init();
+  MX_CRC_Init();
+  MX_RNG_Init();
   /* USER CODE BEGIN 2 */
   dbmsg("hello");
 
@@ -144,18 +150,20 @@ int main(void)
   USBD_Start(&hUSB);
 	
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
-  NV3030B_Init(grambuff);
-	NV3030B_SetColor(RGB565_YELLOW, RGB565_GREEN);
-	set_brightness_value("",500);
-	dbmsg("%d",HAL_GetTick());
-	for(int i=0;i<200;i++)
-	{
-		NV3030B_ClearBuffer();
-		NV3030B_DrawBox(5,20,100,i,RGB565_PURPLE);
-		NV3030B_ShowStr(5, i, "Hello World");
-		NV3030B_SendBuffer();
-	}
-	dbmsg("%d",HAL_GetTick());
+	MenuInit();
+	EasyUIInit(1);
+//  NV3030B_Init(grambuff);
+//	NV3030B_SetColor(RGB565_YELLOW, RGB565_GREEN);
+//	set_brightness_value("",500);
+//	dbmsg("%d",HAL_GetTick());
+//	for(int i=0;i<200;i++)
+//	{
+//		NV3030B_ClearBuffer();
+//		NV3030B_DrawBox(5,20,100,i,RGB565_PURPLE);
+//		NV3030B_ShowStr(5, i, "Hello World");
+//		NV3030B_SendBuffer();
+//	}
+//	dbmsg("%d",HAL_GetTick());
 	a = lv_anim_start(999,0,set_brightness_value,1000);
 	
   dbmsg("ok");
@@ -174,6 +182,7 @@ int main(void)
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run(&a);
     HAL_Delay(5);
+		EasyUI(5);
 	  
   }
   /* USER CODE END 3 */
@@ -204,21 +213,21 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 7;
-  if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-                                | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
     Error_Handler();
   }
@@ -251,7 +260,7 @@ void Error_Handler(void)
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t* file, uint32_t line)
+void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
