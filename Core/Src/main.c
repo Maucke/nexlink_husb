@@ -40,6 +40,7 @@
 #include "lv_anim_light.h"
 #include "easy_ui.h"
 #include "easy_ui_user_app.h"
+#include "easy_key.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -78,32 +79,24 @@ int fputc(int ch, FILE* f)
 }
 
 uint16_t grambuff[1024];
-//uint8_t grambufftemp[1024];
 nex_usb_des des;
-
-//uint8_t refrash_screen(void)
-//{
-//  uint16_t line = 0;
-
-////  dbmsg("wait:%d", HAL_GetTick());
-//  do
-//  {
-//    line = LCD_ReadScanLine();
-//  }
-//  while(line < 200);   // 轮询
-//  LCD_Color_Fill(0, 0, 240, 240, grambuff);
-////  dbmsg("start:%d", HAL_GetTick());
-//  return 0;
-//}
-
 lv_anim_t a;
 void set_brightness_value(void *obj, int32_t value)
 {
-	dbmsg("brightness: %d", value);
+//	dbmsg("brightness: %d", value);
 	Set_PWM_DutyCycle(value%1000);
 }
 
-
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if (htim->Instance == htim3.Instance)
+	{
+		EasyKeyScanKeyState();
+		EasyKeyUserApp();
+		EasyUIKeyActionMonitor();
+//		dbmsg("tick: %d", HAL_GetTick());
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -113,8 +106,6 @@ void set_brightness_value(void *obj, int32_t value)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-//	long index = 0;
-//	long i,j,p;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -141,6 +132,7 @@ int main(void)
   MX_TIM13_Init();
   MX_CRC_Init();
   MX_RNG_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   dbmsg("hello");
 
@@ -150,6 +142,7 @@ int main(void)
   USBD_Start(&hUSB);
 	
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
+	HAL_TIM_Base_Start_IT(&htim3);
 	MenuInit();
 	EasyUIInit(1);
 //  NV3030B_Init(grambuff);
@@ -182,7 +175,7 @@ int main(void)
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run(&a);
     HAL_Delay(5);
-		EasyUI(5);
+		EasyUI(10);
 	  
   }
   /* USER CODE END 3 */

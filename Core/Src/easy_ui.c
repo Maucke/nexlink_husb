@@ -1267,8 +1267,8 @@ void EasyUIInit(uint8_t mode)
 //    }
 
 //    // Display the welcome photo and info
-//    EasyUIModifyColor();
-//    EasyUIClearBuffer();
+    EasyUIModifyColor();
+    EasyUIClearBuffer();
 ////    if (mode)
 ////        EasyUIDisplayBMP((SCREEN_WIDTH - 58) / 2, (SCREEN_HEIGHT - 56) / 2, 58, 56, ErBW_s_5856);
 ////    else
@@ -1307,6 +1307,18 @@ void EasyUIKeyActionMonitor()
     opnExit = keyConfirm.isHold;
     opnUp = keyUp.isPressed;
     opnDown = keyDown.isPressed;
+		if(opnForward!=0)
+		dbmsg("opnForward:%d",opnForward);
+		if(opnBackward!=0)
+		dbmsg("opnBackward:%d",opnBackward);
+		if(opnEnter!=0)
+		dbmsg("opnEnter:%d",opnEnter);
+		if(opnExit!=0)
+		dbmsg("opnExit:%d",opnExit);
+		if(opnUp!=0)
+		dbmsg("opnUp:%d",opnUp);
+		if(opnDown!=0)
+		dbmsg("opnDown:%d",opnDown);
 #endif
 
 #if ROTARY == 1

@@ -42,9 +42,9 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 
 #define SCREEN_WIDTH            LCD_W
 #define SCREEN_HEIGHT           LCD_H
-#define FONT_WIDTH              6
-#define FONT_HEIGHT             8
-#define ITEM_HEIGHT             12
+#define FONT_WIDTH              8
+#define FONT_HEIGHT             16
+#define ITEM_HEIGHT             20
 #define SCROLL_BAR_WIDTH        4
 #define ITEM_LINES              ((uint8_t)(SCREEN_HEIGHT / ITEM_HEIGHT))
 #define MAX_LAYER               10

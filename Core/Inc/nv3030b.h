@@ -61,7 +61,7 @@ typedef enum
 #define NV3030B_DEFAULT_DISPLAY_DIR      (NV3030B_PORTAIT)                  
 #define NV3030B_DEFAULT_PENCOLOR         (RGB565_WHITE)                     
 #define NV3030B_DEFAULT_BGCOLOR          (RGB565_BLACK)                          
-#define NV3030B_DEFAULT_DISPLAY_FONT     (NV3030B_6X8_FONT)                      
+#define NV3030B_DEFAULT_DISPLAY_FONT     (NV3030B_8X16_FONT)                      
 
 #define CIRCLE_UPPER_RIGHT      0x01
 #define CIRCLE_UPPER_LEFT       0x02

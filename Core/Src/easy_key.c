@@ -146,9 +146,10 @@ void DebounceFilter(uint8_t timems)
     {
         key->cacheValue = HAL_GPIO_ReadPin(key->GPIOx, key->GPIO_Pin);
     }
-
-    HAL_Delay(timems);
-
+		
+		for (int i=0;i<5000;i++)
+			__NOP();
+		
     uint8_t mask;
     for (EasyKey_t *key = head; key != NULL; key = key->next)
     {
