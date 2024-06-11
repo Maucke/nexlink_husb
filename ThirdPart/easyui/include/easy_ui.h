@@ -148,7 +148,7 @@ void EasyUIEventSaveSettings(EasyUIItem_t *item);
 void EasyUIEventResetSettings(EasyUIItem_t *item);
 void EasyUIEventChangeFloatForYaw(EasyUIItem_t *item);
 void EasyUIInit(uint8_t mode);
-void EasyUI(uint8_t timer);
+void EasyUIEvent(uint8_t timer);
 
 #ifdef __cplusplus
 }

@@ -142,13 +142,12 @@ int main(void)
   USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
   USBD_NEX_LINK_Init(&hUSB, grambuff, &des);
   USBD_Start(&hUSB);
-	
+	des.brides.brightness = 999;
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
 	HAL_TIM_Base_Start_IT(&htim3);
+	a = lv_anim_start(des.brides.brightness,0,set_brightness_value,1000);
 	MenuInit();
 	EasyUIInit(1);
-	a = lv_anim_start(999,0,set_brightness_value,1000);
-//	chipmunk_example_init();
   dbmsg("application initialized");
   /* USER CODE END 2 */
 
@@ -164,8 +163,7 @@ int main(void)
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run(&a);
     HAL_Delay(5);
-//		chipmunk_example_update(5);
-		EasyUI(10);
+		EasyUIEvent(5);
   }
   /* USER CODE END 3 */
 }

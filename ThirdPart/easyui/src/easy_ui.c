@@ -1189,7 +1189,7 @@ void EasyUIKeyActionMonitor()
  * @param   timer   Fill this with interrupt trigger time
  * @return  void
  */
-void EasyUI(uint8_t timer)
+void EasyUIEvent(uint8_t timer)
 {
 //    float batVoltage = 0;
 //
