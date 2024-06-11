@@ -21,17 +21,9 @@ extern "C"
 #include "my_math.h"
 #include "zf_common_function.h"
 
-//extern uint16_t time;
+#define NV3030B_SPI_TX_DMA DMA2_Stream3				
 
-//#define uint8 uint8_t
-//#define uint16 uint16_t
-//#define uint32 uint32_t
-//#define int8 int8_t
-//#define int16 int16_t
-//#define int32 int32_t
-#define NV3030B_SPI_TX_DMA DMA2_Stream3				//DMA1通道
-
-#define X_MAX 240				 //LCD排线朝下时的X和Y最大像素点
+#define X_MAX 240				
 #define Y_MAX 280
 
 #define LCD_W X_MAX

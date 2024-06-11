@@ -18,3 +18,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef CHIPMUNKDEMO_H
+#define CHIPMUNKDEMO_H
+
+#include "chipmunk/chipmunk.h"
+void chipmunk_example_init(void);
+void chipmunk_example_update(float timems);
+
+#endif

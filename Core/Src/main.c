@@ -42,6 +42,7 @@
 #include "easy_ui_user_app.h"
 #include "easy_key.h"
 #include "easy_key.h"
+//#include "chipmunkdemo.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -147,10 +148,8 @@ int main(void)
 	MenuInit();
 	EasyUIInit(1);
 	a = lv_anim_start(999,0,set_brightness_value,1000);
-//	set_brightness_value(NULL, 500);
-//	HAL_Delay(1000);
+//	chipmunk_example_init();
   dbmsg("application initialized");
-	
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -165,8 +164,8 @@ int main(void)
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run(&a);
     HAL_Delay(5);
+//		chipmunk_example_update(5);
 		EasyUI(10);
-	  
   }
   /* USER CODE END 3 */
 }
