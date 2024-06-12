@@ -267,3 +267,8 @@ void lv_anim_add(lv_anim_t* a, int32_t start, lv_anim_exec_xcb_t exec_cb)
     anim_tail = anim_tail->next;
   }
 }
+
+void lv_anim_path_set_cb(lv_anim_t* a, lv_anim_path_cb_t cb)
+{
+   a->path_cb = cb;
+}

@@ -41,8 +41,6 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define BATTERY_ADC_PIN         ADC2_IN2_A2
 #define LOWEST_BATTERY_VOLTAGE  0.0f
 
-#define SCREEN_WIDTH            LCD_W
-#define SCREEN_HEIGHT           LCD_H
 #define FONT_WIDTH              12
 #define FONT_HEIGHT             16
 #define ITEM_HEIGHT             20
@@ -57,19 +55,25 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define ITEM_MOVE_TIME          70
 #define TRANSITION_TIME         60
 
+#define OFFSET_X 10
+#define OFFSET_Y 40
+#define SCREEN_WIDTH            (LCD_W - OFFSET_X*2)
+#define SCREEN_HEIGHT           (LCD_H - OFFSET_Y*2)
 #define EasyUIScreenInit(gram)                                  (NV3030B_Init(gram))
-#define EasyUIDisplayStr(x, y, str)                             (NV3030B_ShowStr(x, y, str))
-#define EasyUIDisplayFloat(x, y, dat, num, pointNum)            (NV3030B_ShowFloat(x, y, dat, num, pointNum))
-#define EasyUIDrawDot(x, y, color)                              (NV3030B_DrawPoint(x, y, color))
-#define EasyUIDrawBox(x, y, width, height, color)               (NV3030B_DrawBox(x, y, width, height, color))
-#define EasyUIDrawFrame(x, y, width, height, color)             (NV3030B_DrawFrame(x, y, width, height, color))
-#define EasyUIDrawRFrame(x, y, width, height, color, r)         (NV3030B_DrawRFrame(x, y, width, height, color, r))
-#define EasyUIDrawRBox(x, y, width, height, color, r)           (NV3030B_DrawRBox(x, y, width, height, color, r))
+#define EasyUIDisplayStr(x, y, str)                             (NV3030B_ShowStr((x) + OFFSET_X, (y) + OFFSET_Y, str))
+#define EasyUIDisplayFloat(x, y, dat, num, pointNum)            (NV3030B_ShowFloat((x) + OFFSET_X, (y) + OFFSET_Y, dat, num, pointNum))
+#define EasyUIDrawDot(x, y, color)                              (NV3030B_DrawPoint((x) + OFFSET_X, (y) + OFFSET_Y, color))
+#define EasyUIDrawBox(x, y, width, height, color)               (NV3030B_DrawBox((x) + OFFSET_X, (y) + OFFSET_Y, width, height, color))
+#define EasyUIDrawFrame(x, y, width, height, color)             (NV3030B_DrawFrame((x) + OFFSET_X, (y) + OFFSET_Y, width, height, color))
+#define EasyUIDrawRFrame(x, y, width, height, color, r)         (NV3030B_DrawRFrame((x) + OFFSET_X, (y) + OFFSET_Y, width, height, color, r))
+#define EasyUIDrawRBox(x, y, width, height, color, r)           (NV3030B_DrawRBox((x) + OFFSET_X, (y) + OFFSET_Y, width, height, color, r))
 #define EasyUIClearBuffer(void)                                     (NV3030B_ClearBuffer())
 #define EasyUISendBuffer(void)                                      (NV3030B_SendBuffer())
 #define EasyUISetDrawColor(mode)                                (NV3030B_SetDrawColor(mode))
-#define EasyUIDisplayBMP(x, y, width, height, pic)              (NV3030B_ShowBMP(x, y, width, height, pic))
+#define EasyUIDisplayBMP(x, y, width, height, pic)              (NV3030B_ShowBMP((x) + OFFSET_X, (y) + OFFSET_Y, width, height, pic))
 #define EasyUIModifyColor(void)                                     (NV3030B_ModifyColor())
+#define EasyUIDrawCircle(x, y, r, color, section)                 (NV3030B_DrawCircle((x) + OFFSET_X, (y) + OFFSET_Y, r, color, section))
+#define EasyUIDrawDisc(x, y, r, color, section)                 (NV3030B_DrawDisc((x) + OFFSET_X, (y) + OFFSET_Y, r, color, section))
 
 #define EasyUIGetBatVoltage(void)                                   (4.2f)
 #define EasyUIDelay_ms(time)                                    (HAL_Delay(time))

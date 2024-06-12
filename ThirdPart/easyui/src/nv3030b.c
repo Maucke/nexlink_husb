@@ -1087,7 +1087,130 @@ NV3030B_ShowGrayImage(uint16_t x, uint16_t y, const uint8_t *image, uint16_t wid
     }
     NV3030B_CS(1);
 }
+void 
+NV3030B_Triangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2,uint16_t color)  {
+  NV3030B_DrawLine(x0, y0, x1, y1, color);
+  NV3030B_DrawLine(x1, y1, x2, y2, color);
+  NV3030B_DrawLine(x2, y2, x0, y0, color);
+}
 
+void NV3030B_FastHLine(int16_t x, int16_t y, int16_t length, uint16_t color) {
+  // Bounds check
+		int16_t x0=x;
+    do
+    {
+        NV3030B_DrawPoint(x, y, color);   // 逐点显示，描出垂直线
+        x++;
+    }
+    while(x0+length>=x);
+}
+#define swap(a, b) { uint16_t t = a; a = b; b = t; }
+void 
+NV3030B_FillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
+{
+
+    int16_t a, b, y, last;
+    // Sort coordinates by Y order (y2 >= y1 >= y0)
+    if (y0 > y1)
+    {
+        swap(y0, y1);
+        swap(x0, x1);
+    }
+    if (y1 > y2)
+    {
+        swap(y2, y1);
+        swap(x2, x1);
+    }
+    if (y0 > y1)
+    {
+        swap(y0, y1);
+        swap(x0, x1);
+    }
+
+    if(y0 == y2)
+    {
+        // Handle awkward all-on-same-line case as its own thing
+        a = b = x0;
+        if(x1 < a)
+        {
+            a = x1;
+        }
+        else if(x1 > b)
+        {
+            b = x1;
+        }
+        if(x2 < a)
+        {
+            a = x2;
+        }
+        else if(x2 > b)
+        {
+            b = x2;
+        }
+        NV3030B_FastHLine(a, y0, b - a , color);
+        return;
+    }
+
+    int16_t dx01 = x1 - x0,
+            dy01 = y1 - y0,
+            dx02 = x2 - x0,
+            dy02 = y2 - y0,
+            dx12 = x2 - x1,
+            dy12 = y2 - y1,
+            sa = 0,
+            sb = 0;
+
+    // For upper part of triangle, find scanline crossings for segments
+    // 0-1 and 0-2.  If y1=y2 (flat-bottomed triangle), the scanline y1
+    // is included here (and second loop will be skipped, avoiding a /0
+    // error there), otherwise scanline y1 is skipped here and handled
+    // in the second loop...which also avoids a /0 error here if y0=y1
+    // (flat-topped triangle).
+    if (y1 == y2)
+    {
+        last = y1;   // Include y1 scanline
+    }
+    else
+    {
+        last = y1 - 1; // Skip it
+    }
+
+
+    for(y = y0; y <= last; y++)
+    {
+        a   = x0 + sa / dy01;
+        b   = x0 + sb / dy02;
+        sa += dx01;
+        sb += dx02;
+
+        if(a > b)
+        {
+            swap(a, b);
+        }
+
+        NV3030B_FastHLine(a, y, b - a , color);
+    }
+
+    // For lower part of triangle, find scanline crossings for segments
+    // 0-2 and 1-2.  This loop is skipped if y1=y2.
+    sa = dx12 * (y - y1);
+    sb = dx02 * (y - y0);
+
+    for(; y <= y2; y++)
+    {
+        a   = x1 + sa / dy12;
+        b   = x0 + sb / dy02;
+        sa += dx12;
+        sb += dx02;
+
+        if(a > b)
+        {
+            swap(a, b);
+        }
+
+        NV3030B_FastHLine(a, y, b - a , color);
+    }
+}
 
 void NV3030B_SetDirection (nv3030b_dir_enum dir)
 {

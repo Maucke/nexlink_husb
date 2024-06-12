@@ -6,7 +6,7 @@
  */
 
 #include "easy_ui.h"
-
+#include "animation.h"
 EasyUIPage_t *pageHead = NULL, *pageTail = NULL;
 
 uint8_t pageIndex[MAX_LAYER] = {0};
@@ -316,6 +316,25 @@ void EasyUIDrawCheckbox(int16_t x, int16_t y, uint16_t size, uint8_t offset, boo
         EasyUIDrawRBox(x + offset, y + offset, size - 2 * offset, size - 2 * offset, NV3030B_penColor, r);
 }
 
+/*!
+ * @brief   Draw radio button
+ *
+ * @param   x           Radio button position x
+ * @param   y           Radio button position y
+ * @param   size        Size of radio button
+ * @param   offset      Offset of selected rounded box
+ * @param   boolValue   True of false
+ * @return  void
+ *
+ * @note    Internal call
+ */
+void EasyUIDrawRadio(int16_t x, int16_t y, uint16_t size, uint8_t offset, bool boolValue, uint8_t r)
+{
+    EasyUIDrawRFrame(x, y, size, size, NV3030B_penColor, r);
+    if (boolValue)
+        EasyUIDrawRBox(x + offset +1, y + offset +1, size - 2 * offset-2, size - 2 * offset-2, NV3030B_penColor, r - 2*offset-2);
+}
+
 
 /*!
  * @brief   Get position of item with linear animation
@@ -407,8 +426,14 @@ void EasyUIDisplayItem(EasyUIItem_t *item)
     case ITEM_PAGE_DESCRIPTION:
         EasyUIDisplayStr(2, item->position, item->title);
         break;
-    case ITEM_CHECKBOX:
     case ITEM_RADIO_BUTTON:
+        EasyUIDisplayStr(2, item->position, "-");
+        EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
+        EasyUIDrawRadio(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - ITEM_HEIGHT + 2,
+                           item->position - (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1, ITEM_HEIGHT - 2, CHECK_BOX_OFFSET,
+                           *item->flag, (ITEM_HEIGHT - 2)/2);
+        break;
+    case ITEM_CHECKBOX:
         EasyUIDisplayStr(2, item->position, "-");
         EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
         EasyUIDrawCheckbox(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - ITEM_HEIGHT + 2,
@@ -1183,6 +1208,8 @@ void EasyUIKeyActionMonitor()
 }
 
 
+
+void EventMotion();
 /*!
  * @brief   Main function of EasyUI
  *
@@ -1254,6 +1281,8 @@ void EasyUIEvent(uint8_t timer)
     }
 
     EasyUIClearBuffer();
+		
+		EventMotion();
 
     // Custom page--------------------------------------------------------------------------------
     if (page->funcType == PAGE_CUSTOM)

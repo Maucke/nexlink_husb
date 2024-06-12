@@ -97,4 +97,6 @@ void lv_anim_add(lv_anim_t* a, int32_t start, lv_anim_exec_xcb_t exec_cb); //ini
 
 void lv_anim_start(lv_anim_t* a, uint32_t end, uint32_t duration); //start value change
 
+void lv_anim_path_set_cb(lv_anim_t* a, lv_anim_path_cb_t cb);
+
 #endif

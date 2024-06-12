@@ -312,7 +312,6 @@ static uint8_t USBD_NEX_LINK_SOF(struct _USBD_HandleTypeDef *pdev)
 static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	struct tm *tm_local;
 	char time_str[32];
-	uint16_t last_brightness;
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
 	dbmsg("USBD_NEX_LINK_EP0_RxReady");	
 	USBD_SetupReqTypedef *req = &hnex->last_setup_request;

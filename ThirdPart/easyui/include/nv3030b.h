@@ -124,6 +124,8 @@ void NV3030B_ShowBMP(int16_t x, int16_t y, uint16_t width, uint16_t height, cons
 void NV3030B_ShowGrayImage(uint16_t x, uint16_t y, const uint8_t *image, uint16_t width, uint16_t height, uint16_t dis_width,
                           uint16_t dis_height, uint8_t threshold);
 
+void NV3030B_Triangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+void NV3030B_FillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
 void NV3030B_SetColor (const uint16 pen, const uint16 bgcolor);
 void NV3030B_Init (uint16 *gram);
 
