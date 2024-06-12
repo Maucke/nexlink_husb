@@ -83,7 +83,7 @@ int fputc(int ch, FILE* f)
 uint16_t grambuff[1024];
 uint16_t grambuff_usb[1024];
 nex_usb_des des;
-lv_anim_t a;
+lv_anim_t anim_backlight;
 void set_brightness_value(void *obj, int32_t value)
 {
 //	dbmsg("brightness: %d", value);
@@ -138,7 +138,7 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   dbmsg("system initialized");
-
+	set_brightness_value(NULL, 0);
   USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
   USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
   USBD_NEX_LINK_Init(&hUSB, grambuff_usb, &des);
@@ -146,9 +146,10 @@ int main(void)
 	des.brides.brightness = 999;
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
 	HAL_TIM_Base_Start_IT(&htim3);
-	a = lv_anim_start(des.brides.brightness,0,set_brightness_value,1000);
 	MenuInit();
 	EasyUIInit(1);
+	lv_anim_add(&anim_backlight, 0, set_brightness_value);
+	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
   dbmsg("application initialized");
 // chipmunk_example_init();
   /* USER CODE END 2 */
@@ -163,7 +164,7 @@ int main(void)
     HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
-		lv_anim_run(&a);
+		lv_anim_run();
     HAL_Delay(5);
 		EasyUIEvent(5);
 //    chipmunk_example_update(0.005);

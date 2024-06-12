@@ -332,11 +332,10 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 		case NEX_BRIGHTNESS_SET:
-			last_brightness = hnex->des->brides.brightness;
 			memcpy(&hnex->des->brides, hnex->ep0_buf, sizeof(hnex->des->brides));
 			dbmsg("Brightness: %d\n", hnex->des->brides.brightness); // 打印亮度
-			extern lv_anim_t a;
-			a = lv_anim_start(hnex->des->brides.brightness,last_brightness,set_brightness_value,hnex->des->brides.damp);
+			extern lv_anim_t anim_backlight;
+			lv_anim_start(&anim_backlight, hnex->des->brides.brightness, hnex->des->brides.damp);
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 		case NEX_SCREEN_SET:

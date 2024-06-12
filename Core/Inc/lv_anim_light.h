@@ -2,6 +2,7 @@
 #define __LV_ANIM_LIGHT_H__
 
 #include <stdint.h>
+#include "main.h"
 
 struct _lv_anim_t;
 struct _lv_timer_t;
@@ -30,6 +31,8 @@ typedef struct _lv_anim_t {
     int32_t end_value;                 /**< End value*/
     int32_t time;                /**< Animation time in ms*/
     int32_t act_time;            /**< Current time in animation. Set to negative to make delay.*/
+		struct _lv_anim_t* next;
+		int32_t id;
 } lv_anim_t;
 
 #define LV_BEZIER_VAL_MAX 1024 /**< Max time in Bezier functions (not [0..1] to use integers)*/
@@ -89,8 +92,9 @@ int32_t lv_anim_path_bounce(const lv_anim_t * a);
  */
 int32_t lv_anim_path_step(const lv_anim_t * a);
 
-void lv_anim_run(lv_anim_t* a);
+void lv_anim_run(void); // add to main
+void lv_anim_add(lv_anim_t* a, int32_t start, lv_anim_exec_xcb_t exec_cb); //inital value
 
-lv_anim_t lv_anim_start(uint32_t end, int32_t start, lv_anim_exec_xcb_t exec_cb, uint32_t duration);
+void lv_anim_start(lv_anim_t* a, uint32_t end, uint32_t duration); //start value change
 
 #endif

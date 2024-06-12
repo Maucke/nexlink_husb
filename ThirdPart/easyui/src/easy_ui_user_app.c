@@ -16,7 +16,7 @@ EasyUIItem_t itemUSBForm;
 EasyUIItem_t itemSetting, itemColor, itemReset, itemBrightness, titleSetting;
 EasyUIItem_t itemAbout;
 
-extern lv_anim_t a;
+			extern lv_anim_t anim_backlight;
 extern nex_usb_des des;
 float setting_brightness;
 __IO bool usbinhibit = false;
@@ -30,9 +30,7 @@ void EventChangeBrightness(EasyUIItem_t *item)
             *item->param += 10;
         else
             *item->param = 100;
-				last_brightness = des.brides.brightness;
-				a = lv_anim_start(*item->param==100?990:(*item->param)*10,last_brightness,set_brightness_value,100);
-				des.brides.brightness = *item->param==100?990:(*item->param)*10;
+				lv_anim_start(&anim_backlight, *item->param==100?990:(*item->param)*10, 100);
         opnUp = opnForward = false;
     }
     if (opnDown)
@@ -41,9 +39,7 @@ void EventChangeBrightness(EasyUIItem_t *item)
             *item->param -= 10;
         else
             *item->param = 10;
-				last_brightness = des.brides.brightness;
-				a = lv_anim_start(*item->param==100?990:(*item->param)*10,last_brightness,set_brightness_value,100);
-				des.brides.brightness = *item->param==100?990:(*item->param)*10;
+				lv_anim_start(&anim_backlight, *item->param==100?990:(*item->param)*10, 100);
         opnDown = opnBackward = false;
     }
 
@@ -57,9 +53,7 @@ void EventChangeBrightness(EasyUIItem_t *item)
     if (opnExit)
     {
         *item->param = item->paramBackup;
-				last_brightness = des.brides.brightness;
-				a = lv_anim_start(*item->param==100?990:(*item->param)*10,last_brightness,set_brightness_value,100);
-				des.brides.brightness = *item->param==100?990:(*item->param)*10;
+				lv_anim_start(&anim_backlight, *item->param==100?990:(*item->param)*10, 100);
         EasyUIBackgroundBlur();
         functionIsRunning = false;
         opnExit = false;
