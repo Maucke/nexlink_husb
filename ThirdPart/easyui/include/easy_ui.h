@@ -43,7 +43,7 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 
 #define SCREEN_WIDTH            LCD_W
 #define SCREEN_HEIGHT           LCD_H
-#define FONT_WIDTH              8
+#define FONT_WIDTH              12
 #define FONT_HEIGHT             16
 #define ITEM_HEIGHT             20
 #define CHECK_BOX_OFFSET        2
@@ -149,6 +149,7 @@ void EasyUIEventResetSettings(EasyUIItem_t *item);
 void EasyUIEventChangeFloatForYaw(EasyUIItem_t *item);
 void EasyUIInit(uint8_t mode);
 void EasyUIEvent(uint8_t timer);
+void EasyUIItemOperationResponse(EasyUIPage_t *page, EasyUIItem_t *item, uint8_t *index);
 
 #ifdef __cplusplus
 }

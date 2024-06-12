@@ -12,13 +12,15 @@
 EasyUIPage_t pageMain, pageUSBForm, pageSetting, pageAbout;
 
 // Items
-EasyUIItem_t itemUSBForm, itemColor, itemReset, titleUSBForm;
+EasyUIItem_t itemUSBForm;
 EasyUIItem_t itemSetting, itemColor, itemReset, itemBrightness, titleSetting;
 EasyUIItem_t itemAbout;
 
 extern lv_anim_t a;
 extern nex_usb_des des;
 float setting_brightness;
+__IO bool usbinhibit = false;
+
 void EventChangeBrightness(EasyUIItem_t *item)
 {
 		uint16_t last_brightness;
@@ -127,24 +129,33 @@ void PageAbout(EasyUIItem_t *page)
     }
 }
 
+void PageUSBForm(EasyUIItem_t *page)
+{
+		usbinhibit = false;
+    if (opnExit)
+    {
+			usbinhibit = true;
+    }
+}
+
 void MenuInit()
 {
 		EasyUIAddPage(&pageMain, PAGE_LIST);
     EasyUIAddPage(&pageSetting, PAGE_LIST);
-    EasyUIAddPage(&pageUSBForm, PAGE_LIST);
+    EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
     EasyUIAddPage(&pageAbout, PAGE_CUSTOM, PageAbout);
 
 		EasyUIAddItem(&pageMain, &itemUSBForm, "USBForm", ITEM_JUMP_PAGE, pageUSBForm.id);
 		EasyUIAddItem(&pageMain, &itemSetting, "Setting", ITEM_JUMP_PAGE, pageSetting.id);
     EasyUIAddItem(&pageMain, &itemAbout, "<About>", ITEM_JUMP_PAGE, pageAbout.id);
-	
-    EasyUIAddItem(&pageUSBForm, &titleUSBForm, "[USBForm]", ITEM_PAGE_DESCRIPTION);
 
     EasyUIAddItem(&pageSetting, &titleSetting, "[Setting]", ITEM_PAGE_DESCRIPTION);
-    EasyUIAddItem(&pageSetting, &itemColor, "Reversed color", ITEM_SWITCH, &reversedColor);
-    EasyUIAddItem(&pageSetting, &itemBrightness, "LCD Brightness", ITEM_PROGRESS_BAR, &setting_brightness, EventChangeBrightness);
+    EasyUIAddItem(&pageSetting, &itemColor, "Reversed", ITEM_SWITCH, &reversedColor);
+    EasyUIAddItem(&pageSetting, &itemBrightness, "Brightness", ITEM_PROGRESS_BAR, &setting_brightness, EventChangeBrightness);
 
 		setting_brightness = (des.brides.brightness+1)/10;
 		
 		dbmsg("setting_brightness: %f",setting_brightness);
+	
+		EasyUIItemOperationResponse(&pageUSBForm, &itemUSBForm, &itemUSBForm.id);
 }

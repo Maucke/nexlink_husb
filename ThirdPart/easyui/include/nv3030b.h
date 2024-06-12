@@ -53,7 +53,7 @@ typedef enum
 #define NV3030B_DEFAULT_DISPLAY_DIR      (NV3030B_PORTAIT)                  
 #define NV3030B_DEFAULT_PENCOLOR         (RGB565_WHITE)                     
 #define NV3030B_DEFAULT_BGCOLOR          (RGB565_BLACK)                          
-#define NV3030B_DEFAULT_DISPLAY_FONT     (NV3030B_8X16_FONT)                      
+#define NV3030B_DEFAULT_DISPLAY_FONT     (NV3030B_12X16_OCR)                      
 
 #define CIRCLE_UPPER_RIGHT      0x01
 #define CIRCLE_UPPER_LEFT       0x02
@@ -82,7 +82,14 @@ typedef enum
 {
     NV3030B_6X8_FONT                     = 0,                                    // 6x8    
     NV3030B_8X16_FONT                    = 1,                                    // 8x16   
-    NV3030B_16X16_FONT                   = 2,                                    // 16x16   
+    NV3030B_8X16_OCRB,              
+    NV3030B_10X16_OCR,    
+    NV3030B_12X16_OCR,    
+    NV3030B_12X16_OCRB,   
+    NV3030B_12X24_AGENCY,    
+    NV3030B_16X24_OCR,    
+		NV3030B_16X24_OCRB,      //不好看       
+    NV3030B_NUM_FONT          
 }nv3030b_font_size_enum;
 
 

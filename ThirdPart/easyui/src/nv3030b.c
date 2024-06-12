@@ -285,7 +285,7 @@ void NV3030B_ShowChar(int16 x, int16 y, const char dat)
         for (i = 0; i < 6; i++)
         {
             // 减 32 因为是取模是从空格开始取得 空格在 ascii 中序号是 32
-            uint8 temp_top = ascii_font_6x8[dat - 32][i];
+            uint8 temp_top = ascii_default_6x8[dat - 32][i];
             for (j = 0; j < 8; j++)
             {
                 if (temp_top & 0x01)
@@ -300,8 +300,8 @@ void NV3030B_ShowChar(int16 x, int16 y, const char dat)
         for (i = 0; i < 8; i++)
         {
             // 减 32 因为是取模是从空格开始取得 空格在 ascii 中序号是 32
-            uint8 temp_top = ascii_font_8x16[dat - 32][i];
-            uint8 temp_bottom = ascii_font_8x16[dat - 32][i + 8];
+            uint8 temp_top = ascii_default_8x16[dat - 32][i];
+            uint8 temp_bottom = ascii_default_8x16[dat - 32][i + 8];
             for (j = 0; j < 8; j++)
             {
                 if (temp_top & 0x01)
@@ -320,6 +320,203 @@ void NV3030B_ShowChar(int16 x, int16 y, const char dat)
             }
         }
         break;
+				
+				case NV3030B_8X16_OCRB:
+        for (i = 0; i < 8; i++)
+        {
+            // 减 32 因为是取模是从空格开始取得 空格在 ascii 中序号是 32
+            uint8 temp_top = ascii_OCRB_8x16[dat - 32][i];
+            uint8 temp_bottom = ascii_OCRB_8x16[dat - 32][i + 8];
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_top & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j ,NV3030B_penColor);
+                }
+                temp_top >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_bottom & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 8,NV3030B_penColor);
+                }
+                temp_bottom >>= 1;
+            }
+        }
+            break;           
+				case NV3030B_10X16_OCR:
+        for (i = 0; i < 10; i++)
+        {
+            // 减 32 因为是取模是从空格开始取得 空格在 ascii 中序号是 32
+            uint8 temp_top = ascii_OCR_10x16[dat - 32][i];
+            uint8 temp_bottom = ascii_OCR_10x16[dat - 32][i + 10];
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_top & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j ,NV3030B_penColor);
+                }
+                temp_top >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_bottom & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 8,NV3030B_penColor);
+                }
+                temp_bottom >>= 1;
+            }
+        }
+            break;
+				case NV3030B_12X16_OCR:
+        for (i = 0; i < 12; i++)
+        {
+            // 减 32 因为是取模是从空格开始取得 空格在 ascii 中序号是 32
+            uint8 temp_top = ascii_OCR_12x16[dat - 32][i];
+            uint8 temp_bottom = ascii_OCR_12x16[dat - 32][i + 12];
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_top & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j ,NV3030B_penColor);
+                }
+                temp_top >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_bottom & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 8,NV3030B_penColor);
+                }
+                temp_bottom >>= 1;
+            }
+        }
+            break;
+				case NV3030B_12X16_OCRB:
+        for (i = 0; i < 12; i++)
+        {
+            // 减 32 因为是取模是从空格开始取得 空格在 ascii 中序号是 32
+            uint8 temp_top = ascii_OCRB_12x16[dat - 32][i];
+            uint8 temp_bottom = ascii_OCRB_12x16[dat - 32][i + 12];
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_top & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j ,NV3030B_penColor);
+                }
+                temp_top >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_bottom & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 8,NV3030B_penColor);
+                }
+                temp_bottom >>= 1;
+            }
+        }
+            break;
+				case NV3030B_12X24_AGENCY:
+        for (i = 0; i < 12; i++)
+        {
+            // 减 32 因为是取模是从空格开始取得 空格在 ascii 中序号是 32
+            uint8 temp_top = ascii_agency_12x24[dat - 32][i];
+            uint8 temp_mid = ascii_agency_12x24[dat - 32][i + 12];
+            uint8 temp_bottom = ascii_agency_12x24[dat - 32][i + 24];
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_top & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j ,NV3030B_penColor);
+                }
+                temp_top >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_mid & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 8,NV3030B_penColor);
+                }
+                temp_mid >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_bottom & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 16,NV3030B_penColor);
+                }
+                temp_bottom >>= 1;
+            }
+        }
+            break;
+				case NV3030B_16X24_OCR:
+        for (i = 0; i < 16; i++)
+        {
+            // 减 32 因为是取模是从空格开始取得 空格在 ascii 中序号是 32
+            uint8 temp_top = ascii_OCR_16x24[dat - 32][i];
+            uint8 temp_mid = ascii_OCR_16x24[dat - 32][i + 16];
+            uint8 temp_bottom = ascii_OCR_16x24[dat - 32][i + 32];
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_top & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j ,NV3030B_penColor);
+                }
+                temp_top >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_mid & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 8,NV3030B_penColor);
+                }
+                temp_mid >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_bottom & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 16,NV3030B_penColor);
+                }
+                temp_bottom >>= 1;
+            }
+        }
+            break;   
+				case NV3030B_16X24_OCRB:
+        for (i = 0; i < 16; i++)
+        {
+            // 减 32 因为是取模是从空格开始取得 空格在 ascii 中序号是 32
+            uint8 temp_top = ascii_OCRB_16x24[dat - 32][i];
+            uint8 temp_mid = ascii_OCRB_16x24[dat - 32][i + 16];
+            uint8 temp_bottom = ascii_OCRB_16x24[dat - 32][i + 32];
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_top & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j ,NV3030B_penColor);
+                }
+                temp_top >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_mid & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 8,NV3030B_penColor);
+                }
+                temp_mid >>= 1;
+            }
+            for (j = 0; j < 8; j++)
+            {
+                if (temp_bottom & 0x01)
+                {
+                    NV3030B_DrawPoint(x + i, y + j + 16,NV3030B_penColor);
+                }
+                temp_bottom >>= 1;
+            }
+        }
+            break;
+				
     default:
         break;
     }
@@ -346,7 +543,23 @@ void NV3030B_ShowStr(int16 x, int16 y, const char dat[])
             j++;
             break;
         case NV3030B_8X16_FONT:
+				case NV3030B_8X16_OCRB:
             NV3030B_ShowChar(x + 8 * j, y, dat[j]);
+            j++;
+            break;           
+				case NV3030B_10X16_OCR:
+            NV3030B_ShowChar(x + 10 * j, y, dat[j]);
+            j++;
+            break;
+				case NV3030B_12X16_OCR:
+				case NV3030B_12X16_OCRB:
+				case NV3030B_12X24_AGENCY:
+            NV3030B_ShowChar(x + 12 * j, y, dat[j]);
+            j++;
+            break;
+				case NV3030B_16X24_OCR:
+				case NV3030B_16X24_OCRB:
+            NV3030B_ShowChar(x + 16 * j, y, dat[j]);
             j++;
             break;
         default:

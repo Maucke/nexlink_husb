@@ -58,10 +58,14 @@ typedef enum
     RGB565_66CCFF   = (0x665F),
 }rgb565_color_enum;
 
-extern const uint8      ascii_font_8x16[][16];
-extern const uint8      ascii_font_6x8[][6];
-extern const uint8      chinese_test[8][16];
-extern const uint8      oled_16x16_chinese[][16];
-extern const uint8      gImage_seekfree_logo[38400];
+extern const uint8 ascii_default_8x16[][16];
+extern const uint8 ascii_default_6x8[][6];
+extern const uint8 ascii_OCRB_8x16[][16];
+extern const uint8 ascii_OCR_10x16[][20];
+extern const uint8 ascii_OCR_12x16[][24];
+extern const uint8 ascii_OCRB_12x16[][24];
+extern const uint8 ascii_agency_12x24[][36];
+extern const uint8 ascii_OCR_16x24[][48];
+extern const uint8 ascii_OCRB_16x24[][48];
 
 #endif

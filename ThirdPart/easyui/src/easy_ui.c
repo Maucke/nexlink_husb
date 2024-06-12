@@ -428,16 +428,16 @@ void EasyUIDisplayItem(EasyUIItem_t *item)
         EasyUIDisplayStr(2, item->position, "-");
         EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
         if (*item->param < 10 && *item->param >= 0)
-            EasyUIDisplayFloat(SCREEN_WIDTH - 7 - 4 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
+            EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 4 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
                                *item->param, 4, 2);
         else if (*item->param < 100 && *item->param > -10)
-            EasyUIDisplayFloat(SCREEN_WIDTH - 7 - 5 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
+            EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 5 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
                                *item->param, 4, 2);
         else if (*item->param < 1000 && *item->param > -100)
-            EasyUIDisplayFloat(SCREEN_WIDTH - 7 - 6 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
+            EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 6 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
                                *item->param, 4, 2);
         else if (*item->param < 10000 && *item->param > -1000)
-            EasyUIDisplayFloat(SCREEN_WIDTH - 7 - 7 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
+            EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 7 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
                                *item->param, 4, 2);
         else    // Hide because it's too long
             EasyUIDisplayStr(SCREEN_WIDTH - 7 - 5 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position, "**.**");
@@ -469,8 +469,8 @@ void EasyUIDrawIndicator(EasyUIPage_t *page, uint8_t index, uint8_t timer, uint8
     static uint16_t lengthTarget = 0, yTarget = 0;
     uint8_t speed = INDICATOR_MOVE_TIME / timer;
 
-    if (status)
-        y = SCREEN_HEIGHT;
+//    if (status)
+//        y = SCREEN_HEIGHT;
 
     if (page->funcType != PAGE_LIST)
         return;
@@ -1280,7 +1280,9 @@ void EasyUIEvent(uint8_t timer)
             EasyUIDrawIndicator(page, index, timer, 1);
         }
 
-        EasyUISendBuffer();
+				extern __IO bool usbinhibit;
+				if(usbinhibit)
+						EasyUISendBuffer();
         return;
     }
     // -------------------------------------------------------------------------------------------

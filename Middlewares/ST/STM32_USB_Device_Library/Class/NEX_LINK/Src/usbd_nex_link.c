@@ -245,7 +245,6 @@ static __ALIGN_BEGIN uint8_t USBD_MS_EXT_PROP_FEATURE_DESC[] __ALIGN_END = {
 	0x00, 0x00, 0x00, 0x00
 };
 
-
 uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff, nex_usb_des* des)
 {
 	uint8_t ret = USBD_FAIL;
@@ -526,6 +525,7 @@ static uint8_t USBD_NEX_LINK_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	return USBD_OK;
 }
 static __IO bool ramindex = 0;
+
 static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 
 	uint8_t retval = USBD_FAIL;
@@ -537,22 +537,25 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 //	dbmsg("%d,%02X,%02X,%02X,%02X",rxlen,(hnex->grambuff + hnex->gramdetail)[0],(hnex->grambuff + hnex->gramdetail)[1],(hnex->grambuff + hnex->gramdetail)[62],(hnex->grambuff + hnex->gramdetail)[63]);
 
 //	dbmsg("hnex->gramdetail:%d",hnex->gramdetail);
-	if(hnex->gramdetail==0)
+	extern __IO bool usbinhibit;
+	if(!usbinhibit)
 	{
-		HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-		extern __IO nv3030b_dir_enum nv3030b_display_dir;
-		if(nv3030b_display_dir != hnex->des->scrdes.direction)
+		if(hnex->gramdetail==0)
 		{
-			dbmsg("set dir: %d, last: %d", hnex->des->scrdes.direction, nv3030b_display_dir);
-			NV3030B_SetRotation((nv3030b_dir_enum)hnex->des->scrdes.direction);
+			HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
+			extern __IO nv3030b_dir_enum nv3030b_display_dir;
+			if(nv3030b_display_dir != hnex->des->scrdes.direction)
+			{
+				dbmsg("set dir: %d, last: %d", hnex->des->scrdes.direction, nv3030b_display_dir);
+				NV3030B_SetRotation((nv3030b_dir_enum)hnex->des->scrdes.direction);
+			}
+			if(nv3030b_display_dir==0||nv3030b_display_dir==1)
+				NV3030B_SetRegion(0,0,LCD_W-1,LCD_H-1);
+			else
+				NV3030B_SetRegion(0,0,LCD_H-1,LCD_W-1);
 		}
-		if(nv3030b_display_dir==0||nv3030b_display_dir==1)
-			NV3030B_SetRegion(0,0,LCD_W-1,LCD_H-1);
-		else
-			NV3030B_SetRegion(0,0,LCD_H-1,LCD_W-1);
+		NV3030B_DMA_Transfer((uint8_t *)hnex->grambuff + ramindex*1024, 960, DMA_MEMINC_ENABLE); // 启用DMA发送
 	}
-	NV3030B_DMA_Transfer((uint8_t *)hnex->grambuff + ramindex*1024, 960, DMA_MEMINC_ENABLE); // 启用DMA发送
-		
 	hnex->gramdetail=(hnex->gramdetail+rxlen/2)%(LCD_W*LCD_H);
 	USBD_NEX_LINK_PrepareReceive(pdev);
 		

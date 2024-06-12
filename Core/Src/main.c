@@ -81,6 +81,7 @@ int fputc(int ch, FILE* f)
 }
 
 uint16_t grambuff[1024];
+uint16_t grambuff_usb[1024];
 nex_usb_des des;
 lv_anim_t a;
 void set_brightness_value(void *obj, int32_t value)
@@ -140,7 +141,7 @@ int main(void)
 
   USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
   USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
-  USBD_NEX_LINK_Init(&hUSB, grambuff, &des);
+  USBD_NEX_LINK_Init(&hUSB, grambuff_usb, &des);
   USBD_Start(&hUSB);
 	des.brides.brightness = 999;
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
