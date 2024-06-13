@@ -8,8 +8,8 @@
 #ifndef CODE_IMU_H_
 #define CODE_IMU_H_
 
-#include "inc_all.h"
-#include "zf_common_headfile.h"
+#include "main.h"
+#include "zf_common_typedef.h"
 
 typedef struct
 {

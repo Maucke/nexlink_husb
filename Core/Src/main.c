@@ -42,6 +42,9 @@
 #include "easy_ui_user_app.h"
 #include "easy_key.h"
 #include "easy_key.h"
+#include "mpu6050.h"
+#include "inv_mpu.h"
+#include "inv_mpu_dmp_motion_driver.h"
 //#include "chipmunkdemo.h"
 /* USER CODE END Includes */
 
@@ -82,7 +85,11 @@ int fputc(int ch, FILE* f)
 
 uint16_t grambuff[1024];
 uint16_t grambuff_usb[1024];
-nex_usb_des des;
+nex_usb_des des = {
+.brides = {
+	.brightness = 999
+}
+};
 lv_anim_t anim_backlight;
 void set_brightness_value(void *obj, int32_t value)
 {
@@ -100,6 +107,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //		dbmsg("tick: %d", HAL_GetTick());
 	}
 }
+float pitch, roll, yaw;
 /* USER CODE END 0 */
 
 /**
@@ -143,13 +151,16 @@ int main(void)
   USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
   USBD_NEX_LINK_Init(&hUSB, grambuff_usb, &des);
   USBD_Start(&hUSB);
-	des.brides.brightness = 999;
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
 	HAL_TIM_Base_Start_IT(&htim3);
 	MenuInit();
 	EasyUIInit(1);
+	dbmsg("MPU_Init = %d", MPU_Init());
+//	dbmsg("mpu_dmp_init = %d\r\n", mpu_dmp_init());
+	
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
+	
   dbmsg("application initialized");
 // chipmunk_example_init();
   /* USER CODE END 2 */
@@ -165,8 +176,15 @@ int main(void)
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run();
-    HAL_Delay(5);
+    HAL_Delay(1);
 		EasyUIEvent(5);
+		MPU_CRL(10);
+//		mpu_dmp_get_data(&pitch, &roll, &yaw);
+//		dbmsg("pitch = %.1f ", pitch);
+//		dbmsg("roll = %.1f ", roll);
+//		dbmsg("yaw = %.1f\r\n", yaw);
+//		dbmsg("MPU_Get_Temperature = %d", MPU_Get_Temperature());
+//    HAL_Delay(100);
 //    chipmunk_example_update(0.005);
   }
   /* USER CODE END 3 */

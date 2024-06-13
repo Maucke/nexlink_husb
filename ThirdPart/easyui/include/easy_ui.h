@@ -35,6 +35,7 @@ extern EasyKey_t keyConfirm;               // Used to change page or call functi
 extern uint8_t opnForward, opnBackward;
 extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 
+#define MPUCRL          1
 #define KEY_NUM         3
 #define ROTARY          0
 
@@ -45,6 +46,7 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define FONT_HEIGHT             16
 #define ITEM_HEIGHT             20
 #define CHECK_BOX_OFFSET        2
+#define RADIO_BUTTON_OFFSET        3
 #define SCROLL_BAR_WIDTH        4
 #define ITEM_LINES              ((uint8_t)(SCREEN_HEIGHT / ITEM_HEIGHT))
 #define MAX_LAYER               10

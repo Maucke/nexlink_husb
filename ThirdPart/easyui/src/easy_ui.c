@@ -332,7 +332,7 @@ void EasyUIDrawRadio(int16_t x, int16_t y, uint16_t size, uint8_t offset, bool b
 {
     EasyUIDrawRFrame(x, y, size, size, NV3030B_penColor, r);
     if (boolValue)
-        EasyUIDrawRBox(x + offset +1, y + offset +1, size - 2 * offset-2, size - 2 * offset-2, NV3030B_penColor, r - 2*offset-2);
+        EasyUIDrawRBox(x + offset, y + offset, size - 2 * offset, size - 2 * offset, NV3030B_penColor, r - 2 * offset);
 }
 
 
@@ -430,7 +430,7 @@ void EasyUIDisplayItem(EasyUIItem_t *item)
         EasyUIDisplayStr(2, item->position, "-");
         EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
         EasyUIDrawRadio(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - ITEM_HEIGHT + 2,
-                           item->position - (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1, ITEM_HEIGHT - 2, CHECK_BOX_OFFSET,
+                           item->position - (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1, ITEM_HEIGHT - 2, RADIO_BUTTON_OFFSET,
                            *item->flag, (ITEM_HEIGHT - 2)/2);
         break;
     case ITEM_CHECKBOX:
@@ -1182,6 +1182,23 @@ void EasyUIKeyActionMonitor()
     opnExit = keyBackward.isHold;
     opnUp = keyUp.isPressed;
     opnDown = keyDown.isPressed;
+#elif MPUCRL == 1
+		extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
+		opnEnter = mpu_ok;
+		opnExit = mpu_quit;
+		opnUp = mpu_left;
+		opnDown = mpu_right;
+		opnForward = mpu_left;
+		opnBackward = mpu_right;
+		mpu_left=mpu_right= mpu_ok=mpu_quit=0;
+		if(opnEnter!=0)
+		dbmsg("opnEnter:%d",opnEnter);
+		if(opnExit!=0)
+		dbmsg("opnExit:%d",opnExit);
+		if(opnUp!=0)
+		dbmsg("opnUp:%d",opnUp);
+		if(opnDown!=0)
+		dbmsg("opnDown:%d",opnDown);
 #elif KEY_NUM > 2
     opnForward = keyForward.isPressed;
     opnBackward = keyBackward.isPressed;
