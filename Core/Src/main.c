@@ -45,6 +45,7 @@
 #include "mpu6050.h"
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
+#include "bmp280.h"
 //#include "chipmunkdemo.h"
 /* USER CODE END Includes */
 
@@ -108,6 +109,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 }
 float pitch, roll, yaw;
+float pressure, temperature, humidity, asl;
 /* USER CODE END 0 */
 
 /**
@@ -157,7 +159,9 @@ int main(void)
 	EasyUIInit(1);
 	dbmsg("MPU_Init = %d", MPU_Init());
 //	dbmsg("mpu_dmp_init = %d\r\n", mpu_dmp_init());
-	
+	bme280Init();
+	bme280GetData( &pressure, &temperature, &humidity, &asl);
+	dbmsg("pressure: %f, temperature: %f, humidity: %f, asl: %f", pressure, temperature, humidity, asl);
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
 	
@@ -176,7 +180,7 @@ int main(void)
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run();
-    HAL_Delay(1);
+    HAL_Delay(1000);
 		EasyUIEvent(5);
 		MPU_CRL(10);
 //		mpu_dmp_get_data(&pitch, &roll, &yaw);
@@ -186,6 +190,8 @@ int main(void)
 //		dbmsg("MPU_Get_Temperature = %d", MPU_Get_Temperature());
 //    HAL_Delay(100);
 //    chipmunk_example_update(0.005);
+	bme280GetData( &pressure, &temperature, &humidity, &asl);
+	dbmsg("pressure: %f, temperature: %f, humidity: %f, asl: %f", pressure, temperature, humidity, asl);
   }
   /* USER CODE END 3 */
 }
