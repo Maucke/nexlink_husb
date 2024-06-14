@@ -1375,6 +1375,16 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>ThirdPart/rx8900</GroupName>
+          <Files>
+            <File>
+              <FileName>rx8900.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\rx8900\rx8900.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
@@ -1710,7 +1720,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,USE_USB_HS,VECT_TAB_OFFSET = 0x10000U</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../USB_DEVICE/App;../USB_DEVICE/Target;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/NEX_LINK/Inc;..\ThirdPart\chipmunk\include;..\ThirdPart\chipmunk;..\ThirdPart\easyui\include;..\ThirdPart\easyui;..\ThirdPart\mygui;..\ThirdPart\mpu6050;..\ThirdPart\bmp280</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../USB_DEVICE/App;../USB_DEVICE/Target;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/NEX_LINK/Inc;..\ThirdPart\chipmunk\include;..\ThirdPart\chipmunk;..\ThirdPart\easyui\include;..\ThirdPart\easyui;..\ThirdPart\mygui;..\ThirdPart\mpu6050;..\ThirdPart\bmp280;..\ThirdPart\rx8900</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2540,6 +2550,16 @@
               <FileName>bmp280.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\bmp280\bmp280.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>ThirdPart/rx8900</GroupName>
+          <Files>
+            <File>
+              <FileName>rx8900.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\rx8900\rx8900.c</FilePath>
             </File>
           </Files>
         </Group>
