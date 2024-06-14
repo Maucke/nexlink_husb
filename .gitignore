@@ -29,3 +29,5 @@ MDK-ARM/RTE/_nexlink_f407_husb_app/RTE_Components.h
 *.rej
 *.shihuafeng
 MDK-ARM/RTE/_nexlink_f407_husb/RTE_Components.h
+*.__i
+*._ia

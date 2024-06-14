@@ -273,7 +273,7 @@ float func_str_to_float (char *str)
         if('.' == *str)
         {
             str ++;
-            while(('0' <= *str) && ('9' >= *str) && point_bit < 1000000.0)      // 确认这是个数字 并且精度控制还没到六位
+            while(('0' <= *str) && ('9' >= *str) && point_bit < 1000000.0f)      // 确认这是个数字 并且精度控制还没到六位
             {
                 temp_point = temp_point * 10 + ((uint8)(*str) - 0x30);          // 提取小数部分数值
                 point_bit *= 10;                                                // 计算这部分小数的除数
@@ -322,7 +322,7 @@ void func_float_to_str (char *str, float number, uint8 point_bit)
         {
             *str ++ = '-';
         }
-        else if(0.0 == number)                                                  // 如果是个 0
+        else if(0.0f == number)                                                  // 如果是个 0
         {
             *str ++ = '0';
             *str ++ = '.';

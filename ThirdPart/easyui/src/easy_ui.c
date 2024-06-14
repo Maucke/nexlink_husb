@@ -1226,7 +1226,7 @@ void EasyUIKeyActionMonitor()
 
 
 
-void EventMotion();
+void EventMotion(void);
 /*!
  * @brief   Main function of EasyUI
  *

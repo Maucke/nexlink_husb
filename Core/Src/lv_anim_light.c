@@ -272,4 +272,4 @@ void lv_anim_path_set_cb(lv_anim_t* a, lv_anim_path_cb_t cb)
 {
    a->path_cb = cb;
 }
- 
+

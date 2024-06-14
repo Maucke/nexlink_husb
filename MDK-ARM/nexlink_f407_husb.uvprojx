@@ -548,6 +548,11 @@
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f4xx_hal_msp.c</FilePath>
             </File>
+            <File>
+              <FileName>myiic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\myiic.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1357,10 +1362,15 @@
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\mpu6050\mpu6050.c</FilePath>
             </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>ThirdPart/bmp280</GroupName>
+          <Files>
             <File>
-              <FileName>myiic.c</FileName>
+              <FileName>bmp280.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\ThirdPart\mpu6050\myiic.c</FilePath>
+              <FilePath>..\ThirdPart\bmp280\bmp280.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1700,7 +1710,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,USE_USB_HS,VECT_TAB_OFFSET = 0x10000U</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../USB_DEVICE/App;../USB_DEVICE/Target;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/NEX_LINK/Inc;..\ThirdPart\chipmunk\include;..\ThirdPart\chipmunk;..\ThirdPart\easyui\include;..\ThirdPart\easyui;..\ThirdPart\mygui;..\ThirdPart\mpu6050</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../USB_DEVICE/App;../USB_DEVICE/Target;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/NEX_LINK/Inc;..\ThirdPart\chipmunk\include;..\ThirdPart\chipmunk;..\ThirdPart\easyui\include;..\ThirdPart\easyui;..\ThirdPart\mygui;..\ThirdPart\mpu6050;..\ThirdPart\bmp280</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1808,6 +1818,11 @@
               <FileName>stm32f4xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f4xx_hal_msp.c</FilePath>
+            </File>
+            <File>
+              <FileName>myiic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\myiic.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2516,10 +2531,15 @@
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\mpu6050\mpu6050.c</FilePath>
             </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>ThirdPart/bmp280</GroupName>
+          <Files>
             <File>
-              <FileName>myiic.c</FileName>
+              <FileName>bmp280.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\ThirdPart\mpu6050\myiic.c</FilePath>
+              <FilePath>..\ThirdPart\bmp280\bmp280.c</FilePath>
             </File>
           </Files>
         </Group>

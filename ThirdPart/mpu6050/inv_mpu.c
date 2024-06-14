@@ -49,8 +49,8 @@
 // #include "msp430_clock.h"
 // #include "msp430_interrupt.h"
 
-#define i2c_write MPU_Write_Len
-#define i2c_read MPU_Read_Len
+#define i2c_write IIC_Write_Len
+#define i2c_read IIC_Read_Len
 #define HAL_Delay HAL_Delay
 #define get_ms mget_ms
 // static inline int reg_int_cb(struct int_param_s *int_param)
