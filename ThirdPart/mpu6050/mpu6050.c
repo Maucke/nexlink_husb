@@ -245,45 +245,32 @@ long  last_update_time;
 bool mpu_left, mpu_right, mpu_ok, mpu_quit;
 void MPU_CRL(int interval)
 {
-	static int xflag = 0, yflag = 0;
 	long now_tick = HAL_GetTick();
 	// dbmsg("HAL_GetTick :%d, last_update_time :%ld", now_tick, last_update_time);
 	if (now_tick - last_update_time > interval)
 	{
 		// dbmsg("HAL_GetTick() - last_update_time :%ld", now_tick- last_update_time);
 		MPU_Get_Gyroscope(&ax, &ay, &az);
-		if (ay > 5000 && yflag)
+		if (ay > 5000)
 		{
 			mpu_right = true;
-			yflag = 0;
 			last_update_time = HAL_GetTick() + 400;return; 
 		}
-		else if (ay < -5000 && yflag)
+		else if (ay < -5000)
 		{
 			mpu_left = true;
-			yflag = 0;
 			last_update_time = HAL_GetTick() + 400;return; 
 		}
-		else
-		{
-			yflag = 1;
-		}
 
-		if (ax > 5000 && xflag)
+		else if (ax > 5000)
 		{
 			mpu_ok = true;
-			xflag = 0;
 			last_update_time = HAL_GetTick() + 600;return; 
 		}
-		else if (ax < -5000 && xflag)
+		else if (ax < -5000)
 		{
 			mpu_quit = true;
-			xflag = 0;
 			last_update_time = HAL_GetTick() + 600;return; 
-		}
-		else
-		{
-			xflag = 1;
 		}
 
 		last_update_time = HAL_GetTick();

@@ -169,6 +169,7 @@ void PageAnimation(EasyUIItem_t* page)
 
 void MenuInit()
 {
+  setting_brightness = (des.brides.brightness + 1) / 10;
   EasyUIAddPage(&pageMain, PAGE_LIST);
   EasyUIAddPage(&pageSetting, PAGE_LIST);
   EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
@@ -194,9 +195,6 @@ void MenuInit()
   EasyUIAddItem(&pageAnimation, &itemTriangle, "Triangle", ITEM_RADIO_BUTTON, &enTriangle);
   EasyUIAddItem(&pageAnimation, &itemStarwar, "Starwar", ITEM_RADIO_BUTTON, &enStarwar);
   EasyUIAddItem(&pageAnimation, &itemGCircle, "GCircle", ITEM_RADIO_BUTTON, &enGCircle);
-
-  setting_brightness = (des.brides.brightness + 1) / 10;
-
   dbmsg("setting_brightness: %f", setting_brightness);
 //
 //		EasyUIItemOperationResponse(&pageAnimation, &itemAnimation, &itemAnimation.id);

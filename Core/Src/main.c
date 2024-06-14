@@ -93,7 +93,7 @@ nex_usb_des des = {
 lv_anim_t anim_backlight;
 void set_brightness_value(void *obj, int32_t value)
 {
-//	dbmsg("brightness: %d", value);
+	// dbmsg("brightness: %d", value);
 	Set_PWM_DutyCycle(value%1000);
 }
 
@@ -156,13 +156,11 @@ int main(void)
 	MenuInit();
 	EasyUIInit(1);
 	dbmsg("MPU_Init = %d", MPU_Init());
-//	dbmsg("mpu_dmp_init = %d\r\n", mpu_dmp_init());
 	
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
 	
   dbmsg("application initialized");
-// chipmunk_example_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -179,13 +177,6 @@ int main(void)
     HAL_Delay(1);
 		EasyUIEvent(5);
 		MPU_CRL(10);
-//		mpu_dmp_get_data(&pitch, &roll, &yaw);
-//		dbmsg("pitch = %.1f ", pitch);
-//		dbmsg("roll = %.1f ", roll);
-//		dbmsg("yaw = %.1f\r\n", yaw);
-//		dbmsg("MPU_Get_Temperature = %d", MPU_Get_Temperature());
-//    HAL_Delay(100);
-//    chipmunk_example_update(0.005);
   }
   /* USER CODE END 3 */
 }
