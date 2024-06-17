@@ -48,6 +48,7 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "bmp280.h"
 #include "fftaffect.h"
+#include "arm_math.h"
 //#include "chipmunkdemo.h"
 /* USER CODE END Includes */
 
@@ -111,12 +112,50 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 }
 float pitch, roll, yaw;
+enum buffer_states{FFT_BUFFER_CLEAR, FFT_BUFFER_HALF, FFT_BUFFER_FULL, FFT_DISPLAY};
+enum display_states{DISPLAY_MANY, DISPLAY_FEW, DISPLAY_COW};
+arm_rfft_fast_instance_f32 fft_handler;
+uint8_t buffer_state = FFT_BUFFER_CLEAR;
+uint8_t display_state = DISPLAY_MANY;
+uint32_t adc_buffer[4096] = {0};
+float32_t fft_input_buffer[1024] = {0};
+float32_t fft_output_buffer[1024] = {0};
+//float32_t output_buffer2[1024] = {0};
+uint16_t chosen_freqs[32] = {4,
+		5,
+		6,
+		7,
+		8,
+		9,
+		10,
+		11,
+		12,
+		13,
+		14,
+		15,
+		16,
+		17,
+		18,
+		20,
+		23,
+		26,
+		29,
+		32,
+		36,
+		41,
+		45,
+		51,
+		57,
+		64,
+		72,
+		80,
+		90,
+		101,
+		113,
+		127
 
-#define NPT 256									//样本数量
-uint32_t i2s_dma[NPT*2];
-int32_t fft_buf[NPT];
-int32_t fft_raw[NPT];
-int32_t fft_app[NPT];
+
+};
 
 /* USER CODE END 0 */
 
@@ -171,7 +210,8 @@ int main(void)
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
-	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t*)i2s_dma,NPT*2);	
+	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,4096);	
+  arm_rfft_fast_init_f32(&fft_handler, 1024);
   dbmsg("application initialized");
   /* USER CODE END 2 */
 
@@ -192,7 +232,8 @@ int main(void)
 //		BMP280_Test(1000);
 		
     EasyUIClearBuffer();
-		Display_Style1(fft_app);
+		extern float32_t freqs[512];
+		Display_Style1(freqs);
 		EasyUISendBuffer();
   }
   /* USER CODE END 3 */
@@ -244,44 +285,64 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void GetPowerMag(int32_t *fftraw, int32_t *fft_app)
+float offset;
+float32_t maxValue;
+uint32_t maxIndex;
+int offset2 = 190;
+float32_t freqs[512] = {0};
+// Returns absolute value of complex number
+float abs_complex(float real, float imag)
 {
-    signed short lX,lY;
-    float X,Y,Mag;
-    unsigned short i;
-	
-    for(i=0; i<NPT; i++)
-    {
-        lX  = (fftraw[i] << 16) >> 16;
-        lY  = (fftraw[i] >> 16);
-			
-				//除以32768再乘65536是为了符合浮点数计算规律
-        X = NPT * ((float)lX) / 32768;
-        Y = NPT * ((float)lY) / 32768;
-        Mag = sqrt(X * X + Y * Y)*1.0f/ NPT;
-//				printf("%ld",(unsigned long)(Mag * 65536 / 16));
-//				printf(",");
-			fft_app[i] = Mag * 65536 / 16;
-    }
-//			printf("\r\n");
+	return sqrtf(real * real + imag * imag);
+}
+
+void FFT()
+{
+	//arm_scale_f32(fft_input_buffer, 1.0f/1024, fft_input_buffer, 1024);
+	arm_mean_f32(fft_input_buffer, 1024, &offset);
+		//arm_cmplx_mag_f32(fft_output_buffer, output_buffer2, 1024);
+		for (int i=0; i<1024; i++)
+			{
+			fft_input_buffer[i] -= offset;
+			}
+	arm_rfft_fast_f32(&fft_handler, fft_input_buffer, fft_output_buffer, 0);
+
+	//(output_buffer2, 1.0f/1024, output_buffer2, 1024);
+	//arm_rfft_q15(&fft_handler, fft_input_buffer, fft_output_buffer);
+	//arm_cmplx_mag_f32(fft_output_buffer, output_buffer2, 1024);
+	//arm_cmplx_mag_q15(fft_output_buffer, (q15_t*) fft_input_buffer, 1024);	//вычисление амплитуд гармоник
+	int freqs_ptr = 0;
+
+	for (int i=1; i<1024; i=i+2)
+	{
+
+		freqs[freqs_ptr] = (int)(20*log10f(abs_complex(fft_output_buffer[i], fft_output_buffer[i+1]))) - offset2;
+		//freqs[freqs_ptr] = (int)(20*log10f(fft_output_buffer[i]));
+
+		if (freqs[freqs_ptr] < 0)
+			freqs[freqs_ptr] = 0;
+
+     	++freqs_ptr;
+		//freqs[0] = 0;
+	}
+	arm_max_f32(freqs, 512, &maxValue, &maxIndex);
+//
+//		// Normalize spectrum
+		for (int i = 0; i < 512; i++)
+		{
+			freqs[i] = freqs[i] * 128 / maxValue;
+		}
+	buffer_state = FFT_DISPLAY;
 }
 
 void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	if(hi2s==&hi2s3){
-		for(int i=0;i<NPT;i++)
+		for (int i = 0;i < 1024; i++)
 		{
-			//dat32 example: 0000fffb 00004f00
-			fft_buf[i]=(i2s_dma[0+i*2]<<8)+(i2s_dma[1+i*2]>>8);
-			
-			if(fft_buf[i] & 0x800000){//negative
-				fft_buf[i]|=0xff000000;
-			}
+			fft_input_buffer[i] = (float) ((int) (adc_buffer[i*4]<<16)|adc_buffer[i*4+1]);
 		}
-		//256点FFT变换
-		cr4_fft_256_stm32(fft_raw, fft_buf, NPT);
-		GetPowerMag(fft_raw, fft_app);
-		
+		FFT();
 	}
 }
 /* USER CODE END 4 */
