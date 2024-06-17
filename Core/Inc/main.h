@@ -46,13 +46,11 @@ extern "C" {
 #define u16 uint16_t
 #define u32 uint32_t
 
-//位带操作,实现51类似的GPIO控制功能
-//具体实现思想,参考<<CM3权威指南>>第五章(87页~92页).M4同M3类似,只是寄存器地址变了.
 //IO口操作宏定义
 #define BITBAND(addr, bitnum) ((addr & 0xF0000000)+0x2000000+((addr &0xFFFFF)<<5)+(bitnum<<2)) 
 #define MEM_ADDR(addr)  *((volatile unsigned long  *)(addr)) 
 #define BIT_ADDR(addr, bitnum)   MEM_ADDR(BITBAND(addr, bitnum)) 
-//IO口地址映射
+
 #define GPIOA_ODR_Addr    (GPIOA_BASE+20) //0x40020014
 #define GPIOB_ODR_Addr    (GPIOB_BASE+20) //0x40020414 
 #define GPIOC_ODR_Addr    (GPIOC_BASE+20) //0x40020814 
@@ -77,8 +75,7 @@ extern "C" {
 #define GPIOJ_IDR_Addr    (GPIOJ_BASE+16) //0x40022410 
 #define GPIOK_IDR_Addr    (GPIOK_BASE+16) //0x40022810 
 
-//IO口操作,只对单一的IO口!
-//确保n的值小于16!
+
 #define PAout(n)   BIT_ADDR(GPIOA_ODR_Addr,n)  //输出 
 #define PAin(n)    BIT_ADDR(GPIOA_IDR_Addr,n)  //输入 
 
@@ -114,6 +111,42 @@ extern "C" {
 
 
 #define dbmsg(fmt, args...) printf("%s[%d]: " fmt "  \r\n", __FUNCTION__, __LINE__, ##args) //__FILE__,
+
+/* Exported types ------------------------------------------------------------*/
+/* for block FIR module */
+typedef struct {
+  u16 *h;
+  u32 nh;
+} COEFS;
+
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
+
+/* FIR 16-bit filter in assembly */
+void fir_16by16_stm32(void *y, void *x, COEFS *c, u32 N);
+
+/* PID controller in C, error computed outside the function */
+u16 DoPID(u16 Error, u16 *Coeff);
+
+/* Full PID in C, error computed inside the function */
+u16 DoFullPID(u16 In, u16 Ref, u16 *Coeff);
+
+/* PID controller in assembly, error computed outside the function */
+u16 PID_stm32(u16 Error, u16 *Coeff);
+
+/* Radix-4 complex FFT for STM32, in assembly  */
+/* 64 points*/
+void cr4_fft_64_stm32(void *pssOUT, void *pssIN, u16 Nbin);
+/* 256 points */
+void cr4_fft_256_stm32(void *pssOUT, void *pssIN, u16 Nbin);
+/* 1024 points */
+void cr4_fft_1024_stm32(void *pssOUT, void *pssIN, u16 Nbin);
+
+/* IIR filter in assembly */
+void iirarma_stm32(void *y, void *x, u16 *h2, u16 *h1, u32 ny );
+
+
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -144,12 +177,6 @@ void set_brightness_value(void *obj, int32_t value);
 #define LCD_RST_GPIO_Port GPIOC
 #define LCD_DC_Pin GPIO_PIN_8
 #define LCD_DC_GPIO_Port GPIOA
-#define BTN_FORWARD_Pin GPIO_PIN_15
-#define BTN_FORWARD_GPIO_Port GPIOA
-#define BTN_BACKWORD_Pin GPIO_PIN_10
-#define BTN_BACKWORD_GPIO_Port GPIOC
-#define BTN_CONFIRM_Pin GPIO_PIN_11
-#define BTN_CONFIRM_GPIO_Port GPIOC
 #define BTN_UP_Pin GPIO_PIN_8
 #define BTN_UP_GPIO_Port GPIOB
 #define BTN_DOWN_Pin GPIO_PIN_9

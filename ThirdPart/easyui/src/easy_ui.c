@@ -7,6 +7,8 @@
 
 #include "easy_ui.h"
 #include "animation.h"
+#include "fftaffect.h"
+
 EasyUIPage_t *pageHead = NULL, *pageTail = NULL;
 
 uint8_t pageIndex[MAX_LAYER] = {0};
