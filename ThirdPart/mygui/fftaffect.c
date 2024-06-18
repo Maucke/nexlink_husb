@@ -32,7 +32,8 @@ void FFT_Run(int32_t* fftraw)
 int random_value;extern uint16_t chosen_freqs[32];
 extern uint16_t maxValue;
 extern uint32_t maxIndex;
-extern float32_t maxMagnitude;
+
+float32_t maxMagnitude = 32;
 uint8_t audio_bar_height[32]; // sizes for the individual bars
 uint8_t audio_bar_peak[32]; // positions for the individual peaks (lines over the bars)
 float value = 2.5;
