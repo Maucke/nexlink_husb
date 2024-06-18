@@ -332,7 +332,7 @@ void EasyUIDrawCheckbox(int16_t x, int16_t y, uint16_t size, uint8_t offset, boo
  */
 void EasyUIDrawRadio(int16_t x, int16_t y, uint16_t size, uint8_t offset, bool boolValue, uint8_t r)
 {
-    EasyUIDrawRFrame(x, y, size, size, NV3030B_penColor, r);
+    EasyUIDrawRFrame(x, y, size, size, NV3030B_penColor, r - 1);
     if (boolValue)
         EasyUIDrawRBox(x + offset, y + offset, size - 2 * offset, size - 2 * offset, NV3030B_penColor, r - 2 * offset);
 }

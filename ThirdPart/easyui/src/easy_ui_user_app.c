@@ -151,7 +151,11 @@ void PageAbout(EasyUIItem_t* page)
 
 void PageUSBForm(EasyUIItem_t* page)
 {
-  usbinhibit = false;
+	if(usbinhibit)
+	{
+		EasyUIBackgroundBlur();
+		usbinhibit = false;
+	}
   if(opnExit)
   {
     usbinhibit = true;
