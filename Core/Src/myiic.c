@@ -4,7 +4,7 @@ void delay_us(uint16_t us)
 {
 	uint16_t i,j;
 	for(i=0;i<us;i++)
-		for(j=0;j<10;j++)
+		for(j=0;j<1000;j++)
 	;
 //	HAL_Delay(1);
 }

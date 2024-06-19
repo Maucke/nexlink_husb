@@ -153,7 +153,9 @@ void PageUSBForm(EasyUIItem_t* page)
 {
 	if(usbinhibit)
 	{
-		EasyUIBackgroundBlur();
+		EasyUITransitionAnim();
+    EasyUIClearBuffer();
+    EasyUISendBuffer();
 		usbinhibit = false;
 	}
   if(opnExit)

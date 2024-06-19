@@ -7,13 +7,18 @@
 
 static uint8_t B2D(uint8_t bcd);
 static uint8_t D2B(uint8_t decimal);
-
+_RTC rtc = {
+    .Year = 19, .Month = 12, .Date = 12,
+    .DaysOfWeek = SUNDAY,
+    .Hour = 1, .Min = 2, .Sec = 3
+};
 void RX8900_Init()
 {
 	IIC_Init();
   IIC_Write_Byte(RX8900_ADDR, RX8900_EXT_REG, 8);
   IIC_Write_Byte(RX8900_ADDR, RX8900_REG_STATUS, 0);
   IIC_Write_Byte(RX8900_ADDR, RX8900_REG_CONTROL, 64);
+	RX8900_SetTime(&rtc);
 }
 
 char weektab[][4]={"SUN","MON","TUE","WED","THU","FRI","SAT"};
@@ -37,16 +42,8 @@ bool RX8900_GetTime(_RTC *rtc)
 {
 	int  i;
   uint8_t buffer[7] = {0,};
-  uint8_t bufferchk[7] = {0,};
-	if(!IIC_Read_Len(RX8900_ADDR, RX8900_REG_TIME, 7, buffer))
+	if(IIC_Read_Len(RX8900_ADDR, RX8900_REG_TIME, 7, buffer))
 		return false;
-	
-	if(!IIC_Read_Len(RX8900_ADDR, RX8900_REG_TIME, 7, bufferchk))
-		return false;
-
-	for(i=0;i<7;i++)
-		if(buffer[i]!=bufferchk[i])
-			return false;
 		
   rtc->Sec = B2D(buffer[0] & 0x7F);
   rtc->Min = B2D(buffer[1] & 0x7F);
@@ -55,16 +52,28 @@ bool RX8900_GetTime(_RTC *rtc)
   rtc->Date = B2D(buffer[4] & 0x3F);
   rtc->Month = B2D(buffer[5] & 0x1F);
   rtc->Year = B2D(buffer[6]);
-		
+			
   return true;
 }
 
+void RX8900_Test(int interval)
+{
+  static _RTC rtc;
+  static long last_update_time;
+  long now_tick = HAL_GetTick();
+  if(now_tick - last_update_time > interval)
+  {
+    RX8900_GetTime(&rtc);
+    dbmsg("Time: %02d:%02d:%02d", rtc.Hour,rtc.Min,rtc.Sec);
+    last_update_time = HAL_GetTick();
+  }
+}
 
 bool RX8900_SetTime(_RTC *rtc)
 {
   uint8_t buffer[8] = {D2B(rtc->Sec), D2B(rtc->Min), D2B(rtc->Hour), (unsigned char)(1 << rtc->DaysOfWeek), D2B(rtc->Date), D2B(rtc->Month), D2B(rtc->Year)};
   
-	if(!IIC_Write_Len(RX8900_ADDR, RX8900_REG_TIME, 7, buffer))
+	if(IIC_Write_Len(RX8900_ADDR, RX8900_REG_TIME, 7, buffer))
 		return false;
   return true;
 }

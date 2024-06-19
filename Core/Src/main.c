@@ -48,6 +48,7 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "bmp280.h"
 #include "fftaffect.h"
+#include "rx8900.h"
 //#include "arm_math.h"
 //#include "chipmunkdemo.h"
 /* USER CODE END Includes */
@@ -155,7 +156,6 @@ uint16_t chosen_freqs[32] = {4,
 
 
 };
-
 /* USER CODE END 0 */
 
 /**
@@ -204,6 +204,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
 	HAL_TIM_Base_Start_IT(&htim3);
 	MenuInit();
+	RX8900_Init();
 	EasyUIInit(1);
 	dbmsg("MPU_Init = %d", MPU_Init());
 //	dbmsg("mpu_dmp_init = %d\r\n", mpu_dmp_init());
@@ -230,7 +231,7 @@ int main(void)
 		EasyUIEvent(5);
 		MPU_CRL(10);
 		BMP280_Test(1000);
-		
+		RX8900_Test(1000);
 //    EasyUIClearBuffer();
 //		extern float32_t freqs[512];
 //		Display_Style1(freqs);
