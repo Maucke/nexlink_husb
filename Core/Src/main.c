@@ -113,7 +113,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 float pitch, roll, yaw;
 
 #define NPT 256									//样本数量
-uint32_t i2s_dma[NPT*2];
+uint32_t i2s_dma[NPT*4];
 int32_t fft_buf[NPT];
 int32_t fft_raw[NPT];
 int32_t fft_app[NPT];
@@ -171,7 +171,7 @@ int main(void)
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
-	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t*)i2s_dma,NPT*2);	
+	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t*)i2s_dma,NPT*4);	
   dbmsg("application initialized");
   /* USER CODE END 2 */
 
@@ -272,15 +272,18 @@ void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 		for(int i=0;i<NPT;i++)
 		{
 			//dat32 example: 0000fffb 00004f00
-			fft_buf[i]=(i2s_dma[0+i*2]<<8)+(i2s_dma[1+i*2]>>8);
+			fft_buf[i]=(i2s_dma[0+i*4]<<8)+(i2s_dma[1+i*4]>>8);
 			
 			if(fft_buf[i] & 0x800000){//negative
 				fft_buf[i]|=0xff000000;
 			}
+			//printf("1:%08X,2:%08X,3:%08X,4:%08X,mix:%08X\n",i2s_dma[0+i*4],i2s_dma[1+i*4],i2s_dma[2+i*4],i2s_dma[3+i*4],fft_buf[i]);
+			printf("%d\n",fft_buf[i]);
 		}
+//		HAL_I2S_Receive_DMA(&hi2s3,(uint16_t*)i2s_dma,NPT*4);	
 		//256点FFT变换
-		cr4_fft_256_stm32(fft_raw, fft_buf, NPT);
-		GetPowerMag(fft_raw, fft_app);
+//		cr4_fft_256_stm32(fft_raw, fft_buf, NPT);
+//		GetPowerMag(fft_raw, fft_app);
 		
 	}
 }
