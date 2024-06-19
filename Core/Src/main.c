@@ -48,6 +48,8 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "bmp280.h"
 #include "fftaffect.h"
+#include "rx8900.h"
+//#include "arm_math.h"
 //#include "chipmunkdemo.h"
 /* USER CODE END Includes */
 
@@ -111,13 +113,57 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 }
 float pitch, roll, yaw;
+enum buffer_states{FFT_BUFFER_CLEAR, FFT_BUFFER_HALF, FFT_BUFFER_FULL, FFT_DISPLAY};
+enum display_states{DISPLAY_MANY, DISPLAY_FEW, DISPLAY_COW};
+arm_rfft_fast_instance_f32 fft_handler;
+uint8_t buffer_state = FFT_BUFFER_CLEAR;
+uint8_t display_state = DISPLAY_MANY;
+uint32_t adc_buffer[2048/2] = {0};
+int32_t fft_input_buffer[512/2] = {0};
+float32_t fft_output_buffer[512/2] = {0};
+uint16_t chosen_freqs[32] = {4,
+		5,
+		6,
+		7,
+		8,
+		9,
+		10,
+		11,
+		12,
+		13,
+		14,
+		15,
+		16,
+		17,
+		18,
+		20,
+		23,
+		26,
+		29,
+		32,
+		36,
+		41,
+		45,
+		51,
+		57,
+		64,
+		72,
+		80,
+		90,
+		101,
+		113,
+		127
 
+<<<<<<< HEAD
 #define NPT 256									//样本数量
 uint32_t i2s_dma[NPT*4];
 int32_t fft_buf[NPT];
 int32_t fft_raw[NPT];
 int32_t fft_app[NPT];
+=======
+>>>>>>> 1.8Inch
 
+};
 /* USER CODE END 0 */
 
 /**
@@ -150,6 +196,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_DMA_Init();
   MX_SPI1_Init();
+	
   MX_TIM13_Init();
   MX_CRC_Init();
   MX_RNG_Init();
@@ -165,13 +212,19 @@ int main(void)
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
 	HAL_TIM_Base_Start_IT(&htim3);
 	MenuInit();
+	RX8900_Init();
 	EasyUIInit(1);
 	dbmsg("MPU_Init = %d", MPU_Init());
 //	dbmsg("mpu_dmp_init = %d\r\n", mpu_dmp_init());
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
+<<<<<<< HEAD
 	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t*)i2s_dma,NPT*4);	
+=======
+	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048/2);	
+  arm_rfft_fast_init_f32(&fft_handler, 512/2);
+>>>>>>> 1.8Inch
   dbmsg("application initialized");
   /* USER CODE END 2 */
 
@@ -186,14 +239,15 @@ int main(void)
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run();
-    HAL_Delay(1);
+//    HAL_Delay(1);
 //		EasyUIEvent(5);
 //		MPU_CRL(10);
 //		BMP280_Test(1000);
-		
-    EasyUIClearBuffer();
-		Display_Style1(fft_app);
-		EasyUISendBuffer();
+//		RX8900_Test(1000);
+//    EasyUIClearBuffer();
+//		extern float32_t freqs[512];
+//		Display_Style1(freqs);
+//		EasyUISendBuffer();
   }
   /* USER CODE END 3 */
 }
@@ -244,39 +298,60 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void GetPowerMag(int32_t *fftraw, int32_t *fft_app)
+float offset;
+float32_t maxValue;
+uint32_t maxIndex;
+int offset2 = 190;
+float32_t freqs[512] = {0};
+// Returns absolute value of complex number
+float abs_complex(float real, float imag)
 {
-    signed short lX,lY;
-    float X,Y,Mag;
-    unsigned short i;
-	
-    for(i=0; i<NPT; i++)
+	return sqrtf(real * real + imag * imag);
+}
+
+void FFT()
+{
+	float32_t testInput_f32[256];
+//	//arm_scale_f32(fft_input_buffer, 1.0f/1024, fft_input_buffer, 1024);
+//	arm_mean_f32((float32_t*)fft_input_buffer, 512/2, &offset);
+//	//arm_cmplx_mag_f32(fft_output_buffer, output_buffer2, 1024);
+
+//	for (int i=0; i<512/2; i++)
+//	{
+//		fft_input_buffer[i] -= offset;
+//	}
+	 for(int i=0; i<256; i++)
     {
-        lX  = (fftraw[i] << 16) >> 16;
-        lY  = (fftraw[i] >> 16);
-			
-				//除以32768再乘65536是为了符合浮点数计算规律
-        X = NPT * ((float)lX) / 32768;
-        Y = NPT * ((float)lY) / 32768;
-        Mag = sqrt(X * X + Y * Y)*1.0f/ NPT;
-//				printf("%ld",(unsigned long)(Mag * 65536 / 16));
-//				printf(",");
-			fft_app[i] = Mag * 65536 / 16;
+        /* 波形是由直流分量，50Hz正弦波组成，波形采样率1024，初始相位60° */
+        testInput_f32[i] = 1 + cos(2*3.1415926f*50*i/256 + 3.1415926f/3);
     }
-//			printf("\r\n");
+	arm_rfft_fast_f32(&fft_handler, (float32_t*)testInput_f32, fft_output_buffer, 0);
+
+	arm_cmplx_mag_f32(fft_output_buffer, freqs, 256);  //计算幅值    
+	for (int i = 0; i < 256; i++)
+	{
+		printf("%.1f,",freqs[i]);
+	}
+		printf("\n");
 }
 
 void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	if(hi2s==&hi2s3){
-		for(int i=0;i<NPT;i++)
+		for (int i = 0;i < 512/2; i++)
 		{
+<<<<<<< HEAD
 			//dat32 example: 0000fffb 00004f00
 			fft_buf[i]=(i2s_dma[0+i*4]<<8)+(i2s_dma[1+i*4]>>8);
+=======
+			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
+//			printf("%08X,%08X,%08X,%08X\r\n",adc_buffer[0+i*4],adc_buffer[1+i*4],adc_buffer[2+i*4],adc_buffer[3+i*4]);
+>>>>>>> 1.8Inch
 			
-			if(fft_buf[i] & 0x800000){//negative
-				fft_buf[i]|=0xff000000;
+			if(fft_input_buffer[i] & 0x800000){//negative
+					fft_input_buffer[i]|=0xff000000;
 			}
+<<<<<<< HEAD
 			//printf("1:%08X,2:%08X,3:%08X,4:%08X,mix:%08X\n",i2s_dma[0+i*4],i2s_dma[1+i*4],i2s_dma[2+i*4],i2s_dma[3+i*4],fft_buf[i]);
 			printf("%d\n",fft_buf[i]);
 		}
@@ -285,6 +360,12 @@ void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 //		cr4_fft_256_stm32(fft_raw, fft_buf, NPT);
 //		GetPowerMag(fft_raw, fft_app);
 		
+=======
+//			printf("%.1f\n",(float32_t)fft_input_buffer[i]);
+		}
+
+		FFT();
+>>>>>>> 1.8Inch
 	}
 }
 /* USER CODE END 4 */

@@ -77,5 +77,6 @@ bool RX8900_SetTime(_RTC *rtc);
 bool RX8900_ReadTemperature(float *rtctemp);
 bool RX8900_SetAlarm1(AlarmMode mode, uint8_t date, uint8_t hour, uint8_t min, uint8_t sec);
 bool RX8900_ClearAlarm1(void);
+void RX8900_Test(int interval);
 
 #endif /* STM32_RX8900_H_ */
