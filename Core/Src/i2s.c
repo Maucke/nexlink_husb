@@ -43,7 +43,7 @@ void MX_I2S3_Init(void)
   hi2s3.Init.Standard = I2S_STANDARD_PHILIPS;
   hi2s3.Init.DataFormat = I2S_DATAFORMAT_24B;
   hi2s3.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
-  hi2s3.Init.AudioFreq = I2S_AUDIOFREQ_96K;
+  hi2s3.Init.AudioFreq = I2S_AUDIOFREQ_8K;
   hi2s3.Init.CPOL = I2S_CPOL_LOW;
   hi2s3.Init.ClockSource = I2S_CLOCK_PLL;
   hi2s3.Init.FullDuplexMode = I2S_FULLDUPLEXMODE_DISABLE;
@@ -111,7 +111,7 @@ void HAL_I2S_MspInit(I2S_HandleTypeDef* i2sHandle)
     hdma_spi3_rx.Init.MemInc = DMA_MINC_ENABLE;
     hdma_spi3_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_spi3_rx.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-    hdma_spi3_rx.Init.Mode = DMA_NORMAL;
+    hdma_spi3_rx.Init.Mode = DMA_CIRCULAR;
     hdma_spi3_rx.Init.Priority = DMA_PRIORITY_LOW;
     hdma_spi3_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_spi3_rx) != HAL_OK)

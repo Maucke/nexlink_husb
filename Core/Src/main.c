@@ -118,9 +118,9 @@ enum display_states{DISPLAY_MANY, DISPLAY_FEW, DISPLAY_COW};
 arm_rfft_fast_instance_f32 fft_handler;
 uint8_t buffer_state = FFT_BUFFER_CLEAR;
 uint8_t display_state = DISPLAY_MANY;
-uint32_t adc_buffer[2048] = {0};
-int32_t fft_input_buffer[512] = {0};
-float32_t fft_output_buffer[512] = {0};
+uint32_t adc_buffer[2048/2] = {0};
+int32_t fft_input_buffer[512/2] = {0};
+float32_t fft_output_buffer[512/2] = {0};
 uint16_t chosen_freqs[32] = {4,
 		5,
 		6,
@@ -211,8 +211,8 @@ int main(void)
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
-//	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048);	
-//  arm_rfft_fast_init_f32(&fft_handler, 512);
+	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048/2);	
+  arm_rfft_fast_init_f32(&fft_handler, 512/2);
   dbmsg("application initialized");
   /* USER CODE END 2 */
 
@@ -228,10 +228,10 @@ int main(void)
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run();
 //    HAL_Delay(1);
-		EasyUIEvent(5);
-		MPU_CRL(10);
-		BMP280_Test(1000);
-		RX8900_Test(1000);
+//		EasyUIEvent(5);
+//		MPU_CRL(10);
+//		BMP280_Test(1000);
+//		RX8900_Test(1000);
 //    EasyUIClearBuffer();
 //		extern float32_t freqs[512];
 //		Display_Style1(freqs);
@@ -286,75 +286,58 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-//float offset;
+float offset;
 float32_t maxValue;
 uint32_t maxIndex;
-//int offset2 = 190;
-//float32_t freqs[512] = {0};
-//// Returns absolute value of complex number
-//float abs_complex(float real, float imag)
-//{
-//	return sqrtf(real * real + imag * imag);
-//}
+int offset2 = 190;
+float32_t freqs[512] = {0};
+// Returns absolute value of complex number
+float abs_complex(float real, float imag)
+{
+	return sqrtf(real * real + imag * imag);
+}
 
-//void FFT()
-//{
+void FFT()
+{
+	float32_t testInput_f32[256];
 //	//arm_scale_f32(fft_input_buffer, 1.0f/1024, fft_input_buffer, 1024);
-//	arm_mean_f32((float32_t*)fft_input_buffer, 512, &offset);
-//		//arm_cmplx_mag_f32(fft_output_buffer, output_buffer2, 1024);
-//		for (int i=0; i<512; i++)
-//			{
-//			fft_input_buffer[i] -= offset;
-//			}
-//	arm_rfft_fast_f32(&fft_handler, (float32_t*)fft_input_buffer, fft_output_buffer, 0);
-
-//	//(output_buffer2, 1.0f/1024, output_buffer2, 1024);
-//	//arm_rfft_q15(&fft_handler, fft_input_buffer, fft_output_buffer);
+//	arm_mean_f32((float32_t*)fft_input_buffer, 512/2, &offset);
 //	//arm_cmplx_mag_f32(fft_output_buffer, output_buffer2, 1024);
-//	//arm_cmplx_mag_q15(fft_output_buffer, (q15_t*) fft_input_buffer, 1024);	//вычисление амплитуд гармоник
-//	int freqs_ptr = 0;
 
-//	for (int i=1; i<512; i++)
+//	for (int i=0; i<512/2; i++)
 //	{
-
-//		freqs[freqs_ptr] = (int)(20*log10f(abs_complex(fft_output_buffer[i], fft_output_buffer[i+1]))) - offset2;
-//		//freqs[freqs_ptr] = (int)(20*log10f(fft_output_buffer[i]));
-
-//		if (freqs[freqs_ptr] < 0)
-//			freqs[freqs_ptr] = 0;
-
-//     	++freqs_ptr;
-//		//freqs[0] = 0;
+//		fft_input_buffer[i] -= offset;
 //	}
-//	arm_max_f32(freqs, 512, &maxValue, &maxIndex);
-////
-////		// Normalize spectrum
-//		for (int i = 0; i < 512; i++)
-//		{
-//			freqs[i] = freqs[i] * 128 / maxValue;
-//		}
-//	buffer_state = FFT_DISPLAY;
-//}
+	 for(int i=0; i<256; i++)
+    {
+        /* 波形是由直流分量，50Hz正弦波组成，波形采样率1024，初始相位60° */
+        testInput_f32[i] = 1 + cos(2*3.1415926f*50*i/256 + 3.1415926f/3);
+    }
+	arm_rfft_fast_f32(&fft_handler, (float32_t*)testInput_f32, fft_output_buffer, 0);
+
+	arm_cmplx_mag_f32(fft_output_buffer, freqs, 256);  //计算幅值    
+	for (int i = 0; i < 256; i++)
+	{
+		printf("%.1f,",freqs[i]);
+	}
+		printf("\n");
+}
 
 void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	if(hi2s==&hi2s3){
-//		for (int i = 0;i < 512; i++)
-//		{
+		for (int i = 0;i < 512/2; i++)
+		{
+			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
 //			printf("%08X,%08X,%08X,%08X\r\n",adc_buffer[0+i*4],adc_buffer[1+i*4],adc_buffer[2+i*4],adc_buffer[3+i*4]);
-//			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
-//			printf("%08X\r\n",fft_input_buffer[i]);
-//			
-//			if(fft_input_buffer[i] & 0x800000){//negative
-//					fft_input_buffer[i]|=0xff000000;
-//			}
-//		}
-//		
-////		for(int i=0;i<512;i++)
-////			printf("%.1f,",(float32_t)fft_input_buffer[i]);
-////		printf("\n");
-//		FFT();
-//	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048);	
+			
+			if(fft_input_buffer[i] & 0x800000){//negative
+					fft_input_buffer[i]|=0xff000000;
+			}
+//			printf("%.1f\n",(float32_t)fft_input_buffer[i]);
+		}
+
+		FFT();
 	}
 }
 /* USER CODE END 4 */
