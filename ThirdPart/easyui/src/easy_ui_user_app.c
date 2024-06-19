@@ -17,8 +17,8 @@ EasyUIItem_t itemUSBForm;
 EasyUIItem_t itemAnimation;
 EasyUIItem_t itemSetting, itemColor, itemReset, itemBrightness, titleSetting;
 EasyUIItem_t itemAbout;
-EasyUIItem_t itemMind, itemCircle, itemSnowflake, itemMeteo, itemPlanet, itemTriangle, itemStarwar, itemBlast, itemGCircle, titleAnimation;
-bool enMind, enCircle, enSnowflake, enMeteo, enPlanet, enTriangle, enStarwar, enGCircle;
+EasyUIItem_t itemMind, itemCircle, itemSnowflake, itemMeteo, itemPlanet, itemTriangle, itemStarwar, itemBlast, itemGCircle, itemFirework, titleAnimation;
+bool enMind, enCircle, enSnowflake, enMeteo, enPlanet, enTriangle, enStarwar, enGCircle, enFirework;
 extern lv_anim_t anim_backlight;
 extern nex_usb_des des;
 float setting_brightness;
@@ -42,7 +42,8 @@ void EventMotion()
     Motion_StarWar();
   if(enGCircle)
     Motion_GCFireworks();
-
+  if(enFirework)
+    Motion_Firework();
 }
 
 void EventChangeBrightness(EasyUIItem_t* item)
@@ -176,6 +177,7 @@ void PageAnimation(EasyUIItem_t* page)
 void MenuInit()
 {
   setting_brightness = (des.brides.brightness + 1) / 10;
+	enFirework = true;
   EasyUIAddPage(&pageMain, PAGE_LIST);
   EasyUIAddPage(&pageSetting, PAGE_LIST);
   EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
@@ -201,6 +203,7 @@ void MenuInit()
   EasyUIAddItem(&pageAnimation, &itemTriangle, "Triangle", ITEM_RADIO_BUTTON, &enTriangle);
   EasyUIAddItem(&pageAnimation, &itemStarwar, "Starwar", ITEM_RADIO_BUTTON, &enStarwar);
   EasyUIAddItem(&pageAnimation, &itemGCircle, "GCircle", ITEM_RADIO_BUTTON, &enGCircle);
+  EasyUIAddItem(&pageAnimation, &itemFirework, "Firework", ITEM_RADIO_BUTTON, &enFirework);
   dbmsg("setting_brightness: %f", setting_brightness);
 //
 //		EasyUIItemOperationResponse(&pageAnimation, &itemAnimation, &itemAnimation.id);
