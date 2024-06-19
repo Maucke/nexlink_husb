@@ -227,7 +227,7 @@ int main(void)
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run();
-    HAL_Delay(1);
+//    HAL_Delay(1);
 		EasyUIEvent(5);
 		MPU_CRL(10);
 		BMP280_Test(1000);

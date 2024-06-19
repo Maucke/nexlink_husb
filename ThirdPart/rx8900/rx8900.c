@@ -40,7 +40,6 @@ int RX8900_Get_Week_Day( u8 reg_week_day )
 }
 bool RX8900_GetTime(_RTC *rtc)
 {
-	int  i;
   uint8_t buffer[7] = {0,};
 	if(IIC_Read_Len(RX8900_ADDR, RX8900_REG_TIME, 7, buffer))
 		return false;

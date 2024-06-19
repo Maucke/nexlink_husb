@@ -71,6 +71,8 @@ void Motion_StarWarInit(void);
 void Motion_StarWar(void);
 void Motion_GCFireworksInit(void);
 void Motion_GCFireworks(void);
+void Motion_FireworkInit(void);
+void Motion_Firework(void);;
 
 void Motion_Init(void);
 

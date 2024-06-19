@@ -39,8 +39,6 @@ uint8_t audio_bar_peak[32]; // positions for the individual peaks (lines over th
 float value = 2.5;
 void Display_Style1(float32_t* freqs)
 {
-	uint16_t i = 0;
-
 	for (int i=0; i<32; i++) // loop for every fraquency (63Hz, 160Hz, 400Hz, 1kHz, 2.5kHz, 6.25kHz and 16kHz)
 	{
 

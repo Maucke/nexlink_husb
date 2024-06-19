@@ -182,18 +182,6 @@ void BMP280_GetData(float* pressure, float* temperature, float* humidity, float*
   *asl = BMP280_PressureToAltitude(pressure);	                             /**/
 }
 
-double pressureToAltitude(double pressure) {
-    const double seaLevelPressure = 1013.25; // 海平面标准大气压力（hPa）
-    const double earthRadius = 6356.766; // 地球半径（km）
-    const double tempLapseRate = 0.0065; // 温度递减率（K/m）
-
-    double altitude;
-
-    altitude = (1 - pow((pressure / seaLevelPressure), 0.190284)) * 44330.8;
-
-    return altitude;
-}
-
 void BMP280_Test(int interval)
 {
   static float pressure, temperature, humidity, asl;
@@ -202,7 +190,7 @@ void BMP280_Test(int interval)
   if(now_tick - last_update_time > interval)
   {
     BMP280_GetData(&pressure, &temperature, &humidity, &asl);
-    dbmsg("pressure: %f, temperature: %f, humidity: %f, asl: %f, altitude: %f m", pressure, temperature, humidity, asl, pressureToAltitude(pressure));
+    dbmsg("pressure: %f, temperature: %f, humidity: %f, asl: %f, altitude: %f m", pressure, temperature, humidity, asl, BMP280_PressureToAltitude(&pressure));
     last_update_time = HAL_GetTick();
   }
 }
