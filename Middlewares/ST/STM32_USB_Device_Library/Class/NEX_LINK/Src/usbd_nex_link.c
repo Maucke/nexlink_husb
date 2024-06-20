@@ -38,6 +38,7 @@ THE SOFTWARE.
 #include "spi.h"
 #include "tim.h"
 #include "lv_anim_light.h"
+#include "rx8900.h"
 typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
 
@@ -322,6 +323,7 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			memcpy(&hnex->des->timestamp_s, hnex->ep0_buf, sizeof(hnex->des->timestamp_s));
 			tm_local = localtime((const time_t *)&hnex->des->timestamp_s); // 转换时间戳
 	 
+			RX8900_SetTime(tm_local);
 			// 格式化时间为字符串
 			if (strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_local) != 0) {
 					dbmsg("Formatted time: %s\n", time_str); // 打印时间

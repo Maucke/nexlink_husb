@@ -211,9 +211,25 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
+          <LineNumber>503</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134261826</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\usbd_nex_link.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\nexlink_f407_husb\../Middlewares/ST/STM32_USB_Device_Library/Class/NEX_LINK/Src/usbd_nex_link.c\503</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
           <LineNumber>501</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134254370</Address>
+          <Address>134261820</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -224,23 +240,14 @@
           <ExecCommand></ExecCommand>
           <Expression>\\nexlink_f407_husb\../Middlewares/ST/STM32_USB_Device_Library/Class/NEX_LINK/Src/usbd_nex_link.c\501</Expression>
         </Bp>
-        <Bp>
-          <Number>1</Number>
-          <Type>0</Type>
-          <LineNumber>499</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134254364</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\usbd_nex_link.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\nexlink_f407_husb\../Middlewares/ST/STM32_USB_Device_Library/Class/NEX_LINK/Src/usbd_nex_link.c\499</Expression>
-        </Bp>
       </Breakpoint>
+      <WatchWindow1>
+        <Ww>
+          <count>0</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>tm_local,0x0A</ItemText>
+        </Ww>
+      </WatchWindow1>
       <Tracepoint>
         <THDelay>0</THDelay>
       </Tracepoint>
@@ -512,7 +519,7 @@
 
   <Group>
     <GroupName>Application/MDK-ARM</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -544,7 +551,7 @@
 
   <Group>
     <GroupName>Application/User/Core</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1024,7 +1031,7 @@
 
   <Group>
     <GroupName>Application/User/USB_DEVICE/App</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1320,7 +1327,7 @@
 
   <Group>
     <GroupName>ThirdPart/rx8900</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>

@@ -207,7 +207,6 @@ int main(void)
 	RX8900_Init();
 	EasyUIInit(1);
 	dbmsg("MPU_Init = %d", MPU_Init());
-//	dbmsg("mpu_dmp_init = %d\r\n", mpu_dmp_init());
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
@@ -227,15 +226,10 @@ int main(void)
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 		lv_anim_run();
-//    HAL_Delay(1);
 		EasyUIEvent(5);
 		MPU_CRL(10);
 		BMP280_Test(1000);
 		RX8900_Test(1000);
-//    EasyUIClearBuffer();
-//		extern float32_t freqs[512];
-//		Display_Style1(freqs);
-//		EasyUISendBuffer();
   }
   /* USER CODE END 3 */
 }

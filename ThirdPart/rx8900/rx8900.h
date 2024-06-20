@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 #include "main.h"
 
 #define RX8900_REG_TIME         0x00
@@ -39,7 +40,7 @@ typedef enum
 
 typedef enum
 {
-  SUNDAY = 1,
+  SUNDAY = 0,
   MONDAY,
   TUESDAY,
   WEDNESDAY,
@@ -48,32 +49,10 @@ typedef enum
   SATURDAY
 } DaysOfWeek;
 
-typedef struct
-{
-  uint8_t Year;
-  uint8_t Month;
-  uint8_t Date;
-  uint8_t DaysOfWeek;
-  uint8_t Hour;
-  uint8_t Min;
-  uint8_t Sec;
-} _RTC;
-
-typedef struct
-{
-	char Time[10];
-	char Timens[10];
-	char Hour[10];
-	char Min[10];
-	char Sec[10];
-	char Date[20];
-	char Week[10];
-	char Datemd[10];
-} _RTCStr;
 
 void RX8900_Init(void);
-bool RX8900_GetTime(_RTC *rtc);
-bool RX8900_SetTime(_RTC *rtc);
+bool RX8900_GetTime(struct tm *tm_local);
+bool RX8900_SetTime(struct tm *tm_local);
 bool RX8900_ReadTemperature(float *rtctemp);
 bool RX8900_SetAlarm1(AlarmMode mode, uint8_t date, uint8_t hour, uint8_t min, uint8_t sec);
 bool RX8900_ClearAlarm1(void);

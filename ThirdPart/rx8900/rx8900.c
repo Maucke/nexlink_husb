@@ -7,10 +7,14 @@
 
 static uint8_t B2D(uint8_t bcd);
 static uint8_t D2B(uint8_t decimal);
-_RTC rtc = {
-    .Year = 19, .Month = 12, .Date = 12,
-    .DaysOfWeek = SUNDAY,
-    .Hour = 1, .Min = 2, .Sec = 3
+struct tm tm_local = {
+  .tm_sec = 00,
+  .tm_min = 22,
+  .tm_hour = 10,
+  .tm_wday = 4,
+  .tm_mday = 20,
+  .tm_mon = 6-1,
+  .tm_year = 124,
 };
 void RX8900_Init()
 {
@@ -18,63 +22,48 @@ void RX8900_Init()
   IIC_Write_Byte(RX8900_ADDR, RX8900_EXT_REG, 8);
   IIC_Write_Byte(RX8900_ADDR, RX8900_REG_STATUS, 0);
   IIC_Write_Byte(RX8900_ADDR, RX8900_REG_CONTROL, 64);
-	RX8900_SetTime(&rtc);
+	RX8900_SetTime(&tm_local);
 }
 
-char weektab[][4]={"SUN","MON","TUE","WED","THU","FRI","SAT"};
-int RX8900_Get_Week_Day( u8 reg_week_day )
+bool RX8900_SetTime(struct tm *tm_local)
 {
-	int i, tm_wday = -1;
-	
-	for ( i=0; i < 7; i++ )
-	{
-		if ( reg_week_day & 1 )
-		{
-			tm_wday = i;
-			break;
-		}
-		reg_week_day >>= 1;
-	}
-	
-	return 	tm_wday;
+  uint8_t buffer[8] = {D2B(tm_local->tm_sec), D2B(tm_local->tm_min), D2B(tm_local->tm_hour), (tm_local->tm_wday), D2B(tm_local->tm_mday), D2B(tm_local->tm_mon+1), D2B(tm_local->tm_year % 100)};
+  
+	if(IIC_Write_Len(RX8900_ADDR, RX8900_REG_TIME, 7, buffer))
+		return false;
+  return true;
 }
-bool RX8900_GetTime(_RTC *rtc)
+
+bool RX8900_GetTime(struct tm *tm_local)
 {
   uint8_t buffer[7] = {0,};
 	if(IIC_Read_Len(RX8900_ADDR, RX8900_REG_TIME, 7, buffer))
 		return false;
 		
-  rtc->Sec = B2D(buffer[0] & 0x7F);
-  rtc->Min = B2D(buffer[1] & 0x7F);
-  rtc->Hour = B2D(buffer[2] & 0x3F);
-  rtc->DaysOfWeek = RX8900_Get_Week_Day(buffer[3] & 0x7f );
-  rtc->Date = B2D(buffer[4] & 0x3F);
-  rtc->Month = B2D(buffer[5] & 0x1F);
-  rtc->Year = B2D(buffer[6]);
+  tm_local->tm_sec = B2D(buffer[0] & 0x7F);
+  tm_local->tm_min = B2D(buffer[1] & 0x7F);
+  tm_local->tm_hour = B2D(buffer[2] & 0x3F);
+  tm_local->tm_wday = (buffer[3] & 0x7f);
+  tm_local->tm_mday = B2D(buffer[4] & 0x3F);
+  tm_local->tm_mon = B2D(buffer[5] & 0x1F)-1;
+  tm_local->tm_year = B2D(buffer[6])%100 + 100;
 			
   return true;
 }
 
 void RX8900_Test(int interval)
 {
-  static _RTC rtc;
+	struct tm tm_local;
   static long last_update_time;
   long now_tick = HAL_GetTick();
   if(now_tick - last_update_time > interval)
   {
-    RX8900_GetTime(&rtc);
-    dbmsg("Time: %02d:%02d:%02d", rtc.Hour,rtc.Min,rtc.Sec);
+    RX8900_GetTime(&tm_local);
+    dbmsg("Data: %04d-%02d-%02d", tm_local.tm_year+1900,tm_local.tm_mon+1,tm_local.tm_mday);
+    dbmsg("Week: %d", tm_local.tm_wday);
+    dbmsg("Time: %02d:%02d:%02d", tm_local.tm_hour, tm_local.tm_min, tm_local.tm_sec);
     last_update_time = HAL_GetTick();
   }
-}
-
-bool RX8900_SetTime(_RTC *rtc)
-{
-  uint8_t buffer[8] = {D2B(rtc->Sec), D2B(rtc->Min), D2B(rtc->Hour), (unsigned char)(1 << rtc->DaysOfWeek), D2B(rtc->Date), D2B(rtc->Month), D2B(rtc->Year)};
-  
-	if(IIC_Write_Len(RX8900_ADDR, RX8900_REG_TIME, 7, buffer))
-		return false;
-  return true;
 }
 
 bool RX8900_ReadTemperature(float *rtctemp)
