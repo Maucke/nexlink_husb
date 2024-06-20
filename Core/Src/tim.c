@@ -201,15 +201,14 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 void Set_PWM_DutyCycle(uint16_t dutyCycle)
 {
-  // 设置PWM的占空比
-  HAL_TIM_PWM_Stop(&htim13, TIM_CHANNEL_1); // 先停止PWM输出
+  HAL_TIM_PWM_Stop(&htim13, TIM_CHANNEL_1); 
   TIM_OC_InitTypeDef sConfigOC;
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = dutyCycle; // 设置新的占空�?
+  sConfigOC.Pulse = dutyCycle; 
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;
   HAL_TIM_PWM_ConfigChannel(&htim13, &sConfigOC, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1); // 重新启动PWM输出
+  HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1); 
 }
 
 /* USER CODE END 1 */

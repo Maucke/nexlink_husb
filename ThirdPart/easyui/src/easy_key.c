@@ -168,7 +168,9 @@ void DebounceFilter(uint8_t timems)
  */
 void EasyKeyScanKeyState()
 {
+		static long last_update_time;
     DebounceFilter(FILTER_TIME_MS);
+		long now_tick = HAL_GetTick();
 
     for (EasyKey_t *key = head; key != NULL; key = key->next)
     {
@@ -192,13 +194,13 @@ void EasyKeyScanKeyState()
             key->intervalTime = 0;
             break;
         case pressed:
-            key->holdTime += UPDATE_KEY_STATE_MS;
+            key->holdTime += now_tick - last_update_time;
             break;
         default:
             if (key->intervalTime >= 3000)
                 key->intervalTime = 3000;
             else
-                key->intervalTime += UPDATE_KEY_STATE_MS;
+                key->intervalTime += now_tick - last_update_time;
             break;
         }
 

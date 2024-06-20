@@ -112,7 +112,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //		dbmsg("tick: %d", HAL_GetTick());
 	}
 }
-float pitch, roll, yaw;
 enum buffer_states{FFT_BUFFER_CLEAR, FFT_BUFFER_HALF, FFT_BUFFER_FULL, FFT_DISPLAY};
 enum display_states{DISPLAY_MANY, DISPLAY_FEW, DISPLAY_COW};
 arm_rfft_fast_instance_f32 fft_handler;
