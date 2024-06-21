@@ -17,6 +17,8 @@ static uint16                    nv3030b_y_max        = LCD_H;
 static uint8_t NV3030B_colorMode = NORMAL;
 static uint8_t NV3030B_buffer[LCD_H][LCD_W] = {0};
 uint16 *localgram;
+
+bool reversedColor = false;
 // LCD串行数据写入
 static void spi_write_bus(uint8_t dat)
 {
@@ -187,7 +189,10 @@ void NV3030B_SendBuffer()
 void NV3030B_ClearBuffer()
 {
 	uint8_t background = color16to8(NV3030B_backgroundColor);
+			if(!reversedColor)
 	memset(NV3030B_buffer, background, nv3030b_x_max * nv3030b_y_max * sizeof(uint8_t));
+			else
+	memset(NV3030B_buffer, ~background, nv3030b_x_max * nv3030b_y_max * sizeof(uint8_t));
 }
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -199,18 +204,24 @@ void NV3030B_ClearBuffer()
 // 使用示例     nv3030b_draw_point(0, 0, RGB565_RED);            // 坐标 0,0 画一个红色的点
 // 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-void NV3030B_DrawPoint(int16 x, int16 y, const uint16 color)
+__inline void NV3030B_DrawPoint(int16 x, int16 y, const uint16 color)
 {
     if (x < nv3030b_x_max && y < nv3030b_y_max && x >= 0 && y >= 0)
     {
-        if (NV3030B_colorMode == XOR)
-        {
-            if (NV3030B_buffer[y][x] == color16to8(color))
-                NV3030B_buffer[y][x] = NV3030B_backgroundColor;
-            else
-                NV3030B_buffer[y][x] = color16to8(color);
-        } else
-            NV3030B_buffer[y][x] = color16to8(color);
+			if (NV3030B_colorMode == XOR)
+			{            
+				if (NV3030B_buffer[y][x] == color16to8(color))
+						NV3030B_buffer[y][x] = NV3030B_backgroundColor;
+				else
+						NV3030B_buffer[y][x] ^= color16to8(color);
+			}
+			else
+			{
+				if(!reversedColor)
+							NV3030B_buffer[y][x] = color16to8(color);
+				else
+							NV3030B_buffer[y][x] = ~color16to8(color);
+			}
     }
 }
 
@@ -675,19 +686,17 @@ void NV3030B_ShowFloat(int16 x, int16 y, const float dat, uint8 num, uint8 point
 }
 
 
-bool reversedColor = false;
-
 void NV3030B_ModifyColor()
 {
-    if (reversedColor)
-    {
-        NV3030B_penColor = NV3030B_DEFAULT_BGCOLOR;
-        NV3030B_backgroundColor = NV3030B_DEFAULT_PENCOLOR;
-    } else
-    {
-        NV3030B_penColor = NV3030B_DEFAULT_PENCOLOR;
-        NV3030B_backgroundColor = NV3030B_DEFAULT_BGCOLOR;
-    }
+//    if (reversedColor)
+//    {
+//        NV3030B_penColor = NV3030B_DEFAULT_BGCOLOR;
+//        NV3030B_backgroundColor = NV3030B_DEFAULT_PENCOLOR;
+//    } else
+//    {
+//        NV3030B_penColor = NV3030B_DEFAULT_PENCOLOR;
+//        NV3030B_backgroundColor = NV3030B_DEFAULT_BGCOLOR;
+//    }
 }
 
 

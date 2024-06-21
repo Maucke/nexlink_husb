@@ -350,6 +350,17 @@ void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 //	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048);	
 	}
 }
+#define FLASH_ADDRESS 0x08000000 
+typedef void (*pFunction)(void);
+pFunction                     JumpAddress;
+
+void JumpToApplication()
+{
+  JumpAddress = *(__IO pFunction*)(FLASH_ADDRESS + 4);
+  __set_MSP(*(__IO uint32_t*) FLASH_ADDRESS);
+  HAL_DeInit();
+  JumpAddress();
+}
 /* USER CODE END 4 */
 
 /**
@@ -361,6 +372,8 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
+	JumpToApplication();
+
   while(1)
   {
   }
