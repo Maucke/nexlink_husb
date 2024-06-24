@@ -167,20 +167,22 @@ void set_brightness_value(void *obj, int32_t value);
 #define SYSLED_GPIO_Port GPIOC
 #define LCD_CS_Pin GPIO_PIN_4
 #define LCD_CS_GPIO_Port GPIOA
-#define GREEN_LED_Pin GPIO_PIN_14
-#define GREEN_LED_GPIO_Port GPIOB
-#define RED_LED_Pin GPIO_PIN_15
-#define RED_LED_GPIO_Port GPIOB
-#define BLUE_LED_Pin GPIO_PIN_8
-#define BLUE_LED_GPIO_Port GPIOD
+#define PW_HOLD_Pin GPIO_PIN_14
+#define PW_HOLD_GPIO_Port GPIOB
 #define LCD_RST_Pin GPIO_PIN_9
 #define LCD_RST_GPIO_Port GPIOC
 #define LCD_DC_Pin GPIO_PIN_8
 #define LCD_DC_GPIO_Port GPIOA
-#define BTN_UP_Pin GPIO_PIN_8
-#define BTN_UP_GPIO_Port GPIOB
-#define BTN_DOWN_Pin GPIO_PIN_9
-#define BTN_DOWN_GPIO_Port GPIOB
+#define PW_CHARGE_Pin GPIO_PIN_11
+#define PW_CHARGE_GPIO_Port GPIOA
+#define BT_UP_Pin GPIO_PIN_6
+#define BT_UP_GPIO_Port GPIOB
+#define BT_DOWN_Pin GPIO_PIN_7
+#define BT_DOWN_GPIO_Port GPIOB
+#define BUS_SCL_Pin GPIO_PIN_8
+#define BUS_SCL_GPIO_Port GPIOB
+#define BUS_SDA_Pin GPIO_PIN_9
+#define BUS_SDA_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

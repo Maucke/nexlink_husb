@@ -489,7 +489,6 @@ bool USBD_NEX_LINK_CustomInterfaceRequest(USBD_HandleTypeDef *pdev, USBD_SetupRe
 static uint8_t USBD_NEX_LINK_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
 	static uint8_t ifalt = 0;
-	HAL_GPIO_TogglePin(RED_LED_GPIO_Port, RED_LED_Pin);
 	dbmsg("USBD_NEX_LINK_Setup");	
 	switch (req->bmRequest & USB_REQ_TYPE_MASK) {
 
@@ -542,7 +541,7 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	{
 		if(hnex->gramdetail==0)
 		{
-			HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
+			HAL_GPIO_TogglePin(SYSLED_GPIO_Port, SYSLED_Pin);
 			extern __IO nv3030b_dir_enum nv3030b_display_dir;
 			if(nv3030b_display_dir != hnex->des->scrdes.direction)
 			{

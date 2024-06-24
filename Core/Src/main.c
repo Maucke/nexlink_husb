@@ -187,7 +187,6 @@ int main(void)
   MX_USART1_UART_Init();
   MX_DMA_Init();
   MX_SPI1_Init();
-	
   MX_TIM13_Init();
   MX_CRC_Init();
   MX_RNG_Init();
@@ -221,9 +220,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SYSLED_GPIO_Port, SYSLED_Pin, GPIO_PIN_SET);
 		lv_anim_run();
 		EasyUIEvent(5);
 		MPU_CRL(10);

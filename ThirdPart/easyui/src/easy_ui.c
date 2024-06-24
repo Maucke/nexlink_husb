@@ -15,7 +15,7 @@ uint8_t pageIndex[MAX_LAYER] = {0};
 uint8_t itemIndex[MAX_LAYER] = {0};
 uint8_t layer = 0;
 
-EasyKey_t keyUp, keyDown, keyForward, keyBackward, keyConfirm;
+EasyKey_t keyUp, keyDown;
 uint8_t opnForward, opnBackward;
 uint8_t opnEnter, opnExit, opnUp, opnDown;
 
@@ -1114,13 +1114,8 @@ void EasyUIInit(uint8_t mode)
     EasyUIScreenInit(grambuff);
 
     // Key init
-    EasyKeyInit(&keyUp, GPIOB, GPIO_PIN_8);
-    EasyKeyInit(&keyDown, GPIOB, GPIO_PIN_9);
-    EasyKeyInit(&keyForward, GPIOA, GPIO_PIN_15);
-    EasyKeyInit(&keyBackward, GPIOC, GPIO_PIN_10);
-#if KEY_NUM > 2
-    EasyKeyInit(&keyConfirm, GPIOC, GPIO_PIN_11);
-#endif
+    EasyKeyInit(&keyUp, GPIOB, GPIO_PIN_6);
+    EasyKeyInit(&keyDown, GPIOB, GPIO_PIN_7);
 
     // Power-off storage
 //    if (flash_check(flashSecIndex, flashPageIndex))
