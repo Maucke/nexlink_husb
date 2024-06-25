@@ -1183,8 +1183,8 @@ void EasyUIKeyActionMonitor()
 		extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
 		opnEnter = mpu_ok;
 		opnExit = mpu_quit;
-		opnUp = mpu_left;
-		opnDown = mpu_right;
+		opnUp = mpu_right;
+		opnDown = mpu_left;
 		opnForward = mpu_left;
 		opnBackward = mpu_right;
 		mpu_left=mpu_right= mpu_ok=mpu_quit=0;

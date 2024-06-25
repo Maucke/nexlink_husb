@@ -160,12 +160,12 @@ void MPU_CRL(int interval)
 
 		else if (ax > 5000)
 		{
-			mpu_ok = true;
+			mpu_quit = true;
 			last_update_time = HAL_GetTick() + 600;return; 
 		}
 		else if (ax < -5000)
 		{
-			mpu_quit = true;
+			mpu_ok = true;
 			last_update_time = HAL_GetTick() + 600;return; 
 		}
 

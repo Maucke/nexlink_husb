@@ -127,13 +127,20 @@ void NV3030B_SetDrawColor(NV3030B_ColorMode_e mode)
 
 void NV3030B_SetRotation(nv3030b_dir_enum dir)
 {
-	nv3030b_display_dir = dir;
-	
-	nv3030b_write_index(0x36);
-	if(nv3030b_display_dir==NV3030B_PORTAIT)spi_write_8bit(0x08);
-	else if(nv3030b_display_dir==NV3030B_PORTAIT_180)spi_write_8bit(0xC8);
-	else if(nv3030b_display_dir==NV3030B_CROSSWISE)spi_write_8bit(0x78);
-	else spi_write_8bit(0xA8);
+  nv3030b_display_dir = dir;
+#if 0
+  nv3030b_write_index(0x36);
+  if(nv3030b_display_dir == NV3030B_PORTAIT)spi_write_8bit(0x08);
+  else if(nv3030b_display_dir == NV3030B_PORTAIT_180)spi_write_8bit(0xC8);
+  else if(nv3030b_display_dir == NV3030B_CROSSWISE)spi_write_8bit(0x78);
+  else spi_write_8bit(0xA8);
+	#else
+  nv3030b_write_index(0x36);
+  if(nv3030b_display_dir == NV3030B_PORTAIT)spi_write_8bit(0x00);
+  else if(nv3030b_display_dir == NV3030B_PORTAIT_180)spi_write_8bit(0xC0);
+  else if(nv3030b_display_dir == NV3030B_CROSSWISE)spi_write_8bit(0x70);
+  else spi_write_8bit(0xA0);
+	#endif
 }
 
 
@@ -1256,179 +1263,254 @@ void NV3030B_SetColor (const uint16 pen, const uint16 bgcolor)
 // 使用示例     nv3030b_init();
 // 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-void NV3030B_Init (uint16 *gram)
+void NV3030B_Init(uint16* gram)
 {
-	localgram = gram;
-	NV3030B_RST(0);
-	HAL_Delay(200);
-	NV3030B_RST(1);
-	HAL_Delay(10); 
+  localgram = gram;
+  NV3030B_RST(0);
+  HAL_Delay(200);
+  NV3030B_RST(1);
+  HAL_Delay(10);
+#if 0
+  nv3030b_write_index(0xfd);//private_access
+  spi_write_8bit(0x06);
+  spi_write_8bit(0x08);
 
-	nv3030b_write_index(0xfd);//private_access
-	spi_write_8bit(0x06);
-	spi_write_8bit(0x08);
+  nv3030b_write_index(0x61);//add
+  spi_write_8bit(0x07);//
+  spi_write_8bit(0x04);//
 
-	nv3030b_write_index(0x61);//add
-	spi_write_8bit(0x07);//
-	spi_write_8bit(0x04);//
+  nv3030b_write_index(0x62);//bias setting
+  spi_write_8bit(0x00);//00
+  spi_write_8bit(0x44);//44
+  spi_write_8bit(0x45);//40  47
 
-	nv3030b_write_index(0x62);//bias setting
-	spi_write_8bit(0x00);//00
-	spi_write_8bit(0x44);//44
-	spi_write_8bit(0x45);//40  47
+  nv3030b_write_index(0x63);//
+  spi_write_8bit(0x41);//
+  spi_write_8bit(0x07);//
+  spi_write_8bit(0x12);//
+  spi_write_8bit(0x12);//
 
-	nv3030b_write_index(0x63);//
-	spi_write_8bit(0x41);//
-	spi_write_8bit(0x07);//
-	spi_write_8bit(0x12);//
-	spi_write_8bit(0x12);//
+  nv3030b_write_index(0x64);//
+  spi_write_8bit(0x37);//
+  //VSP
+  nv3030b_write_index(0x65);//Pump1=4.7MHz //PUMP1 VSP
+  spi_write_8bit(0x09);//D6-5:pump1_clk[1:0] clamp 28 2b
+  spi_write_8bit(0x10);//6.26
+  spi_write_8bit(0x21);
+  //VSN
+  nv3030b_write_index(0x66); //pump=2 AVCL
+  spi_write_8bit(0x09); //clamp 08 0b 09
+  spi_write_8bit(0x10); //10
+  spi_write_8bit(0x21);
+  //add source_neg_time
+  nv3030b_write_index(0x67);//pump_sel
+  spi_write_8bit(0x20);//21 20
+  spi_write_8bit(0x40);
 
-	nv3030b_write_index(0x64);//
-	spi_write_8bit(0x37);//
-	//VSP
-	nv3030b_write_index(0x65);//Pump1=4.7MHz //PUMP1 VSP
-	spi_write_8bit(0x09);//D6-5:pump1_clk[1:0] clamp 28 2b
-	spi_write_8bit(0x10);//6.26
-	spi_write_8bit(0x21);
-	//VSN
-	nv3030b_write_index(0x66); //pump=2 AVCL
-	spi_write_8bit(0x09); //clamp 08 0b 09
-	spi_write_8bit(0x10); //10
-	spi_write_8bit(0x21);
-	//add source_neg_time
-	nv3030b_write_index(0x67);//pump_sel
-	spi_write_8bit(0x20);//21 20
-	spi_write_8bit(0x40);
+  //gamma vap/van
+  nv3030b_write_index(0x68);//gamma vap/van
+  spi_write_8bit(0x90);//
+  spi_write_8bit(0x4c);//
+  spi_write_8bit(0x7C);//VCOM
+  spi_write_8bit(0x66);//
 
-	//gamma vap/van
-	nv3030b_write_index(0x68);//gamma vap/van
-	spi_write_8bit(0x90);//
-	spi_write_8bit(0x4c);//
-	spi_write_8bit(0x7C);//VCOM  
-	spi_write_8bit(0x66);//
+  nv3030b_write_index(0xb1);//frame rate
+  spi_write_8bit(0x0F);//0x0f fr_h[5:0] 0F
+  spi_write_8bit(0x02);//0x02 fr_v[4:0] 02
+  spi_write_8bit(0x01);//0x04 fr_div[2:0] 04
 
-	nv3030b_write_index(0xb1);//frame rate
-	spi_write_8bit(0x0F);//0x0f fr_h[5:0] 0F
-	spi_write_8bit(0x02);//0x02 fr_v[4:0] 02
-	spi_write_8bit(0x01);//0x04 fr_div[2:0] 04
+  nv3030b_write_index(0xB4);
+  spi_write_8bit(0x01); //01:1dot 00:column
+  ////porch
+  nv3030b_write_index(0xB5);
+  spi_write_8bit(0x02);//0x02 vfp[6:0]
+  spi_write_8bit(0x02);//0x02 vbp[6:0]
+  spi_write_8bit(0x0a);//0x0A hfp[6:0]
+  spi_write_8bit(0x14);//0x14 hbp[6:0]
 
-	nv3030b_write_index(0xB4);
-	spi_write_8bit(0x01); //01:1dot 00:column
-	////porch
-	nv3030b_write_index(0xB5);
-	spi_write_8bit(0x02);//0x02 vfp[6:0]
-	spi_write_8bit(0x02);//0x02 vbp[6:0]
-	spi_write_8bit(0x0a);//0x0A hfp[6:0]
-	spi_write_8bit(0x14);//0x14 hbp[6:0]
+  nv3030b_write_index(0xB6);
+  spi_write_8bit(0x04);//
+  spi_write_8bit(0x01);//
+  spi_write_8bit(0x9f);//
+  spi_write_8bit(0x00);//
+  spi_write_8bit(0x02);//
+  ////gamme sel
+  nv3030b_write_index(0xdf);//
+  spi_write_8bit(0x11);//gofc_gamma_en_sel=1
+  ////gamma_test1 A1#_wangly
+  //3030b_gamma_new_
+  //GAMMA---------------------------------/////////////
 
-	nv3030b_write_index(0xB6);
-	spi_write_8bit(0x04);//
-	spi_write_8bit(0x01);//
-	spi_write_8bit(0x9f);//
-	spi_write_8bit(0x00);//
-	spi_write_8bit(0x02);//
-	////gamme sel
-	nv3030b_write_index(0xdf);//
-	spi_write_8bit(0x11);//gofc_gamma_en_sel=1
-	////gamma_test1 A1#_wangly
-	//3030b_gamma_new_
-	//GAMMA---------------------------------/////////////
+  //GAMMA---------------------------------/////////////
+  nv3030b_write_index(0xE2);
+  spi_write_8bit(0x13);//vrp0[5:0]	V0 13
+  spi_write_8bit(0x00);//vrp1[5:0]	V1
+  spi_write_8bit(0x00);//vrp2[5:0]	V2
+  spi_write_8bit(0x30);//vrp3[5:0]	V61
+  spi_write_8bit(0x33);//vrp4[5:0]	V62
+  spi_write_8bit(0x3f);//vrp5[5:0]	V63
 
-	//GAMMA---------------------------------/////////////
-	nv3030b_write_index(0xE2);	
-	spi_write_8bit(0x13);//vrp0[5:0]	V0 13
-	spi_write_8bit(0x00);//vrp1[5:0]	V1 
-	spi_write_8bit(0x00);//vrp2[5:0]	V2 
-	spi_write_8bit(0x30);//vrp3[5:0]	V61 
-	spi_write_8bit(0x33);//vrp4[5:0]	V62 
-	spi_write_8bit(0x3f);//vrp5[5:0]	V63
+  nv3030b_write_index(0xE5);
+  spi_write_8bit(0x3f);//vrn0[5:0]	V63
+  spi_write_8bit(0x33);//vrn1[5:0]	V62
+  spi_write_8bit(0x30);//vrn2[5:0]	V61
+  spi_write_8bit(0x00);//vrn3[5:0]	V2
+  spi_write_8bit(0x00);//vrn4[5:0]	V1
+  spi_write_8bit(0x13);//vrn5[5:0]  V0 13
 
-	nv3030b_write_index(0xE5);	
-	spi_write_8bit(0x3f);//vrn0[5:0]	V63
-	spi_write_8bit(0x33);//vrn1[5:0]	V62	
-	spi_write_8bit(0x30);//vrn2[5:0]	V61 
-	spi_write_8bit(0x00);//vrn3[5:0]	V2 
-	spi_write_8bit(0x00);//vrn4[5:0]	V1 
-	spi_write_8bit(0x13);//vrn5[5:0]  V0 13
+  nv3030b_write_index(0xE1);
+  spi_write_8bit(0x00);//prp0[6:0]	V15
+  spi_write_8bit(0x57);//prp1[6:0]	V51
 
-	nv3030b_write_index(0xE1);	
-	spi_write_8bit(0x00);//prp0[6:0]	V15
-	spi_write_8bit(0x57);//prp1[6:0]	V51 
+  nv3030b_write_index(0xE4);
+  spi_write_8bit(0x58);//prn0[6:0]	V51
+  spi_write_8bit(0x00);//prn1[6:0]  V15
 
-	nv3030b_write_index(0xE4);	
-	spi_write_8bit(0x58);//prn0[6:0]	V51 
-	spi_write_8bit(0x00);//prn1[6:0]  V15
+  nv3030b_write_index(0xE0);
+  spi_write_8bit(0x01);//pkp0[4:0]	V3
+  spi_write_8bit(0x03);//pkp1[4:0]	V7
+  spi_write_8bit(0x0d);//pkp2[4:0]	V21
+  spi_write_8bit(0x0e);//pkp3[4:0]	V29
+  spi_write_8bit(0x0e);//pkp4[4:0]	V37
+  spi_write_8bit(0x0c);//pkp5[4:0]	V45
+  spi_write_8bit(0x15);//pkp6[4:0]	V56
+  spi_write_8bit(0x19);//pkp7[4:0]	V60
+
+  nv3030b_write_index(0xE3);
+  spi_write_8bit(0x1a);//pkn0[4:0]	V60
+  spi_write_8bit(0x16);//pkn1[4:0]	V56
+  spi_write_8bit(0x0C);//pkn2[4:0]	V45
+  spi_write_8bit(0x0f);//pkn3[4:0]	V37
+  spi_write_8bit(0x0e);//pkn4[4:0]	V29
+  spi_write_8bit(0x0d);//pkn5[4:0]	V21
+  spi_write_8bit(0x02);//pkn6[4:0]	V7
+  spi_write_8bit(0x01);//pkn7[4:0]	V3
+  //GAMMA---------------------------------/////////////
+
+  //source
+  nv3030b_write_index(0xE6);
+  spi_write_8bit(0x00);
+  spi_write_8bit(0xff);//SC_EN_START[7:0] f0
+
+  nv3030b_write_index(0xE7);
+  spi_write_8bit(0x01);//CS_START[3:0] 01
+  spi_write_8bit(0x04);//scdt_inv_sel cs_vp_en
+  spi_write_8bit(0x03);//CS1_WIDTH[7:0] 12
+  spi_write_8bit(0x03);//CS2_WIDTH[7:0] 12
+  spi_write_8bit(0x00);//PREC_START[7:0] 06
+  spi_write_8bit(0x12);//PREC_WIDTH[7:0] 12
+
+  nv3030b_write_index(0xE8); //source
+  spi_write_8bit(0x00); //VCMP_OUT_EN 81-
+  spi_write_8bit(0x70); //chopper_sel[6:4]
+  spi_write_8bit(0x00); //gchopper_sel[6:4] 60
+  ////gate
+  nv3030b_write_index(0xEc);
+  spi_write_8bit(0x52);//52
+
+  nv3030b_write_index(0xF1);
+  spi_write_8bit(0x01);//te_pol tem_extend 00 01 03
+  spi_write_8bit(0x01);
+  spi_write_8bit(0x02);
+
+
+  nv3030b_write_index(0xF6);
+  spi_write_8bit(0x09);
+  spi_write_8bit(0x10);
+  spi_write_8bit(0x00);//
+  spi_write_8bit(0x00);//40 3线2通道
+
+  nv3030b_write_index(0xfd);
+  spi_write_8bit(0xfa);
+  spi_write_8bit(0xfc);
+
+  nv3030b_write_index(0x3a);
+  spi_write_8bit(0x05);//
+
+  nv3030b_write_index(0x35);
+  spi_write_8bit(0x00);
+
+  NV3030B_SetRotation(nv3030b_display_dir);
+
+  nv3030b_write_index(0x21);
+
+  nv3030b_write_index(0x11); // exit sleep
+  HAL_Delay(200);
+  nv3030b_write_index(0x29); // display on
+  HAL_Delay(10);
+	#else
+	//************* Start Initial Sequence **********//
+	nv3030b_write_index(0x11); //Sleep out 
+	HAL_Delay(120);              //Delay 120ms 
+	//************* Start Initial Sequence **********// 
+	nv3030b_write_index(0x36);
+  NV3030B_SetRotation(nv3030b_display_dir);
+
+	nv3030b_write_index(0x3A);			
+	spi_write_8bit(0x05);
+
+	nv3030b_write_index(0xB2);			
+	spi_write_8bit(0x0C);
+	spi_write_8bit(0x0C); 
+	spi_write_8bit(0x00); 
+	spi_write_8bit(0x33); 
+	spi_write_8bit(0x33); 			
+
+	nv3030b_write_index(0xB7);			
+	spi_write_8bit(0x35);
+
+	nv3030b_write_index(0xBB);			
+	spi_write_8bit(0x32); //Vcom=1.35V
+					
+	nv3030b_write_index(0xC2);
+	spi_write_8bit(0x01);
+
+	nv3030b_write_index(0xC3);			
+	spi_write_8bit(0x15); //GVDD=4.8V  颜色深度
+				
+	nv3030b_write_index(0xC4);			
+	spi_write_8bit(0x20); //VDV, 0x20:0v
+
+	nv3030b_write_index(0xC6);			
+	spi_write_8bit(0x0F); //0x0F:60Hz        	
+
+	nv3030b_write_index(0xD0);			
+	spi_write_8bit(0xA4);
+	spi_write_8bit(0xA1); 
 
 	nv3030b_write_index(0xE0);
-	spi_write_8bit(0x01);//pkp0[4:0]	V3 
-	spi_write_8bit(0x03);//pkp1[4:0]	V7  
-	spi_write_8bit(0x0d);//pkp2[4:0]	V21
-	spi_write_8bit(0x0e);//pkp3[4:0]	V29 
-	spi_write_8bit(0x0e);//pkp4[4:0]	V37 
-	spi_write_8bit(0x0c);//pkp5[4:0]	V45 
-	spi_write_8bit(0x15);//pkp6[4:0]	V56 
-	spi_write_8bit(0x19);//pkp7[4:0]	V60 
+	spi_write_8bit(0xD0);   
+	spi_write_8bit(0x08);   
+	spi_write_8bit(0x0E);   
+	spi_write_8bit(0x09);   
+	spi_write_8bit(0x09);   
+	spi_write_8bit(0x05);   
+	spi_write_8bit(0x31);   
+	spi_write_8bit(0x33);   
+	spi_write_8bit(0x48);   
+	spi_write_8bit(0x17);   
+	spi_write_8bit(0x14);   
+	spi_write_8bit(0x15);   
+	spi_write_8bit(0x31);   
+	spi_write_8bit(0x34);   
 
-	nv3030b_write_index(0xE3);	
-	spi_write_8bit(0x1a);//pkn0[4:0]	V60 
-	spi_write_8bit(0x16);//pkn1[4:0]	V56 
-	spi_write_8bit(0x0C);//pkn2[4:0]	V45 
-	spi_write_8bit(0x0f);//pkn3[4:0]	V37 
-	spi_write_8bit(0x0e);//pkn4[4:0]	V29 
-	spi_write_8bit(0x0d);//pkn5[4:0]	V21 
-	spi_write_8bit(0x02);//pkn6[4:0]	V7  
-	spi_write_8bit(0x01);//pkn7[4:0]	V3 
-	//GAMMA---------------------------------/////////////
-
-	//source
-	nv3030b_write_index(0xE6);
-	spi_write_8bit(0x00);
-	spi_write_8bit(0xff);//SC_EN_START[7:0] f0
-
-	nv3030b_write_index(0xE7);
-	spi_write_8bit(0x01);//CS_START[3:0] 01
-	spi_write_8bit(0x04);//scdt_inv_sel cs_vp_en
-	spi_write_8bit(0x03);//CS1_WIDTH[7:0] 12
-	spi_write_8bit(0x03);//CS2_WIDTH[7:0] 12
-	spi_write_8bit(0x00);//PREC_START[7:0] 06
-	spi_write_8bit(0x12);//PREC_WIDTH[7:0] 12
-
-	nv3030b_write_index(0xE8); //source
-	spi_write_8bit(0x00); //VCMP_OUT_EN 81-
-	spi_write_8bit(0x70); //chopper_sel[6:4]
-	spi_write_8bit(0x00); //gchopper_sel[6:4] 60
-	////gate
-	nv3030b_write_index(0xEc);
-	spi_write_8bit(0x52);//52
-
-	nv3030b_write_index(0xF1);
-	spi_write_8bit(0x01);//te_pol tem_extend 00 01 03
-	spi_write_8bit(0x01);
-	spi_write_8bit(0x02);
-
-
-	nv3030b_write_index(0xF6);
-	spi_write_8bit(0x09);
-	spi_write_8bit(0x10);
-	spi_write_8bit(0x00);//
-	spi_write_8bit(0x00);//40 3线2通道
-
-	nv3030b_write_index(0xfd);
-	spi_write_8bit(0xfa);
-	spi_write_8bit(0xfc);
-
-	nv3030b_write_index(0x3a);
-	spi_write_8bit(0x05);//
-
-	nv3030b_write_index(0x35);
-	spi_write_8bit(0x00);
-
-	NV3030B_SetRotation(nv3030b_display_dir);
-
+	nv3030b_write_index(0xE1);     
+	spi_write_8bit(0xD0);   
+	spi_write_8bit(0x08);   
+	spi_write_8bit(0x0E);   
+	spi_write_8bit(0x09);   
+	spi_write_8bit(0x09);   
+	spi_write_8bit(0x15);   
+	spi_write_8bit(0x31);   
+	spi_write_8bit(0x33);   
+	spi_write_8bit(0x48);   
+	spi_write_8bit(0x17);   
+	spi_write_8bit(0x14);   
+	spi_write_8bit(0x15);   
+	spi_write_8bit(0x31);   
+	spi_write_8bit(0x34);
 	nv3030b_write_index(0x21); 
 
-	nv3030b_write_index(0x11); // exit sleep
-	HAL_Delay(200);
-	nv3030b_write_index(0x29); // display on
-	HAL_Delay(10); 
+	nv3030b_write_index(0x29);
+	#endif
 }
