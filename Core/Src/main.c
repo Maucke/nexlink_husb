@@ -25,6 +25,7 @@
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
+#include "wwdg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -209,8 +210,10 @@ int main(void)
   MX_RNG_Init();
   MX_TIM3_Init();
   MX_I2S3_Init();
+//  MX_WWDG_Init();
   /* USER CODE BEGIN 2 */
   dbusbmsg("system initialized");
+
 	set_brightness_value(NULL, 0);
   USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
   USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
@@ -228,6 +231,8 @@ int main(void)
 //	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048);	
 //  arm_rfft_fast_init_f32(&fft_handler, 512);
   dbusbmsg("application initialized");
+
+//	HAL_WWDG_Init(&hwwdg);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -243,6 +248,7 @@ int main(void)
 		MPU_CRL(10);
 		BMP280_Test(1000);
 		RX8900_Test(1000);
+//		HAL_WWDG_Refresh(&hwwdg);
   }
   /* USER CODE END 3 */
 }
@@ -386,7 +392,7 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-	JumpToApplication();
+	HAL_GPIO_WritePin(PW_HOLD_GPIO_Port, PW_HOLD_Pin, GPIO_PIN_RESET); //cut the power
 
   while(1)
   {
