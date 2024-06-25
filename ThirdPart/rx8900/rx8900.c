@@ -59,9 +59,9 @@ void RX8900_Test(int interval)
   if(now_tick - last_update_time > interval)
   {
     RX8900_GetTime(&tm_local);
-    dbmsg("Data: %04d-%02d-%02d", tm_local.tm_year+1900,tm_local.tm_mon+1,tm_local.tm_mday);
-    dbmsg("Week: %d", tm_local.tm_wday);
-    dbmsg("Time: %02d:%02d:%02d", tm_local.tm_hour, tm_local.tm_min, tm_local.tm_sec);
+    dbusbmsg("Data: %04d-%02d-%02d", tm_local.tm_year+1900,tm_local.tm_mon+1,tm_local.tm_mday);
+    dbusbmsg("Week: %d", tm_local.tm_wday);
+    dbusbmsg("Time: %02d:%02d:%02d", tm_local.tm_hour, tm_local.tm_min, tm_local.tm_sec);
     last_update_time = HAL_GetTick();
   }
 }

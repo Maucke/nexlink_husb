@@ -190,7 +190,7 @@ void BMP280_Test(int interval)
   if(now_tick - last_update_time > interval)
   {
     BMP280_GetData(&pressure, &temperature, &humidity, &asl);
-    dbmsg("pressure: %f, temperature: %f, humidity: %f, asl: %f, altitude: %f m", pressure, temperature, humidity, asl, BMP280_PressureToAltitude(&pressure));
+    dbusbmsg("pressure: %f, temperature: %f, humidity: %f, asl: %f, altitude: %f m", pressure, temperature, humidity, asl, BMP280_PressureToAltitude(&pressure));
     last_update_time = HAL_GetTick();
   }
 }

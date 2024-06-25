@@ -24,6 +24,44 @@ extern nex_usb_des des;
 float setting_brightness;
 __IO bool usbinhibit = true;
 
+EasyKey_t keyUp, keyDown;
+/*!
+ * @brief   Sync the operation bool value
+ *
+ * @param   void
+ * @return  void
+ */
+void EasyUIKeyActionMonitor()
+{
+    if(keyUp.isPressed)
+			EasyUIItemOperationResponse(&pageUSBForm, &itemUSBForm, &itemUSBForm.id);
+		if(keyDown.isHold)
+			HAL_GPIO_WritePin(PW_HOLD_GPIO_Port, PW_HOLD_Pin, GPIO_PIN_RESET);
+		
+    if (opnForward || opnBackward || opnEnter || opnExit || opnUp || opnDown)
+        return;
+		
+		extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
+		opnEnter = mpu_ok;
+		opnExit = mpu_quit;
+		opnUp = mpu_right;
+		opnDown = mpu_left;
+		opnForward = mpu_left;
+		opnBackward = mpu_right;
+		mpu_left=mpu_right= mpu_ok=mpu_quit=0;
+		if(opnEnter!=0)
+		dbusbmsg("opnEnter:%d",opnEnter);
+		if(opnExit!=0)
+		dbusbmsg("opnExit:%d",opnExit);
+		if(opnUp!=0)
+		dbusbmsg("opnUp:%d",opnUp);
+		if(opnDown!=0)
+		dbusbmsg("opnDown:%d",opnDown);
+
+#if ROTARY == 1
+#endif
+}
+
 void EventMotion()
 {
   if(enMind)
@@ -203,8 +241,11 @@ void MenuInit()
   EasyUIAddItem(&pageAnimation, &itemStarwar, "Starwar", ITEM_RADIO_BUTTON, &enStarwar);
   EasyUIAddItem(&pageAnimation, &itemGCircle, "GCircle", ITEM_RADIO_BUTTON, &enGCircle);
   EasyUIAddItem(&pageAnimation, &itemFirework, "Firework", ITEM_RADIO_BUTTON, &enFirework);
-  dbmsg("setting_brightness: %f", setting_brightness);
+  dbusbmsg("setting_brightness: %f", setting_brightness);
 
 //		EasyUIItemOperationResponse(&pageAnimation, &itemAnimation, &itemAnimation.id);
   Motion_Init();
+	// Key init
+	EasyKeyInit(&keyUp, GPIOB, GPIO_PIN_6);
+	EasyKeyInit(&keyDown, GPIOB, GPIO_PIN_7);
 }

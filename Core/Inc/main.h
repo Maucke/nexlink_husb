@@ -109,8 +109,8 @@ extern "C" {
 #define PKout(n)   BIT_ADDR(GPIOK_ODR_Addr,n)  //输出 
 #define PKin(n)    BIT_ADDR(GPIOK_IDR_Addr,n)  //输入
 
-
-#define dbmsg(fmt, args...) printf("%s[%d]: " fmt "  \r\n", __FUNCTION__, __LINE__, ##args) //__FILE__,
+int usb_printf(const char* pcFormat, ...);
+#define dbusbmsg(fmt, args...) usb_printf("%s[%d]: " fmt "  \r\n", __FUNCTION__, __LINE__, ##args) //__FILE__,
 
 /* Exported types ------------------------------------------------------------*/
 /* for block FIR module */

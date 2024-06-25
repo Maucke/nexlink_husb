@@ -82,10 +82,27 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int fputc(int ch, FILE* f)
+//int fputc(int ch, FILE* f)
+//{
+//  HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
+//  return ch;
+//}
+
+extern bool usbavaliable;
+int usb_printf(const char* pcFormat, ...)
 {
-  HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
-  return ch;
+	static unsigned char buf[1024] = {0};
+  va_list args;
+  int len = 0;
+  memset(buf, 0, sizeof buf);
+  va_start(args, pcFormat);
+
+  len = vsnprintf((char*)buf, sizeof(buf), pcFormat, args);
+	if(usbavaliable)
+		USBD_NEX_LINK_Transmit(&hUSB, buf, len);
+  va_end(args);
+
+  return len;
 }
 
 uint16_t grambuff[1024];
@@ -193,7 +210,7 @@ int main(void)
   MX_TIM3_Init();
   MX_I2S3_Init();
   /* USER CODE BEGIN 2 */
-  dbmsg("system initialized");
+  dbusbmsg("system initialized");
 	set_brightness_value(NULL, 0);
   USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
   USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
@@ -204,13 +221,13 @@ int main(void)
 	MenuInit();
 	RX8900_Init();
 	EasyUIInit(1);
-	dbmsg("MPU_Init = %d", MPU_Init());
+	dbusbmsg("MPU_Init = %d", MPU_Init());
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
 //	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048);	
 //  arm_rfft_fast_init_f32(&fft_handler, 512);
-  dbmsg("application initialized");
+  dbusbmsg("application initialized");
   /* USER CODE END 2 */
 
   /* Infinite loop */

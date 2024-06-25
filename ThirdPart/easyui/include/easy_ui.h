@@ -20,17 +20,6 @@ extern "C"
 #include <stdbool.h>
 #include "profile_photo_erbws.h"
 
-// Modify this to fit your EasyKeyInit
-#define KEY_UP          E4
-#define KEY_DOWN        E2
-#define KEY_FORWARD     E4
-#define KEY_BACKWARD    E2
-#define KEY_CONFIRM     E3
-
-extern EasyKey_t keyUp, keyDown;           // Used to control value up and down
-extern EasyKey_t keyForward, keyBackward;  // Used to control indicator movement
-extern EasyKey_t keyConfirm;               // Used to change page or call function
-
 // Operation response
 extern uint8_t opnForward, opnBackward;
 extern uint8_t opnEnter, opnExit, opnUp, opnDown;
@@ -142,7 +131,6 @@ void EasyUIAddItem(EasyUIPage_t *page, EasyUIItem_t *item, char *_title, EasyUII
 void EasyUIAddPage(EasyUIPage_t *page, EasyUIPage_e func, ...);
 void EasyUITransitionAnim(void);
 void EasyUIBackgroundBlur(void);
-void EasyUIKeyActionMonitor(void);
 
 void EasyUIDrawMsgBox(char *msg);
 float EasyUIGetBatteryVoltage(void);

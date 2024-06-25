@@ -18,7 +18,10 @@ extern "C"
 #include "easy_ui.h"
 #include "easy_key.h"
 
+extern EasyKey_t keyUp, keyDown;           // Used to control value up and down
+
 void MenuInit(void);
+void EasyUIKeyActionMonitor(void);
 
 #ifdef __cplusplus
 }

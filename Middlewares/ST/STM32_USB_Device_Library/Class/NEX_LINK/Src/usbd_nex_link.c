@@ -251,14 +251,13 @@ uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff, nex_usb
 	uint8_t ret = USBD_FAIL;
 	USBD_NEX_LINK_HandleTypeDef *hnex = calloc(1, sizeof(USBD_NEX_LINK_HandleTypeDef));
 
-	dbmsg("USBD_NEX_LINK_Init");	
 	if(hnex != 0) {
 //		hnex->q_frame_pool = q_frame_pool;
 //		hnex->q_from_host = q_from_host;
 		hnex->grambuff = grambuff;
 		hnex->des = des;
 		
-		dbmsg("grambuff:%p",hnex->grambuff);	
+//		dbmsg("grambuff:%p",hnex->grambuff);	
 		hnex->gramdetail = 0;
 		pdev->pClassData = hnex;
 
@@ -275,7 +274,6 @@ static uint8_t USBD_NEX_LINK_Start(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 	UNUSED(cfgidx);
 	uint8_t ret = USBD_FAIL;
 	
-	dbmsg("USBD_NEX_LINK_Start");	
 	if (pdev->pClassData) {
 		USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
 		USBD_LL_OpenEP(pdev, GSUSB_ENDPOINT_IN, USBD_EP_TYPE_BULK, CAN_DATA_MAX_PACKET_SIZE);
@@ -305,36 +303,37 @@ static uint8_t USBD_NEX_LINK_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 static uint8_t USBD_NEX_LINK_SOF(struct _USBD_HandleTypeDef *pdev)
 {
 //	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
-	dbmsg("USBD_NEX_LINK_SOF");	
 //	hnex->sof_timestamp_us = timer_get();
 	return USBD_OK;
 }
+
+bool usbavaliable = false;
 
 static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	struct tm *tm_local;
 	char time_str[32];
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
-	dbmsg("USBD_NEX_LINK_EP0_RxReady");	
 	USBD_SetupReqTypedef *req = &hnex->last_setup_request;
 
 	switch (req->bRequest) {
 
 		case NEX_TIMESTAMP_SET:
+			usbavaliable = true;
 			memcpy(&hnex->des->timestamp_s, hnex->ep0_buf, sizeof(hnex->des->timestamp_s));
 			tm_local = localtime((const time_t *)&hnex->des->timestamp_s); // 转换时间戳
 	 
 			RX8900_SetTime(tm_local);
 			// 格式化时间为字符串
 			if (strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_local) != 0) {
-					dbmsg("Formatted time: %s\n", time_str); // 打印时间
+//					dbmsg("Formatted time: %s\n", time_str); // 打印时间
 			} else {
-					dbmsg("Failed to format time\n");
+//					dbmsg("Failed to format time\n");
 			}
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 		case NEX_BRIGHTNESS_SET:
 			memcpy(&hnex->des->brides, hnex->ep0_buf, sizeof(hnex->des->brides));
-			dbmsg("Brightness: %d\n", hnex->des->brides.brightness); // 打印亮度
+//			dbmsg("Brightness: %d\n", hnex->des->brides.brightness); // 打印亮度
 			extern lv_anim_t anim_backlight;
 			lv_anim_start(&anim_backlight, hnex->des->brides.brightness, hnex->des->brides.damp);
 			USBD_NEX_LINK_PrepareReceive(pdev);
@@ -343,7 +342,7 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			hnex->TxState = 0;            
 			hnex->gramdetail = 0;//reset pic
 			memcpy(&hnex->des->scrdes, hnex->ep0_buf, sizeof(hnex->des->scrdes));
-			dbmsg("Direction: %d\n", hnex->des->scrdes.direction); // 打印屏幕方向
+//			dbmsg("Direction: %d\n", hnex->des->scrdes.direction); // 打印屏幕方向
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 
@@ -385,7 +384,6 @@ static uint8_t USBD_NEX_LINK_DFU_Request(USBD_HandleTypeDef *pdev, USBD_SetupReq
 static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
-	dbmsg("USBD_NEX_LINK_Config_Request");	
 
 	hnex->isconnect = true;
 	switch (req->bRequest) {
@@ -397,19 +395,19 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 			USBD_CtlPrepareRx(pdev, hnex->ep0_buf, req->wLength);
 			break;
 		case NEX_TIMESTAMP_GET:
-			dbmsg("timestamp_s: %d", sizeof(hnex->des->timestamp_s));
+//			dbmsg("timestamp_s: %d", sizeof(hnex->des->timestamp_s));
 			memcpy(hnex->ep0_buf, &hnex->des->timestamp_s, sizeof(hnex->des->timestamp_s));
 			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->timestamp_s));
 			break;
 		
 		case NEX_BRIGHTNESS_GET:
-			dbmsg("brightness: %d", sizeof(hnex->des->brides.brightness));
+//			dbmsg("brightness: %d", sizeof(hnex->des->brides.brightness));
 			memcpy(hnex->ep0_buf, &hnex->des->brides, sizeof(hnex->des->brides));
 			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->brides));
 			break;
 		
 		case NEX_SCREEN_GET:
-			dbmsg("screen: %d", sizeof(hnex->des->scrdes));
+//			dbmsg("screen: %d", sizeof(hnex->des->scrdes));
 			memcpy(hnex->ep0_buf, &hnex->des->scrdes, sizeof(hnex->des->scrdes));
 			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->scrdes));
 			break;
@@ -438,7 +436,6 @@ static uint8_t USBD_NEX_LINK_Vendor_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 	uint8_t req_rcpt = req->bmRequest & 0x1F;
 	uint8_t req_type = (req->bmRequest >> 5) & 0x03;
 
-	dbmsg("USBD_NEX_LINK_Vendor_Request");	
 	if (
 		(req_type == 0x01) // class request
 	 && (req_rcpt == 0x01) // recipient: interface
@@ -455,7 +452,6 @@ bool USBD_NEX_LINK_CustomDeviceRequest(USBD_HandleTypeDef *pdev, USBD_SetupReqTy
 	uint16_t len = 0;
 	uint8_t *pbuf;
 
-	dbmsg("USBD_NEX_LINK_CustomDeviceRequest");	
 	if (req->bRequest == USBD_NEX_LINK_VENDOR_CODE) {
 
 		switch (req->wIndex) {
@@ -489,7 +485,6 @@ bool USBD_NEX_LINK_CustomInterfaceRequest(USBD_HandleTypeDef *pdev, USBD_SetupRe
 static uint8_t USBD_NEX_LINK_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
 	static uint8_t ifalt = 0;
-	dbmsg("USBD_NEX_LINK_Setup");	
 	switch (req->bmRequest & USB_REQ_TYPE_MASK) {
 
 		case USB_REQ_TYPE_CLASS:
@@ -518,7 +513,6 @@ uint8_t refrash_screen(void);
 static uint8_t USBD_NEX_LINK_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	(void) epnum;
 
-	dbmsg("USBD_NEX_LINK_DataIn");	
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
 	hnex->TxState = 0;
 	return USBD_OK;
@@ -545,7 +539,7 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 			extern __IO nv3030b_dir_enum nv3030b_display_dir;
 			if(nv3030b_display_dir != hnex->des->scrdes.direction)
 			{
-				dbmsg("set dir: %d, last: %d", hnex->des->scrdes.direction, nv3030b_display_dir);
+//				dbmsg("set dir: %d, last: %d", hnex->des->scrdes.direction, nv3030b_display_dir);
 				NV3030B_SetRotation((nv3030b_dir_enum)hnex->des->scrdes.direction);
 			}
 			if(nv3030b_display_dir==0||nv3030b_display_dir==1)
@@ -577,7 +571,6 @@ inline uint8_t USBD_NEX_LINK_PrepareReceive(USBD_HandleTypeDef *pdev)
 
 bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev)
 {
-	dbmsg("USBD_NEX_LINK_TxReady");	
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
 	return hnex->TxState == 0;
 }
@@ -587,7 +580,6 @@ uint8_t USBD_NEX_LINK_Transmit(USBD_HandleTypeDef *pdev, uint8_t *buf, uint16_t 
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
 	if (hnex->TxState == 0 && hnex->isconnect) 
 		{
-		dbmsg("USBD_NEX_LINK_Transmit");	
 		hnex->TxState = 1;
 		USBD_LL_Transmit(pdev, GSUSB_ENDPOINT_IN, buf, len);
 		return USBD_OK;

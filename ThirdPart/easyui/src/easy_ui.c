@@ -15,7 +15,6 @@ uint8_t pageIndex[MAX_LAYER] = {0};
 uint8_t itemIndex[MAX_LAYER] = {0};
 uint8_t layer = 0;
 
-EasyKey_t keyUp, keyDown;
 uint8_t opnForward, opnBackward;
 uint8_t opnEnter, opnExit, opnUp, opnDown;
 
@@ -1113,10 +1112,6 @@ void EasyUIInit(uint8_t mode)
 		extern uint16_t grambuff[];
     EasyUIScreenInit(grambuff);
 
-    // Key init
-    EasyKeyInit(&keyUp, GPIOB, GPIO_PIN_6);
-    EasyKeyInit(&keyDown, GPIOB, GPIO_PIN_7);
-
     // Power-off storage
 //    if (flash_check(flashSecIndex, flashPageIndex))
 //    {
@@ -1160,66 +1155,6 @@ void EasyUIInit(uint8_t mode)
     EasyUISendBuffer();
 }
 
-
-/*!
- * @brief   Sync the operation bool value
- *
- * @param   void
- * @return  void
- */
-void EasyUIKeyActionMonitor()
-{
-    if (opnForward || opnBackward || opnEnter || opnExit || opnUp || opnDown)
-        return;
-
-#if KEY_NUM == 2
-    opnForward = keyForward.isPressed;
-    opnBackward = keyBackward.isPressed;
-    opnEnter = keyForward.isHold;
-    opnExit = keyBackward.isHold;
-    opnUp = keyUp.isPressed;
-    opnDown = keyDown.isPressed;
-#elif MPUCRL == 1
-		extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
-		opnEnter = mpu_ok;
-		opnExit = mpu_quit;
-		opnUp = mpu_right;
-		opnDown = mpu_left;
-		opnForward = mpu_left;
-		opnBackward = mpu_right;
-		mpu_left=mpu_right= mpu_ok=mpu_quit=0;
-		if(opnEnter!=0)
-		dbmsg("opnEnter:%d",opnEnter);
-		if(opnExit!=0)
-		dbmsg("opnExit:%d",opnExit);
-		if(opnUp!=0)
-		dbmsg("opnUp:%d",opnUp);
-		if(opnDown!=0)
-		dbmsg("opnDown:%d",opnDown);
-#elif KEY_NUM > 2
-    opnForward = keyForward.isPressed;
-    opnBackward = keyBackward.isPressed;
-    opnEnter = keyConfirm.isPressed;
-    opnExit = keyConfirm.isHold;
-    opnUp = keyUp.isPressed;
-    opnDown = keyDown.isPressed;
-		if(opnForward!=0)
-		dbmsg("opnForward:%d",opnForward);
-		if(opnBackward!=0)
-		dbmsg("opnBackward:%d",opnBackward);
-		if(opnEnter!=0)
-		dbmsg("opnEnter:%d",opnEnter);
-		if(opnExit!=0)
-		dbmsg("opnExit:%d",opnExit);
-		if(opnUp!=0)
-		dbmsg("opnUp:%d",opnUp);
-		if(opnDown!=0)
-		dbmsg("opnDown:%d",opnDown);
-#endif
-
-#if ROTARY == 1
-#endif
-}
 
 
 

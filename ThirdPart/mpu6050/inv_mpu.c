@@ -3024,12 +3024,12 @@ void mpu_test(int interval)
 	static float pitch, roll, yaw;
 	static long  last_update_time;
 	long now_tick = HAL_GetTick();
-	// dbmsg("HAL_GetTick :%d, last_update_time :%ld", now_tick, last_update_time);
+	// dbusbmsg("HAL_GetTick :%d, last_update_time :%ld", now_tick, last_update_time);
 	if (now_tick - last_update_time > interval)
 	{
-		// dbmsg("HAL_GetTick() - last_update_time :%ld", now_tick- last_update_time);
+		// dbusbmsg("HAL_GetTick() - last_update_time :%ld", now_tick- last_update_time);
 		mpu_dmp_get_data(&pitch, &roll, &yaw);
-		dbmsg("pitch: %.1f, roll: %.1f, yaw: %.1f", pitch, roll, yaw);
+		dbusbmsg("pitch: %.1f, roll: %.1f, yaw: %.1f", pitch, roll, yaw);
 		last_update_time = HAL_GetTick();
 	}
 }
