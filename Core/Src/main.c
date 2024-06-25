@@ -232,7 +232,6 @@ int main(void)
 //  arm_rfft_fast_init_f32(&fft_handler, 512);
   dbusbmsg("application initialized");
 
-//	HAL_WWDG_Init(&hwwdg);
   /* USER CODE END 2 */
 
   /* Infinite loop */
