@@ -207,4 +207,5 @@ void EasyKeyScanKeyState()
         // Store key value
         key->preValue = key->value;
     }
+    last_update_time = HAL_GetTick();
 }

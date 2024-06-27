@@ -17,7 +17,7 @@ uint8_t layer = 0;
 
 uint8_t opnForward, opnBackward;
 uint8_t opnEnter, opnExit, opnUp, opnDown;
-
+__IO bool menuisvisible = true;
 char *EasyUIVersion = "v1.5b";
 bool functionIsRunning = false, listLoop = true, errorOccurred = false, batteryMonitor = true;
 
@@ -579,7 +579,8 @@ void EasyUIItemOperationResponse(EasyUIPage_t *page, EasyUIItem_t *item, uint8_t
     case ITEM_JUMP_PAGE:
         if (layer == MAX_LAYER - 1)
             break;
-
+				if(pageIndex[layer] == item->pageId)
+					break;
         itemIndex[layer++] = *index;
         pageIndex[layer] = item->pageId;
         *index = 0;
@@ -1156,8 +1157,6 @@ void EasyUIInit(uint8_t mode)
 }
 
 
-
-
 void EventMotion(void);
 /*!
  * @brief   Main function of EasyUI
@@ -1232,7 +1231,6 @@ void EasyUIEvent(uint8_t timer)
     EasyUIClearBuffer();
 		
 		EventMotion();
-
     // Custom page--------------------------------------------------------------------------------
     if (page->funcType == PAGE_CUSTOM)
     {
@@ -1257,12 +1255,17 @@ void EasyUIEvent(uint8_t timer)
             EasyUITransitionAnim();
             EasyUIDrawIndicator(page, index, timer, 1);
         }
-
 				extern __IO bool usbinhibit;
 				if(usbinhibit)
-						EasyUISendBuffer();
+					EasyUISendBuffer();
         return;
     }
+	
+		if(!menuisvisible)
+		{
+			EasyUISendBuffer();
+			return;
+		}
     // -------------------------------------------------------------------------------------------
 
     // Icon page----------------------------------------------------------------------------------

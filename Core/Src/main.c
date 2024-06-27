@@ -110,7 +110,7 @@ uint16_t grambuff[1024];
 uint16_t grambuff_usb[1024];
 nex_usb_des des = {
 .brides = {
-	.brightness = 999
+	.brightness = 299
 }
 };
 lv_anim_t anim_backlight;
@@ -118,6 +118,16 @@ void set_brightness_value(void *obj, int32_t value)
 {
 	// dbmsg("brightness: %d", value);
 	Set_PWM_DutyCycle(value%1000);
+}
+
+void ready_brightness_value(struct _lv_anim_t *obj)
+{
+	// dbmsg("brightness: %d", value);
+	if(((lv_anim_t*)obj)->end_value == 0)
+	{
+			dbusbmsg("system shutdown");
+			HAL_GPIO_WritePin(PW_HOLD_GPIO_Port, PW_HOLD_Pin, GPIO_PIN_RESET);
+	}
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -182,6 +192,7 @@ uint16_t chosen_freqs[32] = {4,
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+    __enable_irq();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -228,6 +239,7 @@ int main(void)
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
+	lv_anim_ready_set_cb(&anim_backlight, ready_brightness_value);
 //	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048);	
 //  arm_rfft_fast_init_f32(&fft_handler, 512);
   dbusbmsg("application initialized");
@@ -241,9 +253,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_GPIO_WritePin(SYSLED_GPIO_Port, SYSLED_Pin, GPIO_PIN_SET);
 		lv_anim_run();
 		EasyUIEvent(5);
+		EventJump();
 		MPU_CRL(10);
 		BMP280_Test(1000);
 		RX8900_Test(1000);

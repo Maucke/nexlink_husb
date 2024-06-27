@@ -7,6 +7,8 @@
 
 #include "nv3030b.h"
 
+#define ST7789 0
+
 uint16                   NV3030B_penColor     = NV3030B_DEFAULT_PENCOLOR;
 uint16                   NV3030B_backgroundColor      = NV3030B_DEFAULT_BGCOLOR;
 
@@ -128,7 +130,7 @@ void NV3030B_SetDrawColor(NV3030B_ColorMode_e mode)
 void NV3030B_SetRotation(nv3030b_dir_enum dir)
 {
   nv3030b_display_dir = dir;
-#if 0
+#if ST7789 == 0
   nv3030b_write_index(0x36);
   if(nv3030b_display_dir == NV3030B_PORTAIT)spi_write_8bit(0x08);
   else if(nv3030b_display_dir == NV3030B_PORTAIT_180)spi_write_8bit(0xC8);
@@ -1282,7 +1284,7 @@ void NV3030B_Init(uint16* gram)
   HAL_Delay(200);
   NV3030B_RST(1);
   HAL_Delay(10);
-#if 0
+#if ST7789 == 0
   nv3030b_write_index(0xfd);//private_access
   spi_write_8bit(0x06);
   spi_write_8bit(0x08);
@@ -1450,7 +1452,7 @@ void NV3030B_Init(uint16* gram)
   HAL_Delay(200);
   nv3030b_write_index(0x29); // display on
   HAL_Delay(10);
-	#else
+#else
 	//************* Start Initial Sequence **********//
 	nv3030b_write_index(0x11); //Sleep out 
 	HAL_Delay(120);              //Delay 120ms 
@@ -1524,5 +1526,5 @@ void NV3030B_Init(uint16* gram)
 	nv3030b_write_index(0x21); 
 
 	nv3030b_write_index(0x29);
-	#endif
+#endif
 }

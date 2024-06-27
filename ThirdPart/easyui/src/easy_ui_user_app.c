@@ -23,8 +23,10 @@ extern lv_anim_t anim_backlight;
 extern nex_usb_des des;
 float setting_brightness;
 __IO bool usbinhibit = true;
+__IO bool jump2winform = false;
 
 EasyKey_t keyUp, keyDown;
+extern __IO bool menuisvisible;
 /*!
  * @brief   Sync the operation bool value
  *
@@ -33,15 +35,38 @@ EasyKey_t keyUp, keyDown;
  */
 void EasyUIKeyActionMonitor()
 {
+		extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
     if(keyUp.isPressed)
-			EasyUIItemOperationResponse(&pageUSBForm, &itemUSBForm, &itemUSBForm.id);
+		{
+			dbusbmsg("keyUp:isPressed");
+			if(des.brides.brightness == 0)
+			{
+				lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
+				return;
+			}
+			
+			menuisvisible = !menuisvisible;
+			if(menuisvisible)
+				mpu_left=mpu_right= mpu_ok=mpu_quit=0;
+		}
+    else if(keyUp.isHold)
+		{
+			dbusbmsg("keyUp:holdTime:%d", keyUp.holdTime);
+			if(menuisvisible)
+				jump2winform = true;
+		}
 		if(keyDown.isHold)
-			HAL_GPIO_WritePin(PW_HOLD_GPIO_Port, PW_HOLD_Pin, GPIO_PIN_RESET);
+		{
+			dbusbmsg("keyDown:holdTime:%d", keyDown.holdTime);
+			des.brides.brightness = 0;
+			lv_anim_start(&anim_backlight, des.brides.brightness, 1000);
+		}
 		
+		if(!menuisvisible)
+        return;
     if (opnForward || opnBackward || opnEnter || opnExit || opnUp || opnDown)
         return;
 		
-		extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
 		opnEnter = mpu_ok;
 		opnExit = mpu_quit;
 		opnUp = mpu_right;
@@ -60,6 +85,15 @@ void EasyUIKeyActionMonitor()
 
 #if ROTARY == 1
 #endif
+}
+
+void EventJump()
+{
+		if(jump2winform)
+		{
+			jump2winform = false;
+			EasyUIItemOperationResponse(&pageUSBForm, &itemUSBForm, &itemUSBForm.id); 
+		}
 }
 
 void EventMotion()
@@ -92,7 +126,8 @@ void EventChangeBrightness(EasyUIItem_t* item)
       *item->param += 10;
     else
       *item->param = 100;
-    lv_anim_start(&anim_backlight, *item->param == 100 ? 990 : (*item->param) * 10, 100);
+		des.brides.brightness =  *item->param == 100 ? 999 : (*item->param) * 10;
+    lv_anim_start(&anim_backlight,des.brides.brightness, 100);
     opnUp = opnForward = false;
   }
   if(opnDown)
@@ -101,7 +136,8 @@ void EventChangeBrightness(EasyUIItem_t* item)
       *item->param -= 10;
     else
       *item->param = 10;
-    lv_anim_start(&anim_backlight, *item->param == 100 ? 990 : (*item->param) * 10, 100);
+		des.brides.brightness =  *item->param == 100 ? 999 : (*item->param) * 10;
+    lv_anim_start(&anim_backlight,des.brides.brightness, 100);
     opnDown = opnBackward = false;
   }
 
@@ -115,7 +151,8 @@ void EventChangeBrightness(EasyUIItem_t* item)
   if(opnExit)
   {
     *item->param = item->paramBackup;
-    lv_anim_start(&anim_backlight, *item->param == 100 ? 990 : (*item->param) * 10, 100);
+		des.brides.brightness =  *item->param == 100 ? 999 : (*item->param) * 10;
+    lv_anim_start(&anim_backlight,des.brides.brightness, 100);
     EasyUIBackgroundBlur();
     functionIsRunning = false;
     opnExit = false;
@@ -216,6 +253,7 @@ void MenuInit()
 {
   setting_brightness = (des.brides.brightness + 1) / 10;
 	enFirework = true;
+	enStarwar = true;
   EasyUIAddPage(&pageMain, PAGE_LIST);
   EasyUIAddPage(&pageSetting, PAGE_LIST);
   EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
@@ -232,15 +270,15 @@ void MenuInit()
   EasyUIAddItem(&pageSetting, &itemBrightness, "Brightness", ITEM_PROGRESS_BAR, &setting_brightness, EventChangeBrightness);
 
   EasyUIAddItem(&pageAnimation, &titleAnimation, "[Animation]", ITEM_PAGE_DESCRIPTION);
-  EasyUIAddItem(&pageAnimation, &itemMind, "Mind", ITEM_RADIO_BUTTON, &enMind);
-  EasyUIAddItem(&pageAnimation, &itemCircle, "Circle", ITEM_RADIO_BUTTON, &enCircle);
-  EasyUIAddItem(&pageAnimation, &itemSnowflake, "Snowflake", ITEM_RADIO_BUTTON, &enSnowflake);
-  EasyUIAddItem(&pageAnimation, &itemMeteo, "Meteo", ITEM_RADIO_BUTTON, &enMeteo);
-  EasyUIAddItem(&pageAnimation, &itemPlanet, "Planet", ITEM_RADIO_BUTTON, &enPlanet);
-  EasyUIAddItem(&pageAnimation, &itemTriangle, "Triangle", ITEM_RADIO_BUTTON, &enTriangle);
-  EasyUIAddItem(&pageAnimation, &itemStarwar, "Starwar", ITEM_RADIO_BUTTON, &enStarwar);
-  EasyUIAddItem(&pageAnimation, &itemGCircle, "GCircle", ITEM_RADIO_BUTTON, &enGCircle);
-  EasyUIAddItem(&pageAnimation, &itemFirework, "Firework", ITEM_RADIO_BUTTON, &enFirework);
+  EasyUIAddItem(&pageAnimation, &itemMind, "Mind", ITEM_CHECKBOX, &enMind);
+  EasyUIAddItem(&pageAnimation, &itemCircle, "Circle", ITEM_CHECKBOX, &enCircle);
+  EasyUIAddItem(&pageAnimation, &itemSnowflake, "Snowflake", ITEM_CHECKBOX, &enSnowflake);
+  EasyUIAddItem(&pageAnimation, &itemMeteo, "Meteo", ITEM_CHECKBOX, &enMeteo);
+  EasyUIAddItem(&pageAnimation, &itemPlanet, "Planet", ITEM_CHECKBOX, &enPlanet);
+  EasyUIAddItem(&pageAnimation, &itemTriangle, "Triangle", ITEM_CHECKBOX, &enTriangle);
+  EasyUIAddItem(&pageAnimation, &itemStarwar, "Starwar", ITEM_CHECKBOX, &enStarwar);
+  EasyUIAddItem(&pageAnimation, &itemGCircle, "GCircle", ITEM_CHECKBOX, &enGCircle);
+  EasyUIAddItem(&pageAnimation, &itemFirework, "Firework", ITEM_CHECKBOX, &enFirework);
   dbusbmsg("setting_brightness: %f", setting_brightness);
 
 //		EasyUIItemOperationResponse(&pageAnimation, &itemAnimation, &itemAnimation.id);
