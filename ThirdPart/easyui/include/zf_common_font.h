@@ -67,5 +67,6 @@ extern const uint8 ascii_OCRB_12x16[][24];
 extern const uint8 ascii_agency_12x24[][36];
 extern const uint8 ascii_OCR_16x24[][48];
 extern const uint8 ascii_OCRB_16x24[][48];
+extern const unsigned char gImage_Battery[][1296*2];
 
 #endif

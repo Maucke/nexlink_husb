@@ -49,5 +49,6 @@
 void BMP280_GetData(float* pressure, float* temperature, float* humidity, float* asl);
 void BMP280_Test(int interval);
 void BMP280_Init(void);
+float BMP280_PressureToAltitude(float* pressure/*, float* groundPressure, float* groundTemp*/);
 
 #endif  // __BMP280_H__

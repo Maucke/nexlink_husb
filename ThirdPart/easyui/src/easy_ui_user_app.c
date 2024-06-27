@@ -8,16 +8,23 @@
 #include "easy_ui_user_app.h"
 #include "lv_anim_light.h"
 #include "usbd_nex_link.h"
+#include "zf_common_font.h"
 #include "animation.h"
+#include "adc.h"
+#include "rx8900.h"
+#include "bmp280.h"
+#include <time.h>
 // Pages
-EasyUIPage_t pageMain, pageUSBForm, pageAnimation, pageSetting, pageAbout;
+EasyUIPage_t pageMain, pageUSBForm, pageSensor, pageAnimation, pageSetting, pageAbout;
 
 // Items
 EasyUIItem_t itemUSBForm;
+EasyUIItem_t itemSensor;
 EasyUIItem_t itemAnimation;
 EasyUIItem_t itemSetting, itemColor, itemReset, itemBrightness, titleSetting;
 EasyUIItem_t itemAbout;
 EasyUIItem_t itemMind, itemCircle, itemSnowflake, itemMeteo, itemPlanet, itemTriangle, itemStarwar, itemBlast, itemGCircle, itemFirework, titleAnimation;
+
 bool enMind, enCircle, enSnowflake, enMeteo, enPlanet, enTriangle, enStarwar, enGCircle, enFirework;
 extern lv_anim_t anim_backlight;
 extern nex_usb_des des;
@@ -163,66 +170,22 @@ void EventChangeBrightness(EasyUIItem_t* item)
 
 void PageAbout(EasyUIItem_t* page)
 {
-  static uint8_t time = 0;
-  static float x = SCREEN_WIDTH;
-  static float step = (float)(SCREEN_WIDTH - 115) / 5;
+	int screen_delta = 10;
 
-  // Display about info
-  EasyUIClearBuffer();
-  EasyUIDisplayStr(3, 4, "SCEP");
-  EasyUISetDrawColor(XOR);
-  EasyUIDrawRBox(1, 1, 4 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-  EasyUISetDrawColor(NORMAL);
-  EasyUIDrawBox(2, 16, 2, ITEM_HEIGHT * 5, NV3030B_penColor);
-  EasyUIDisplayStr(36, 4, "v1.2");
-  EasyUIDisplayStr(8, 18, "MCU    : CH32V3");
-  EasyUIDisplayStr(8, 30, "EasyUI : ");
-  EasyUIDisplayStr(8 + 9 * FONT_WIDTH, 30, EasyUIVersion);
-  EasyUIDisplayStr(8, 42, "Flash  : 256KB");
-  EasyUIDisplayStr(8, 54, "UID    : ");
-  EasyUIDisplayStr(8, 66, ">> Powered by: ErBW_s");
-
-  // Get uid
-  static uint32_t* addrBase = (uint32_t*) 0x1FFFF7E8;
-  uint64_t uid;
-  memcpy(&uid, addrBase, 8);
-  char str[13];
-  uint64_t uidBackup = uid;
-  const char hex_index[16] =
-  {
-    '0', '1', '2', '3',
-    '4', '5', '6', '7',
-    '8', '9', 'A', 'B',
-    'C', 'D', 'E', 'F'
-  };
-  int8_t data_temp[16];
-  uint8_t bit = 0, i = 0;
-  while(bit < 16)
-  {
-    data_temp[bit++] = (uidBackup & 0xF);
-    uidBackup >>= 4;
-  }
-  for(bit = 12; bit > 0; bit--)
-  {
-    str[i++] = hex_index[data_temp[bit - 1]];
-  }
-  str[i] = '\0';
-  EasyUIDisplayStr(8 + 9 * FONT_WIDTH, 54, str);
-
-  // Display profile photo
-  if(time < 5)
-  {
-    x -= step;
-    time++;
-  }
-  else
-    x = 115;
-  EasyUIDisplayBMP((int16_t) x, (SCREEN_HEIGHT - 56) / 2, 29, 28, ErBW_s_2928);
-  if(opnExit)
-  {
-    time = 0;
-    x = SCREEN_WIDTH;
-  }
+  EasyUIDisplayStr(10, screen_delta, "Ver. 1.0.0");
+	screen_delta += ITEM_HEIGHT;
+  EasyUIDisplayStr(10, screen_delta, "MCU: STM32F405");
+	screen_delta += ITEM_HEIGHT;
+  EasyUIDisplayStr(10, screen_delta, "MPU: MPU6050");
+	screen_delta += ITEM_HEIGHT;
+  EasyUIDisplayStr(10, screen_delta, "CLOCK: RX8900");
+	screen_delta += ITEM_HEIGHT;
+  EasyUIDisplayStr(10, screen_delta, "I2S: INMP441");
+	screen_delta += ITEM_HEIGHT;
+  EasyUIDisplayStr(10, screen_delta, "Author: DPJ");
+	screen_delta += ITEM_HEIGHT;
+  EasyUIDisplayStr(10, screen_delta, __DATE__);
+	screen_delta += ITEM_HEIGHT;
 }
 
 void PageUSBForm(EasyUIItem_t* page)
@@ -238,6 +201,83 @@ void PageUSBForm(EasyUIItem_t* page)
   {
     usbinhibit = true;
   }
+}
+
+float getpresent(float voltage)
+{
+	return voltage>2.8f?1000.0f/14.0f*voltage-200.0f:0.0f;
+}
+
+int getlevel(float voltage)
+{
+	static int level;
+	static float lastsymIndex;
+	float symIndex = getpresent(voltage);
+	if ((symIndex + 2) < lastsymIndex || (symIndex - 3) > lastsymIndex)
+	{
+		lastsymIndex=symIndex;
+		if(symIndex>=85)
+			level = 3;
+		else if(symIndex>=65)
+			level = 2;
+		else if(symIndex>=30)
+			level = 1;
+		else
+			level = 0;
+	}
+	return level;
+}
+
+void PageSensor(EasyUIItem_t* page)
+{
+	static int levelrun = 0;
+	char tempstr[128];
+	int screen_delta = 10;
+	static float battery;
+	static struct tm time_user;
+  static float pressure, temperature, humidity, asl;
+  static long last_update_time = 0;
+  long now_tick = HAL_GetTick();
+  if(now_tick - last_update_time > 500)
+  {
+		if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port,PW_CHARGE_Pin)==GPIO_PIN_RESET)
+			levelrun = (levelrun+1)%4;
+		else
+			levelrun = getlevel(battery);
+		battery = Get_ADC_Value(&hadc1) * 3.28f * 2.0f / 4096.0f;
+    RX8900_GetTime(&time_user);
+    BMP280_GetData(&pressure, &temperature, &humidity, &asl);
+		last_update_time = HAL_GetTick();
+  }
+	
+	
+	snprintf(tempstr, sizeof tempstr, "BAT: %.1f V", battery);
+	EasyUIDisplayStr(10, screen_delta, tempstr);
+	screen_delta += ITEM_HEIGHT;
+	if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port,PW_CHARGE_Pin)==GPIO_PIN_RESET)
+		snprintf(tempstr, sizeof tempstr,"CHARGING");
+	else
+		snprintf(tempstr, sizeof tempstr,"DISCHARGE");
+	EasyUIDisplayStr(10, screen_delta, tempstr);
+	screen_delta += ITEM_HEIGHT;
+	NV3030B_DrawBMP565(165, screen_delta, 36, 36, gImage_Battery[levelrun]);
+
+	snprintf(tempstr, sizeof tempstr, "%04d-%02d-%02d, %s", time_user.tm_year+1900,time_user.tm_mon+1,time_user.tm_mday,weekdays[time_user.tm_wday%7]);
+	EasyUIDisplayStr(10, screen_delta, tempstr);
+	screen_delta += ITEM_HEIGHT;
+	snprintf(tempstr, sizeof tempstr, "%02d:%02d:%02d", time_user.tm_hour%100, time_user.tm_min%100, time_user.tm_sec%100);
+	EasyUIDisplayStr(10, screen_delta, tempstr);
+	screen_delta += ITEM_HEIGHT;
+	
+	snprintf(tempstr, sizeof tempstr, "P: %.1f Pa", pressure);
+	EasyUIDisplayStr(10, screen_delta, tempstr);
+	screen_delta += ITEM_HEIGHT;
+	snprintf(tempstr, sizeof tempstr, "T: %.1f C", temperature);
+	EasyUIDisplayStr(10, screen_delta, tempstr);
+	screen_delta += ITEM_HEIGHT;
+	snprintf(tempstr, sizeof tempstr, "Alt: %.1f M", BMP280_PressureToAltitude(&pressure));
+	EasyUIDisplayStr(10, screen_delta, tempstr);
+	screen_delta += ITEM_HEIGHT;
 }
 
 void PageAnimation(EasyUIItem_t* page)
@@ -257,10 +297,12 @@ void MenuInit()
   EasyUIAddPage(&pageMain, PAGE_LIST);
   EasyUIAddPage(&pageSetting, PAGE_LIST);
   EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
+  EasyUIAddPage(&pageSensor, PAGE_CUSTOM, PageSensor);
   EasyUIAddPage(&pageAnimation, PAGE_LIST);
   EasyUIAddPage(&pageAbout, PAGE_CUSTOM, PageAbout);
 
   EasyUIAddItem(&pageMain, &itemUSBForm, "USBForm", ITEM_JUMP_PAGE, pageUSBForm.id);
+  EasyUIAddItem(&pageMain, &itemSensor, "Sensor", ITEM_JUMP_PAGE, pageSensor.id);
   EasyUIAddItem(&pageMain, &itemAnimation, "Animation", ITEM_JUMP_PAGE, pageAnimation.id);
   EasyUIAddItem(&pageMain, &itemSetting, "Setting", ITEM_JUMP_PAGE, pageSetting.id);
   EasyUIAddItem(&pageMain, &itemAbout, "<About>", ITEM_JUMP_PAGE, pageAbout.id);

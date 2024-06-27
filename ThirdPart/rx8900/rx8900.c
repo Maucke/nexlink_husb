@@ -5,6 +5,8 @@
 
 #define RX8900_ADDR  (0x32)
 
+char weekdays[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+
 static uint8_t B2D(uint8_t bcd);
 static uint8_t D2B(uint8_t decimal);
 struct tm tm_local = {
@@ -22,7 +24,7 @@ void RX8900_Init()
   IIC_Write_Byte(RX8900_ADDR, RX8900_EXT_REG, 8);
   IIC_Write_Byte(RX8900_ADDR, RX8900_REG_STATUS, 0);
   IIC_Write_Byte(RX8900_ADDR, RX8900_REG_CONTROL, 64);
-	RX8900_SetTime(&tm_local);
+//	RX8900_SetTime(&tm_local);
 }
 
 bool RX8900_SetTime(struct tm *tm_local)

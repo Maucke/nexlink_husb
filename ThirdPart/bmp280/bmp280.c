@@ -150,7 +150,7 @@ void BMP280_Init(void)
 /*
  * Converts pressure to altitude above sea level (ASL) in meters
 */
-static float BMP280_PressureToAltitude(float* pressure/*, float* groundPressure, float* groundTemp*/)
+float BMP280_PressureToAltitude(float* pressure/*, float* groundPressure, float* groundTemp*/)
 {
   if(*pressure > 0)
   {

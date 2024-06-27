@@ -1228,9 +1228,12 @@ void EasyUIEvent(uint8_t timer)
         return;
     }
 
-    EasyUIClearBuffer();
-		
-		EventMotion();
+		extern __IO bool usbinhibit;
+		if(usbinhibit)
+		{
+			EasyUIClearBuffer();
+			EventMotion();
+		}
     // Custom page--------------------------------------------------------------------------------
     if (page->funcType == PAGE_CUSTOM)
     {
@@ -1255,7 +1258,6 @@ void EasyUIEvent(uint8_t timer)
             EasyUITransitionAnim();
             EasyUIDrawIndicator(page, index, timer, 1);
         }
-				extern __IO bool usbinhibit;
 				if(usbinhibit)
 					EasyUISendBuffer();
         return;

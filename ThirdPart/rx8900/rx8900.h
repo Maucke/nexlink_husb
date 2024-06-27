@@ -28,7 +28,7 @@
 #define RX8900_STA_BSY          0x04
 #define RX8900_STA_A2F          0x02
 #define RX8900_STA_A1F          0x01
-
+extern char weekdays[7][4];
 typedef enum
 {
   ALARM_MODE_ALL_MATCHED = 0,

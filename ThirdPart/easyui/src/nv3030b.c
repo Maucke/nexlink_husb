@@ -1250,6 +1250,16 @@ void NV3030B_SetDirection (nv3030b_dir_enum dir)
     }
 }
 
+void NV3030B_DrawBMP232(int16_t x, int16_t y, uint16_t width, uint16_t height, const uint8_t* pic)
+{
+  for(int j = y; j < y + height; ++j)
+  {
+    for(int i = x; i < x + width; ++i)
+    {
+      NV3030B_DrawPoint(i, j, pic[(j - y)*width + (i - x)]);
+    }
+  }
+}
 
 void NV3030B_DrawBMP565(int16_t x, int16_t y, uint16_t width, uint16_t height, const uint8_t* pic)
 {
@@ -1258,7 +1268,7 @@ void NV3030B_DrawBMP565(int16_t x, int16_t y, uint16_t width, uint16_t height, c
     for(int i = x; i < x + width; ++i)
     {
 //					dbmsg("X:%d,Y:%d",i, j);
-      NV3030B_DrawPoint(i, j, (pic[(j - y)*width * 2 + 2 * (i - x) + 1] << 8) | pic[(j - y)*width * 2 + 2 * (i - x)]);
+      NV3030B_DrawPoint(i, j, (pic[(j - y)*width * 2 + 2 * (i - x) + 1]) | (pic[(j - y)*width * 2 + 2 * (i - x)] << 8));
     }
   }
 }

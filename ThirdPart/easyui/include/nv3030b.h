@@ -92,6 +92,8 @@ typedef enum
     NV3030B_NUM_FONT          
 }nv3030b_font_size_enum;
 
+void NV3030B_DrawBMP232(int16_t x, int16_t y, uint16_t width, uint16_t height, const uint8_t* pic);
+void NV3030B_DrawBMP565(int16_t x, int16_t y, uint16_t width, uint16_t height, const uint8_t* pic);
 
 void NV3030B_SetRegion (const uint16 x1, const uint16 y1, const uint16 x2, const uint16 y2);
 void NV3030B_DMA_Transfer(uint8_t *pData, uint16_t size, DMA_MEMINC_STATE state);

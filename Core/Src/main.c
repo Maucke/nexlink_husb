@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "crc.h"
 #include "dma.h"
 #include "i2s.h"
@@ -140,6 +141,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //		dbmsg("tick: %d", HAL_GetTick());
 	}
 }
+
+lv_anim_t anim_beep;
+void set_beep_value(void *obj, int32_t value)
+{
+	// dbmsg("brightness: %d", value);
+	Set_PWM_DutyCycle(value%1000);
+}
+
 enum buffer_states{FFT_BUFFER_CLEAR, FFT_BUFFER_HALF, FFT_BUFFER_FULL, FFT_DISPLAY};
 enum display_states{DISPLAY_MANY, DISPLAY_FEW, DISPLAY_COW};
 arm_rfft_fast_instance_f32 fft_handler;
@@ -222,6 +231,9 @@ int main(void)
   MX_TIM3_Init();
   MX_I2S3_Init();
 //  MX_WWDG_Init();
+  MX_ADC1_Init();
+  MX_TIM9_Init();
+  MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
   dbusbmsg("system initialized");
 
@@ -257,8 +269,8 @@ int main(void)
 		EasyUIEvent(5);
 		EventJump();
 		MPU_CRL(10);
-		BMP280_Test(1000);
-		RX8900_Test(1000);
+//		BMP280_Test(1000);
+//		RX8900_Test(1000);
 //		HAL_WWDG_Refresh(&hwwdg);
   }
   /* USER CODE END 3 */
