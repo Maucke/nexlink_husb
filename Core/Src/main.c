@@ -44,7 +44,6 @@
 #include "easy_ui.h"
 #include "easy_ui_user_app.h"
 #include "easy_key.h"
-#include "easy_key.h"
 #include "mpu6050.h"
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
@@ -140,13 +139,27 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		EasyUIKeyActionMonitor();
 //		dbmsg("tick: %d", HAL_GetTick());
 	}
+	if (htim->Instance == htim14.Instance)
+	{
+		lowBatteryAction();
+	}
 }
 
 lv_anim_t anim_beep;
 void set_beep_value(void *obj, int32_t value)
 {
 	// dbmsg("brightness: %d", value);
-	Set_PWM_DutyCycle(value%1000);
+	Set_Freqeucy_Cycle(value);
+}
+
+void ready_beep_value(struct _lv_anim_t *obj)
+{
+	// dbmsg("brightness: %d", value);
+	if(((lv_anim_t*)obj)->end_value != 0)
+	{
+			dbusbmsg("beep");
+			lv_anim_start(&anim_beep, 0, 100);
+	}
 }
 
 enum buffer_states{FFT_BUFFER_CLEAR, FFT_BUFFER_HALF, FFT_BUFFER_FULL, FFT_DISPLAY};
@@ -154,7 +167,7 @@ enum display_states{DISPLAY_MANY, DISPLAY_FEW, DISPLAY_COW};
 arm_rfft_fast_instance_f32 fft_handler;
 uint8_t buffer_state = FFT_BUFFER_CLEAR;
 uint8_t display_state = DISPLAY_MANY;
-uint32_t adc_buffer[2048] = {0};
+uint32_t adc_buffer[1024] = {0};
 int32_t fft_input_buffer[512] = {0};
 float32_t fft_output_buffer[512] = {0};
 uint16_t chosen_freqs[32] = {4,
@@ -230,10 +243,9 @@ int main(void)
   MX_RNG_Init();
   MX_TIM3_Init();
   MX_I2S3_Init();
-//  MX_WWDG_Init();
   MX_ADC1_Init();
-  MX_TIM9_Init();
   MX_TIM14_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
   dbusbmsg("system initialized");
 
@@ -243,7 +255,9 @@ int main(void)
   USBD_NEX_LINK_Init(&hUSB, grambuff_usb, &des);
   USBD_Start(&hUSB);
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);
 	HAL_TIM_Base_Start_IT(&htim3);
+	HAL_TIM_Base_Start_IT(&htim14);
 	MenuInit();
 	RX8900_Init();
 	EasyUIInit(1);
@@ -252,7 +266,12 @@ int main(void)
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
 	lv_anim_ready_set_cb(&anim_backlight, ready_brightness_value);
-//	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048);	
+	
+	lv_anim_add(&anim_beep, 0, set_beep_value);
+//	lv_anim_start(&anim_beep, 0, 2000);
+	lv_anim_path_set_cb(&anim_beep, lv_anim_path_onoff);
+	lv_anim_ready_set_cb(&anim_beep, ready_beep_value);
+//	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,1024);	
 //  arm_rfft_fast_init_f32(&fft_handler, 512);
   dbusbmsg("application initialized");
 
@@ -375,22 +394,15 @@ uint32_t maxIndex;
 void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	if(hi2s==&hi2s3){
-//		for (int i = 0;i < 512; i++)
-//		{
-//			printf("%08X,%08X,%08X,%08X\r\n",adc_buffer[0+i*4],adc_buffer[1+i*4],adc_buffer[2+i*4],adc_buffer[3+i*4]);
-//			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
-//			printf("%08X\r\n",fft_input_buffer[i]);
-//			
-//			if(fft_input_buffer[i] & 0x800000){//negative
-//					fft_input_buffer[i]|=0xff000000;
-//			}
-//		}
-//		
-////		for(int i=0;i<512;i++)
-////			printf("%.1f,",(float32_t)fft_input_buffer[i]);
-////		printf("\n");
-//		FFT();
-//	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,2048);	
+		for (int i = 0;i < 256; i++)
+		{
+			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
+			
+			if(fft_input_buffer[i] & 0x800000){//negative
+					fft_input_buffer[i]|=0xff000000;
+			}
+			
+		}
 	}
 }
 #define FLASH_ADDRESS 0x08000000 

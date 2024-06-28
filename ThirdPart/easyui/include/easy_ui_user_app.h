@@ -23,7 +23,7 @@ extern EasyKey_t keyUp, keyDown;           // Used to control value up and down
 void MenuInit(void);
 void EasyUIKeyActionMonitor(void);
 void EventJump(void);
-
+void lowBatteryAction(void);
 #ifdef __cplusplus
 }
 #endif

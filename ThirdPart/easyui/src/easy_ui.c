@@ -18,7 +18,7 @@ uint8_t layer = 0;
 uint8_t opnForward, opnBackward;
 uint8_t opnEnter, opnExit, opnUp, opnDown;
 __IO bool menuisvisible = true;
-char *EasyUIVersion = "v1.5b";
+char *EasyUIVersion = "Ver. 1.0.0";
 bool functionIsRunning = false, listLoop = true, errorOccurred = false, batteryMonitor = true;
 
 /*!

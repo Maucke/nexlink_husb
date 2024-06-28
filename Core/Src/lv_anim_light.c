@@ -40,6 +40,12 @@ uint32_t lv_bezier3(uint32_t t, uint32_t u0, uint32_t u1, uint32_t u2, uint32_t 
   return v1 + v2 + v3 + v4;
 }
 
+int32_t lv_anim_path_onoff(const lv_anim_t* a)
+{
+  return a->end_value;
+}
+
+
 int32_t lv_anim_path_linear(const lv_anim_t* a)
 {
   /*Calculate the current step*/

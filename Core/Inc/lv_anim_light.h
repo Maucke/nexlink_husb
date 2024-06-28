@@ -42,6 +42,7 @@ typedef struct _lv_anim_t {
 #define LV_ANIM_RES_SHIFT 10
 
 
+int32_t lv_anim_path_onoff(const lv_anim_t* a);
 /**
  * Calculate the current value of an animation applying linear characteristic
  * @param a     pointer to an animation

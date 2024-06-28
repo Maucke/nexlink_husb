@@ -12,13 +12,15 @@
 #include "animation.h"
 #include "adc.h"
 #include "rx8900.h"
+#include "beep.h"
 #include "bmp280.h"
 #include <time.h>
 // Pages
-EasyUIPage_t pageMain, pageUSBForm, pageSensor, pageAnimation, pageSetting, pageAbout;
+EasyUIPage_t pageMain, pageUSBForm, pageFFT, pageSensor, pageAnimation, pageSetting, pageAbout;
 
 // Items
 EasyUIItem_t itemUSBForm;
+EasyUIItem_t itemFFT;
 EasyUIItem_t itemSensor;
 EasyUIItem_t itemAnimation;
 EasyUIItem_t itemSetting, itemColor, itemReset, itemBrightness, titleSetting;
@@ -34,6 +36,7 @@ __IO bool jump2winform = false;
 
 EasyKey_t keyUp, keyDown;
 extern __IO bool menuisvisible;
+extern lv_anim_t anim_beep;
 /*!
  * @brief   Sync the operation bool value
  *
@@ -45,6 +48,7 @@ void EasyUIKeyActionMonitor()
 		extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
     if(keyUp.isPressed)
 		{
+			lv_anim_start(&anim_beep, 1000, 200);
 			dbusbmsg("keyUp:isPressed");
 			if(des.brides.brightness == 0)
 			{
@@ -58,15 +62,16 @@ void EasyUIKeyActionMonitor()
 		}
     else if(keyUp.isHold)
 		{
+			lv_anim_start(&anim_beep, 2000, 500);
 			dbusbmsg("keyUp:holdTime:%d", keyUp.holdTime);
 			if(menuisvisible)
 				jump2winform = true;
 		}
 		if(keyDown.isHold)
 		{
+			lv_anim_start(&anim_beep, 2000, 500);
 			dbusbmsg("keyDown:holdTime:%d", keyDown.holdTime);
-			des.brides.brightness = 0;
-			lv_anim_start(&anim_backlight, des.brides.brightness, 1000);
+			lv_anim_start(&anim_backlight, 0, 1000);
 		}
 		
 		if(!menuisvisible)
@@ -170,10 +175,9 @@ void EventChangeBrightness(EasyUIItem_t* item)
 
 void PageAbout(EasyUIItem_t* page)
 {
+	char tempstr[128];
 	int screen_delta = 10;
 
-  EasyUIDisplayStr(10, screen_delta, "Ver. 1.0.0");
-	screen_delta += ITEM_HEIGHT;
   EasyUIDisplayStr(10, screen_delta, "MCU: STM32F405");
 	screen_delta += ITEM_HEIGHT;
   EasyUIDisplayStr(10, screen_delta, "MPU: MPU6050");
@@ -184,7 +188,10 @@ void PageAbout(EasyUIItem_t* page)
 	screen_delta += ITEM_HEIGHT;
   EasyUIDisplayStr(10, screen_delta, "Author: DPJ");
 	screen_delta += ITEM_HEIGHT;
-  EasyUIDisplayStr(10, screen_delta, __DATE__);
+  EasyUIDisplayStr(10, screen_delta, EasyUIVersion);
+	screen_delta += ITEM_HEIGHT;
+	snprintf(tempstr, sizeof tempstr, "Rel. %s", __DATE__);
+  EasyUIDisplayStr(10, screen_delta, tempstr);
 	screen_delta += ITEM_HEIGHT;
 }
 
@@ -203,29 +210,50 @@ void PageUSBForm(EasyUIItem_t* page)
   }
 }
 
-float getpresent(float voltage)
+void lowBatteryAction()
 {
-	return voltage>2.8f?1000.0f/14.0f*voltage-200.0f:0.0f;
+	float battery = Get_ADC_Value(&hadc1) * 3.28f * 2.0f / 4096.0f;
+	if(battery<3.2f)
+    lv_anim_start(&anim_backlight,0 , 100);
 }
 
-int getlevel(float voltage)
-{
-	static int level;
-	static float lastsymIndex;
-	float symIndex = getpresent(voltage);
-	if ((symIndex + 2) < lastsymIndex || (symIndex - 3) > lastsymIndex)
-	{
-		lastsymIndex=symIndex;
-		if(symIndex>=85)
-			level = 3;
-		else if(symIndex>=65)
-			level = 2;
-		else if(symIndex>=30)
-			level = 1;
-		else
-			level = 0;
-	}
-	return level;
+int batteryVoltageToPercentage(float voltage) {
+    float minVoltage = 3.0f;
+    float maxVoltage = 4.2f;
+    
+    // 计算电压在范围内的百分比
+    if (voltage < minVoltage) {
+        return 0; // 如果电压低于最小值，返回0%
+    } else if (voltage > maxVoltage) {
+        return 100; // 如果电压高于最大值，返回100%
+    } else {
+        // 在最小值和最大值之间进行线性插值计算
+        float percentage = (voltage - minVoltage) / (maxVoltage - minVoltage) * 100.0f;
+        return (int)percentage;
+    }
+}
+
+int batteryVoltageToLevel(float voltage) {
+    float minVoltage = 3.0f;
+    float maxVoltage = 4.2f;
+    
+    // 计算电压在范围内的百分比
+    float percentage = (voltage - minVoltage) / (maxVoltage - minVoltage) * 100.0f;
+    
+    // 将百分比映射到-1到4的级别
+    if (percentage < 20.0f) {
+        return -1;
+    } else if (percentage < 40.0f) {
+        return 0;
+    } else if (percentage < 60.0f) {
+        return 1;
+    } else if (percentage < 75.0f) {
+        return 2;
+    } else if (percentage <= 90.0f) { // 考虑到小数精度可能性，这里增加一个等于的情况
+        return 3;
+    } else {
+        return 4; 
+    }
 }
 
 void PageSensor(EasyUIItem_t* page)
@@ -242,8 +270,10 @@ void PageSensor(EasyUIItem_t* page)
   {
 		if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port,PW_CHARGE_Pin)==GPIO_PIN_RESET)
 			levelrun = (levelrun+1)%4;
+		else if(batteryVoltageToLevel(battery)!=-1)
+			levelrun = batteryVoltageToLevel(battery);
 		else
-			levelrun = getlevel(battery);
+			levelrun = levelrun?0:1;
 		battery = Get_ADC_Value(&hadc1) * 3.28f * 2.0f / 4096.0f;
     RX8900_GetTime(&time_user);
     BMP280_GetData(&pressure, &temperature, &humidity, &asl);
@@ -279,14 +309,12 @@ void PageSensor(EasyUIItem_t* page)
 	EasyUIDisplayStr(10, screen_delta, tempstr);
 	screen_delta += ITEM_HEIGHT;
 }
-
-void PageAnimation(EasyUIItem_t* page)
+void PageFFT(EasyUIItem_t* page)
 {
-  EasyUIClearBuffer();
-
-  if(opnExit)
-  {
-  }
+	extern int32_t fft_input_buffer[];
+	extern uint32_t adc_buffer[];
+	for(int i=0;i<LCD_W;i++)
+		EasyUIDrawDot(i,LCD_H/2+adc_buffer[i],0xFF00);
 }
 
 void MenuInit()
@@ -297,11 +325,13 @@ void MenuInit()
   EasyUIAddPage(&pageMain, PAGE_LIST);
   EasyUIAddPage(&pageSetting, PAGE_LIST);
   EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
+  EasyUIAddPage(&pageFFT, PAGE_CUSTOM, PageFFT);
   EasyUIAddPage(&pageSensor, PAGE_CUSTOM, PageSensor);
   EasyUIAddPage(&pageAnimation, PAGE_LIST);
   EasyUIAddPage(&pageAbout, PAGE_CUSTOM, PageAbout);
 
   EasyUIAddItem(&pageMain, &itemUSBForm, "USBForm", ITEM_JUMP_PAGE, pageUSBForm.id);
+  EasyUIAddItem(&pageMain, &itemFFT, "FFT", ITEM_JUMP_PAGE, pageFFT.id);
   EasyUIAddItem(&pageMain, &itemSensor, "Sensor", ITEM_JUMP_PAGE, pageSensor.id);
   EasyUIAddItem(&pageMain, &itemAnimation, "Animation", ITEM_JUMP_PAGE, pageAnimation.id);
   EasyUIAddItem(&pageMain, &itemSetting, "Setting", ITEM_JUMP_PAGE, pageSetting.id);
