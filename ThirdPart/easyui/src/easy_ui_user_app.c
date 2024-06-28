@@ -6,6 +6,7 @@
  */
 
 #include "easy_ui_user_app.h"
+#include "usbd_nex_link.h"
 #include "lv_anim_light.h"
 #include "usbd_nex_link.h"
 #include "zf_common_font.h"
@@ -52,7 +53,7 @@ void EasyUIKeyActionMonitor()
 			dbusbmsg("keyUp:isPressed");
 			if(des.brides.brightness == 0)
 			{
-				lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
+				lv_anim_start(&anim_backlight, des.brides.brightness?des.brides.brightness:300, 2000);
 				return;
 			}
 			
@@ -256,32 +257,75 @@ int batteryVoltageToLevel(float voltage) {
     }
 }
 
+typedef struct {
+    float current_value;  // 当前值
+    float target_value;   // 目标值
+} Filter;
+
+// 更新滤波器，根据变化的幅度选择步进大小
+void update_filter(Filter *filter) {
+    float diff = fabs(filter->target_value - filter->current_value);
+    
+    if (diff > 20.0f) {
+        filter->current_value = filter->target_value;  // 立即变化到新值
+    } else if (diff > 10.0f) {
+        if (filter->target_value > filter->current_value)
+            filter->current_value += 2.0f;
+        else
+            filter->current_value -= 2.0f;
+    } else if (diff > 5.0f) {
+        if (filter->target_value > filter->current_value)
+            filter->current_value += 1.0f;
+        else
+            filter->current_value -= 1.0f;
+    } else if (diff > 2.0f) {
+        if (filter->target_value > filter->current_value)
+            filter->current_value += 0.5f;
+        else
+            filter->current_value -= 0.5f;
+    } else if (diff > 0.5f) {
+        if (filter->target_value > filter->current_value)
+            filter->current_value += 0.1f;
+        else
+            filter->current_value -= 0.1f;
+    } else {
+        filter->current_value = filter->target_value;  // 立即变化到新值
+    }
+}
+
+Filter fltaltitude;
+Filter fltvoltagex10;
+
 void PageSensor(EasyUIItem_t* page)
 {
 	static int levelrun = 0;
 	char tempstr[128];
 	int screen_delta = 10;
-	static float battery;
 	static struct tm time_user;
   static float pressure, temperature, humidity, asl;
   static long last_update_time = 0;
   long now_tick = HAL_GetTick();
   if(now_tick - last_update_time > 500)
   {
+		fltvoltagex10.target_value = Get_ADC_Value(&hadc1) * 3.28f * 2.0f / 40.960f;
+		update_filter(&fltvoltagex10);
+		
 		if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port,PW_CHARGE_Pin)==GPIO_PIN_RESET)
 			levelrun = (levelrun+1)%4;
-		else if(batteryVoltageToLevel(battery)!=-1)
-			levelrun = batteryVoltageToLevel(battery);
+		else if(batteryVoltageToLevel(fltvoltagex10.current_value/100.0f)!=-1)
+			levelrun = batteryVoltageToLevel(fltvoltagex10.current_value/100.0f);
 		else
 			levelrun = levelrun?0:1;
-		battery = Get_ADC_Value(&hadc1) * 3.28f * 2.0f / 4096.0f;
     RX8900_GetTime(&time_user);
     BMP280_GetData(&pressure, &temperature, &humidity, &asl);
+		fltaltitude.target_value = BMP280_PressureToAltitude(&pressure);
+		update_filter(&fltaltitude);
+		
 		last_update_time = HAL_GetTick();
   }
 	
 	
-	snprintf(tempstr, sizeof tempstr, "BAT: %.1f V", battery);
+	snprintf(tempstr, sizeof tempstr, "BAT: %.1f V", fltvoltagex10.current_value/100.0f);
 	EasyUIDisplayStr(10, screen_delta, tempstr);
 	screen_delta += ITEM_HEIGHT;
 	if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port,PW_CHARGE_Pin)==GPIO_PIN_RESET)
@@ -305,16 +349,19 @@ void PageSensor(EasyUIItem_t* page)
 	snprintf(tempstr, sizeof tempstr, "T: %.1f C", temperature);
 	EasyUIDisplayStr(10, screen_delta, tempstr);
 	screen_delta += ITEM_HEIGHT;
-	snprintf(tempstr, sizeof tempstr, "Alt: %.1f M", BMP280_PressureToAltitude(&pressure));
+	snprintf(tempstr, sizeof tempstr, "Alt: %.1f M", fltaltitude.current_value);
 	EasyUIDisplayStr(10, screen_delta, tempstr);
 	screen_delta += ITEM_HEIGHT;
 }
+extern USBD_HandleTypeDef hUSB;extern bool usbavaliable;
 void PageFFT(EasyUIItem_t* page)
 {
 	extern int32_t fft_input_buffer[];
 	extern uint32_t adc_buffer[];
 	for(int i=0;i<LCD_W;i++)
 		EasyUIDrawDot(i,LCD_H/2+adc_buffer[i],0xFF00);
+		if(usbavaliable)
+			USBD_NEX_LINK_Transmit(&hUSB, (uint8_t*)fft_input_buffer, 256);
 }
 
 void MenuInit()

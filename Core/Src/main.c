@@ -271,7 +271,7 @@ int main(void)
 //	lv_anim_start(&anim_beep, 0, 2000);
 	lv_anim_path_set_cb(&anim_beep, lv_anim_path_onoff);
 	lv_anim_ready_set_cb(&anim_beep, ready_beep_value);
-//	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,1024);	
+	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,1024);	
 //  arm_rfft_fast_init_f32(&fft_handler, 512);
   dbusbmsg("application initialized");
 
@@ -396,12 +396,11 @@ void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 	if(hi2s==&hi2s3){
 		for (int i = 0;i < 256; i++)
 		{
-			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
+ 			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
 			
 			if(fft_input_buffer[i] & 0x800000){//negative
 					fft_input_buffer[i]|=0xff000000;
 			}
-			
 		}
 	}
 }

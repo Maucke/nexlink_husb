@@ -182,6 +182,66 @@ void BMP280_GetData(float* pressure, float* temperature, float* humidity, float*
   *asl = BMP280_PressureToAltitude(pressure);	                             /**/
 }
 
+// 定义最大样本数
+#define SAMPLE_SIZE 20
+void BMP280_GetDataFilter(float* pressure, float* temperature, float* humidity, float* asl)
+{
+	float sum = 0;
+	int count = 0;
+  float pressures[SAMPLE_SIZE], temperatures[SAMPLE_SIZE], humiditys[SAMPLE_SIZE], asls[SAMPLE_SIZE];
+	
+	for(int i=0;i<SAMPLE_SIZE;i++)
+	{
+		BMP280_GetData(&pressures[i],&temperatures[i],&humiditys[i],&asls[i]);
+	}
+	float max_value = pressures[0]; // 初始化为最小的float值
+	float min_value = pressures[0];  // 初始化为最大的float值
+	
+	// 寻找当前样本的最大值和最小值
+	for (int i = 0; i < SAMPLE_SIZE; ++i) {
+			if (pressures[i] > max_value) {
+					max_value = pressures[i];
+			}
+			if (pressures[i] < min_value) {
+					min_value = pressures[i];
+			}
+	}
+	
+	// 计算异常值的阈值（例如最大值和最小值的某个比例）
+	float threshold = (max_value - min_value) * 0.02f; // 例如取范围20%作为异常值的阈值
+	
+	// 遍历数组，过滤掉异常值并计算总和与有效数据数量
+	for (int i = 0; i < SAMPLE_SIZE; ++i) {
+			if (pressures[i] >= (min_value + threshold) && pressures[i] <= (max_value - threshold)) {
+					sum += pressures[i];
+					count++;
+			}
+	}
+	
+	// 计算平均值
+	if (count > 0) {
+			*pressure = sum / count;
+	} else {
+			*pressure = 0;
+	}
+	
+	sum = 0;
+	for (int i = 0; i < SAMPLE_SIZE; ++i) 
+		sum+=temperatures[i];
+	*temperature = sum/SAMPLE_SIZE;
+	
+	sum = 0;
+	for (int i = 0; i < SAMPLE_SIZE; ++i) 
+		sum+=humiditys[i];
+	*humidity = sum/SAMPLE_SIZE;
+	
+	sum = 0;
+	for (int i = 0; i < SAMPLE_SIZE; ++i) 
+		sum+=asls[i];
+	*asl = sum/SAMPLE_SIZE;
+}
+
+
 void BMP280_Test(int interval)
 {
   static float pressure, temperature, humidity, asl;
