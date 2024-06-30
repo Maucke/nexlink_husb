@@ -271,7 +271,7 @@ int main(void)
 //	lv_anim_start(&anim_beep, 0, 2000);
 	lv_anim_path_set_cb(&anim_beep, lv_anim_path_onoff);
 	lv_anim_ready_set_cb(&anim_beep, ready_beep_value);
-	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,1024);	
+//	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,1024);	
 //  arm_rfft_fast_init_f32(&fft_handler, 512);
   dbusbmsg("application initialized");
 

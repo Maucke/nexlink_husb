@@ -360,8 +360,6 @@ void PageFFT(EasyUIItem_t* page)
 	extern uint32_t adc_buffer[];
 	for(int i=0;i<LCD_W;i++)
 		EasyUIDrawDot(i,LCD_H/2+adc_buffer[i],0xFF00);
-		if(usbavaliable)
-			USBD_NEX_LINK_Transmit(&hUSB, (uint8_t*)fft_input_buffer, 256);
 }
 
 void MenuInit()
