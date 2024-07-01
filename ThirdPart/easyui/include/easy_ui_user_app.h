@@ -24,6 +24,8 @@ void MenuInit(void);
 void EasyUIKeyActionMonitor(void);
 void EventJump(void);
 void lowBatteryAction(void);
+void EasyUIShutDown(void);
+	
 #ifdef __cplusplus
 }
 #endif

@@ -43,6 +43,10 @@ void MX_ADC1_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 uint32_t Get_ADC_Value(ADC_HandleTypeDef* adcHandle);
+
+float Get_Battery_Value(void);
+int BatteryVoltage_To_Level(float voltage);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

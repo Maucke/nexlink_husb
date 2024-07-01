@@ -145,4 +145,33 @@ uint32_t Get_ADC_Value(ADC_HandleTypeDef* adcHandle)
   
   return adc_value;
 }
+
+float Get_Battery_Value()
+{
+	 return Get_ADC_Value(&hadc1) * 3.28f * 2.0f / 4096.0f;
+}
+
+int BatteryVoltage_To_Level(float voltage) {
+    float minVoltage = 3.0f;
+    float maxVoltage = 4.2f;
+    
+    // 计算电压在范围内的百分比
+    float percentage = (voltage - minVoltage) / (maxVoltage - minVoltage) * 100.0f;
+    
+    // 将百分比映射到-1到4的级别
+    if (percentage < 20.0f) {
+        return -1;
+    } else if (percentage < 40.0f) {
+        return 0;
+    } else if (percentage < 60.0f) {
+        return 1;
+    } else if (percentage < 75.0f) {
+        return 2;
+    } else if (percentage <= 90.0f) { // 考虑到小数精度可能性，这里增加一个等于的情况
+        return 3;
+    } else {
+        return 4; 
+    }
+}
+
 /* USER CODE END 1 */

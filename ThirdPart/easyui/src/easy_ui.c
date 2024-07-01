@@ -6,10 +6,13 @@
  */
 
 #include "easy_ui.h"
+#include "easy_ui_user_app.h"
+#include "lv_anim_light.h"
 #include "animation.h"
 #include "fftaffect.h"
+#include "rx8900.h"
 
-EasyUIPage_t *pageHead = NULL, *pageTail = NULL;
+EasyUIPage_t* pageHead = NULL, *pageTail = NULL;
 
 uint8_t pageIndex[MAX_LAYER] = {0};
 uint8_t itemIndex[MAX_LAYER] = {0};
@@ -18,11 +21,14 @@ uint8_t layer = 0;
 uint8_t opnForward, opnBackward;
 uint8_t opnEnter, opnExit, opnUp, opnDown;
 __IO bool menuisvisible = true;
-char *EasyUIVersion = "Ver. 1.0.0";
+char* EasyUIVersion = "Ver. 1.0.0";
 bool functionIsRunning = false, listLoop = true, errorOccurred = false, batteryMonitor = true;
 int Item_height = ITEM_HEIGHT;
 int Font_height = FONT_HEIGHT;
 
+static lv_anim_t anim_remind;
+static __IO int remindsec = HOLDTIME;
+static Filter fltvoltagex100;
 /*!
  * @brief   Add item to page
  *
@@ -44,66 +50,67 @@ int Font_height = FONT_HEIGHT;
  *          ITEM_PROGRESS_BAR: the incoming param should be 0 - 100
  *          If page type is PAGE_ICON, filled with icon array in the last variable
  */
-void EasyUIAddItem(EasyUIPage_t *page, EasyUIItem_t *item, char *_title, EasyUIItem_e func, ...)
+void EasyUIAddItem(EasyUIPage_t* page, EasyUIItem_t* item, char* _title, EasyUIItem_e func, ...)
 {
-    *item->flag = false;
-    item->flagDefault = false;
-    *item->param = 0;
-    item->paramDefault = 0;
-    item->paramBackup = 0;
-    item->pageId = 0;
-    item->Event = NULL;
+  *item->flag = false;
+  item->flagDefault = false;
+  *item->param = 0;
+  item->paramDefault = 0;
+  item->paramBackup = 0;
+  item->pageId = 0;
+  item->Event = NULL;
 
-    va_list variableArg;
-    va_start(variableArg, func);
-    item->title = _title;
-    item->funcType = func;
-    switch (item->funcType)
-    {
-    case ITEM_JUMP_PAGE:
-        item->pageId = va_arg(variableArg, int);
-        break;
-    case ITEM_CHECKBOX:
-    case ITEM_RADIO_BUTTON:
-    case ITEM_SWITCH:
-        item->flag = va_arg(variableArg, bool *);
-        item->flagDefault = *item->flag;
-        break;
-    case ITEM_PROGRESS_BAR:
-    case ITEM_CHANGE_VALUE:
-        item->param = va_arg(variableArg, paramType *);
-        item->paramBackup = *item->param;
-        item->paramDefault = *item->param;
-        item->Event = va_arg(variableArg, void (*)(EasyUIItem_t * ));
-        break;
-    case ITEM_MESSAGE:
-        item->msg = va_arg(variableArg, char *);
-        item->Event = va_arg(variableArg, void (*)(EasyUIItem_t * ));
-        break;
-    default:
-        break;
-    }
+  va_list variableArg;
+  va_start(variableArg, func);
+  item->title = _title;
+  item->funcType = func;
+  switch(item->funcType)
+  {
+  case ITEM_JUMP_PAGE:
+    item->pageId = va_arg(variableArg, int);
+    break;
+  case ITEM_CHECKBOX:
+  case ITEM_RADIO_BUTTON:
+  case ITEM_SWITCH:
+    item->flag = va_arg(variableArg, bool*);
+    item->flagDefault = *item->flag;
+    break;
+  case ITEM_PROGRESS_BAR:
+  case ITEM_CHANGE_VALUE:
+    item->param = va_arg(variableArg, paramType*);
+    item->paramBackup = *item->param;
+    item->paramDefault = *item->param;
+    item->Event = va_arg(variableArg, void (*)(EasyUIItem_t*));
+    break;
+  case ITEM_MESSAGE:
+    item->msg = va_arg(variableArg, char*);
+    item->Event = va_arg(variableArg, void (*)(EasyUIItem_t*));
+    break;
+  default:
+    break;
+  }
 
-    va_end(variableArg);
+  va_end(variableArg);
 
-    item->next = NULL;
+  item->next = NULL;
 
-    if (page->itemHead == NULL)
-    {
-        item->id = 0;
-        page->itemHead = item;
-        page->itemTail = item;
-    } else
-    {
-        item->id = page->itemTail->id + 1;
-        page->itemTail->next = item;
-        page->itemTail = page->itemTail->next;
-    }
+  if(page->itemHead == NULL)
+  {
+    item->id = 0;
+    page->itemHead = item;
+    page->itemTail = item;
+  }
+  else
+  {
+    item->id = page->itemTail->id + 1;
+    page->itemTail->next = item;
+    page->itemTail = page->itemTail->next;
+  }
 
-    item->lineId = item->id;
-    item->posForCal = 0;
-    item->step = 0;
-    item->position = 0;
+  item->lineId = item->id;
+  item->posForCal = 0;
+  item->step = 0;
+  item->position = 0;
 }
 
 
@@ -118,32 +125,33 @@ void EasyUIAddItem(EasyUIPage_t *page, EasyUIItem_t *item, char *_title, EasyUII
  *
  * @note    Do not modify, the first page should always be the fist one to be added.
  */
-void EasyUIAddPage(EasyUIPage_t *page, EasyUIPage_e func, ...)
+void EasyUIAddPage(EasyUIPage_t* page, EasyUIPage_e func, ...)
 {
-    page->Event = NULL;
+  page->Event = NULL;
 
-    va_list variableArg;
-    va_start(variableArg, func);
-    page->itemHead = NULL;
-    page->itemTail = NULL;
-    page->next = NULL;
+  va_list variableArg;
+  va_start(variableArg, func);
+  page->itemHead = NULL;
+  page->itemTail = NULL;
+  page->next = NULL;
 
-    page->funcType = func;
-    if (page->funcType == PAGE_CUSTOM)
-        page->Event = va_arg(variableArg, void (*)(EasyUIPage_t * ));
-    va_end(variableArg);
+  page->funcType = func;
+  if(page->funcType == PAGE_CUSTOM)
+    page->Event = va_arg(variableArg, void (*)(EasyUIPage_t*));
+  va_end(variableArg);
 
-    if (pageHead == NULL)
-    {
-        page->id = 0;
-        pageHead = page;
-        pageTail = page;
-    } else
-    {
-        page->id = pageTail->id + 1;
-        pageTail->next = page;
-        pageTail = pageTail->next;
-    }
+  if(pageHead == NULL)
+  {
+    page->id = 0;
+    pageHead = page;
+    pageTail = page;
+  }
+  else
+  {
+    page->id = pageTail->id + 1;
+    pageTail->next = page;
+    pageTail = pageTail->next;
+  }
 }
 
 
@@ -158,42 +166,42 @@ void EasyUIAddPage(EasyUIPage_t *page, EasyUIPage_e func, ...)
  */
 void EasyUITransitionAnim()
 {
-    for (int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  for(int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  {
+    for(int i = 0; i < SCREEN_WIDTH + 1; i += 2)
     {
-        for (int i = 0; i < SCREEN_WIDTH + 1; i += 2)
-        {
-            EasyUIDrawDot(i, j, NV3030B_backgroundColor);
-        }
+      EasyUIDrawDot(i, j, NV3030B_backgroundColor);
     }
-    EasyUIDelay_ms(TRANSITION_TIME / 4);
-    EasyUISendBuffer();
-    for (int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  }
+  EasyUIDelay_ms(TRANSITION_TIME / 4);
+  EasyUISendBuffer();
+  for(int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  {
+    for(int i = 1; i < SCREEN_WIDTH + 1; i += 2)
     {
-        for (int i = 1; i < SCREEN_WIDTH + 1; i += 2)
-        {
-            EasyUIDrawDot(i, j, NV3030B_backgroundColor);
-        }
+      EasyUIDrawDot(i, j, NV3030B_backgroundColor);
     }
-    EasyUIDelay_ms(TRANSITION_TIME / 4);
-    EasyUISendBuffer();
-    for (int j = 0; j < SCREEN_HEIGHT + 1; j += 2)
+  }
+  EasyUIDelay_ms(TRANSITION_TIME / 4);
+  EasyUISendBuffer();
+  for(int j = 0; j < SCREEN_HEIGHT + 1; j += 2)
+  {
+    for(int i = 1; i < SCREEN_WIDTH + 1; i += 2)
     {
-        for (int i = 1; i < SCREEN_WIDTH + 1; i += 2)
-        {
-            EasyUIDrawDot(i, j, NV3030B_backgroundColor);
-        }
+      EasyUIDrawDot(i, j, NV3030B_backgroundColor);
     }
-    EasyUIDelay_ms(TRANSITION_TIME / 4);
-    EasyUISendBuffer();
-    for (int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  }
+  EasyUIDelay_ms(TRANSITION_TIME / 4);
+  EasyUISendBuffer();
+  for(int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  {
+    for(int i = 1; i < SCREEN_WIDTH + 1; i += 2)
     {
-        for (int i = 1; i < SCREEN_WIDTH + 1; i += 2)
-        {
-            EasyUIDrawDot(i - 1, j - 1, NV3030B_backgroundColor);
-        }
+      EasyUIDrawDot(i - 1, j - 1, NV3030B_backgroundColor);
     }
-    EasyUIDelay_ms(TRANSITION_TIME / 4);
-    EasyUISendBuffer();
+  }
+  EasyUIDelay_ms(TRANSITION_TIME / 4);
+  EasyUISendBuffer();
 }
 
 
@@ -205,33 +213,33 @@ void EasyUITransitionAnim()
  */
 void EasyUIBackgroundBlur()
 {
-    for (int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  for(int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  {
+    for(int i = 0; i < SCREEN_WIDTH + 1; i += 2)
     {
-        for (int i = 0; i < SCREEN_WIDTH + 1; i += 2)
-        {
-            EasyUIDrawDot(i, j, NV3030B_backgroundColor);
-        }
+      EasyUIDrawDot(i, j, NV3030B_backgroundColor);
     }
-    EasyUIDelay_ms(TRANSITION_TIME / 3);
-    EasyUISendBuffer();
-    for (int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  }
+  EasyUIDelay_ms(TRANSITION_TIME / 3);
+  EasyUISendBuffer();
+  for(int j = 1; j < SCREEN_HEIGHT + 1; j += 2)
+  {
+    for(int i = 1; i < SCREEN_WIDTH + 1; i += 2)
     {
-        for (int i = 1; i < SCREEN_WIDTH + 1; i += 2)
-        {
-            EasyUIDrawDot(i, j, NV3030B_backgroundColor);
-        }
+      EasyUIDrawDot(i, j, NV3030B_backgroundColor);
     }
-    EasyUIDelay_ms(TRANSITION_TIME / 3);
-    EasyUISendBuffer();
-    for (int j = 0; j < SCREEN_HEIGHT + 1; j += 2)
+  }
+  EasyUIDelay_ms(TRANSITION_TIME / 3);
+  EasyUISendBuffer();
+  for(int j = 0; j < SCREEN_HEIGHT + 1; j += 2)
+  {
+    for(int i = 1; i < SCREEN_WIDTH + 1; i += 2)
     {
-        for (int i = 1; i < SCREEN_WIDTH + 1; i += 2)
-        {
-            EasyUIDrawDot(i, j, NV3030B_backgroundColor);
-        }
+      EasyUIDrawDot(i, j, NV3030B_backgroundColor);
     }
-    EasyUIDelay_ms(TRANSITION_TIME / 3);
-    EasyUISendBuffer();
+  }
+  EasyUIDelay_ms(TRANSITION_TIME / 3);
+  EasyUISendBuffer();
 }
 
 
@@ -241,20 +249,20 @@ void EasyUIBackgroundBlur()
  * @param   msg     The message need to be displayed
  * @return  void
  */
-void EasyUIDrawMsgBox(char *msg)
+void EasyUIDrawMsgBox(char* msg)
 {
-    uint16_t width = strlen(msg) * FONT_WIDTH + 5;
-    uint16_t x, y;
-    uint8_t offset = 2;
-    x = (SCREEN_WIDTH - width) / 2;
-    y = (SCREEN_HEIGHT - ITEM_HEIGHT) / 2;
-    EasyUIBackgroundBlur();
-    EasyUIDrawRFrame(x + offset, y - offset, width, ITEM_HEIGHT, NV3030B_penColor, 1);
-    EasyUIDrawRBox(x - offset, y + offset, width, ITEM_HEIGHT, NV3030B_penColor, 1);
-    EasyUISetDrawColor(XOR);
-    EasyUIDisplayStr(x - offset + 2, y + offset + (ITEM_HEIGHT - FONT_HEIGHT) / 2, msg);
-    EasyUISetDrawColor(NORMAL);
-    EasyUISendBuffer();
+  uint16_t width = strlen(msg) * FONT_WIDTH + 5;
+  uint16_t x, y;
+  uint8_t offset = 2;
+  x = (SCREEN_WIDTH - width) / 2;
+  y = (SCREEN_HEIGHT - ITEM_HEIGHT) / 2;
+  EasyUIBackgroundBlur();
+  EasyUIDrawRFrame(x + offset, y - offset, width, ITEM_HEIGHT, NV3030B_penColor, 1);
+  EasyUIDrawRBox(x - offset, y + offset, width, ITEM_HEIGHT, NV3030B_penColor, 1);
+  EasyUISetDrawColor(XOR);
+  EasyUIDisplayStr(x - offset + 2, y + offset + (ITEM_HEIGHT - FONT_HEIGHT) / 2, msg);
+  EasyUISetDrawColor(NORMAL);
+  EasyUISendBuffer();
 }
 
 
@@ -266,38 +274,38 @@ void EasyUIDrawMsgBox(char *msg)
  *
  * @note    Internal call
  */
-void EasyUIDrawProgressBar(EasyUIItem_t *item)
+void EasyUIDrawProgressBar(EasyUIItem_t* item)
 {
-    static int16_t x, y;
-    static uint16_t width, height;
-    static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1;
-    static uint16_t barWidth;
+  static int16_t x, y;
+  static uint16_t width, height;
+  static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1;
+  static uint16_t barWidth;
 
-    EasyUISetDrawColor(NORMAL);
+  EasyUISetDrawColor(NORMAL);
 
-    // Display information and draw box
-    height = ITEM_HEIGHT * 2 + 2;
-    if (strlen(item->title) + 1 > 12)
-        width = (strlen(item->title) + 1) * FONT_WIDTH + 7;
-    else
-        width = 12 * FONT_WIDTH + 7;
-    if (width < 2 * SCREEN_WIDTH / 3)
-        width = 2 * SCREEN_WIDTH / 3;
-    x = (SCREEN_WIDTH - width) / 2;
-    y = (SCREEN_HEIGHT - height) / 2;
+  // Display information and draw box
+  height = ITEM_HEIGHT * 2 + 2;
+  if(strlen(item->title) + 1 > 12)
+    width = (strlen(item->title) + 1) * FONT_WIDTH + 7;
+  else
+    width = 12 * FONT_WIDTH + 7;
+  if(width < 2 * SCREEN_WIDTH / 3)
+    width = 2 * SCREEN_WIDTH / 3;
+  x = (SCREEN_WIDTH - width) / 2;
+  y = (SCREEN_HEIGHT - height) / 2;
 
-    barWidth = width - 6 * FONT_WIDTH - 10;
+  barWidth = width - 6 * FONT_WIDTH - 10;
 
-    EasyUIDrawFrame(x - 1, y - 1, width + 2, height + 2, NV3030B_penColor);
-    EasyUIDrawBox(x, y, width, height, NV3030B_backgroundColor);
-    EasyUIDisplayStr(x + 3, y + itemHeightOffset, item->title);
-    EasyUIDisplayStr(x + 3 + strlen(item->title) * FONT_WIDTH, y + itemHeightOffset, ":");
-    EasyUIDrawFrame(x + 3, y + ITEM_HEIGHT + itemHeightOffset, barWidth, FONT_HEIGHT, NV3030B_penColor);
-    EasyUIDrawBox(x + 5, y + ITEM_HEIGHT + itemHeightOffset + 2, (float) *item->param / 100 * barWidth - 4,
-                  FONT_HEIGHT - 4, NV3030B_penColor);
-    EasyUIDisplayFloat(x + width - 6 * FONT_WIDTH - 4, y + ITEM_HEIGHT + itemHeightOffset, *item->param, 3, 2);
+  EasyUIDrawFrame(x - 1, y - 1, width + 2, height + 2, NV3030B_penColor);
+  EasyUIDrawBox(x, y, width, height, NV3030B_backgroundColor);
+  EasyUIDisplayStr(x + 3, y + itemHeightOffset, item->title);
+  EasyUIDisplayStr(x + 3 + strlen(item->title) * FONT_WIDTH, y + itemHeightOffset, ":");
+  EasyUIDrawFrame(x + 3, y + ITEM_HEIGHT + itemHeightOffset, barWidth, FONT_HEIGHT, NV3030B_penColor);
+  EasyUIDrawBox(x + 5, y + ITEM_HEIGHT + itemHeightOffset + 2, (float) *item->param / 100 * barWidth - 4,
+                FONT_HEIGHT - 4, NV3030B_penColor);
+  EasyUIDisplayFloat(x + width - 6 * FONT_WIDTH - 4, y + ITEM_HEIGHT + itemHeightOffset, *item->param, 3, 2);
 
-    EasyUISendBuffer();
+  EasyUISendBuffer();
 }
 
 
@@ -315,9 +323,9 @@ void EasyUIDrawProgressBar(EasyUIItem_t *item)
  */
 void EasyUIDrawCheckbox(int16_t x, int16_t y, uint16_t size, uint8_t offset, bool boolValue, uint8_t r)
 {
-    EasyUIDrawRFrame(x, y, size, size, NV3030B_penColor, r);
-    if (boolValue)
-        EasyUIDrawRBox(x + offset, y + offset, size - 2 * offset, size - 2 * offset, NV3030B_penColor, r);
+  EasyUIDrawRFrame(x, y, size, size, NV3030B_penColor, r);
+  if(boolValue)
+    EasyUIDrawRBox(x + offset, y + offset, size - 2 * offset, size - 2 * offset, NV3030B_penColor, r);
 }
 
 /*!
@@ -334,9 +342,9 @@ void EasyUIDrawCheckbox(int16_t x, int16_t y, uint16_t size, uint8_t offset, boo
  */
 void EasyUIDrawRadio(int16_t x, int16_t y, uint16_t size, uint8_t offset, bool boolValue, uint8_t r)
 {
-    EasyUIDrawRFrame(x, y, size, size, NV3030B_penColor, r - 1);
-    if (boolValue)
-        EasyUIDrawRBox(x + offset, y + offset, size - 2 * offset, size - 2 * offset, NV3030B_penColor, r - 2 * offset);
+  EasyUIDrawRFrame(x, y, size, size, NV3030B_penColor, r - 1);
+  if(boolValue)
+    EasyUIDrawRBox(x + offset, y + offset, size - 2 * offset, size - 2 * offset, NV3030B_penColor, r - 2 * offset);
 }
 
 
@@ -351,64 +359,66 @@ void EasyUIDrawRadio(int16_t x, int16_t y, uint16_t size, uint8_t offset, bool b
  *
  * @note    Internal call
  */
-void EasyUIGetItemPos(EasyUIPage_t *page, EasyUIItem_t *item, uint8_t index, uint8_t timer)
+void EasyUIGetItemPos(EasyUIPage_t* page, EasyUIItem_t* item, uint8_t index, uint8_t timer)
 {
-    static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2;
-    static uint16_t time = 0;
-    static int16_t move = 0, target = 0;
-    static uint8_t lastIndex = 0, moveFlag = 0;
-    uint8_t speed = ITEM_MOVE_TIME / timer;
+  static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2;
+  static uint16_t time = 0;
+  static int16_t move = 0, target = 0;
+  static uint8_t lastIndex = 0, moveFlag = 0;
+  uint8_t speed = ITEM_MOVE_TIME / timer;
 
-    // Item need to move or not
-    if (moveFlag == 0)
+  // Item need to move or not
+  if(moveFlag == 0)
+  {
+    for(EasyUIItem_t* itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
     {
-        for (EasyUIItem_t *itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
-        {
-            if (index == itemTmp->id && itemTmp->lineId < 0)
-            {
-                move = itemTmp->lineId;
-                moveFlag = 1;
-                break;
-            } else if (index == itemTmp->id && itemTmp->lineId > ITEM_LINES - 1)
-            {
-                move = itemTmp->lineId - ITEM_LINES + 1;
-                moveFlag = 1;
-                break;
-            }
-        }
+      if(index == itemTmp->id && itemTmp->lineId < 0)
+      {
+        move = itemTmp->lineId;
+        moveFlag = 1;
+        break;
+      }
+      else if(index == itemTmp->id && itemTmp->lineId > ITEM_LINES - 1)
+      {
+        move = itemTmp->lineId - ITEM_LINES + 1;
+        moveFlag = 1;
+        break;
+      }
     }
+  }
 
-    // Change the item lineId and get target position
-    for (EasyUIItem_t *itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
-    {
-        itemTmp->lineId -= move;
-    }
-    move = 0;
-    moveFlag = 0;
-    target = itemHeightOffset + item->lineId * Item_height;
+  // Change the item lineId and get target position
+  for(EasyUIItem_t* itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
+  {
+    itemTmp->lineId -= move;
+  }
+  move = 0;
+  moveFlag = 0;
+  target = itemHeightOffset + item->lineId * Item_height;
 
-    // Calculate current position
-    if (time == 0 || index != lastIndex)
-    {
-        item->step = ((float) target - (float) item->position) / (float) speed;
-    }
-    if (time >= ITEM_MOVE_TIME)
-    {
-        item->posForCal = target;
-    } else
-        item->posForCal += item->step;
+  // Calculate current position
+  if(time == 0 || index != lastIndex)
+  {
+    item->step = ((float) target - (float) item->position) / (float) speed;
+  }
+  if(time >= ITEM_MOVE_TIME)
+  {
+    item->posForCal = target;
+  }
+  else
+    item->posForCal += item->step;
 
-    item->position = (int16_t) item->posForCal;
-    lastIndex = index;
+  item->position = (int16_t) item->posForCal;
+  lastIndex = index;
 
-    // Time counter
-    if (item->next == NULL)
-    {
-        if (target == item->position)
-            time = 0;
-        else
-            time += timer;
-    }
+  // Time counter
+  if(item->next == NULL)
+  {
+    if(target == item->position)
+      time = 0;
+    else
+      time += timer;
+  }
 }
 
 
@@ -419,68 +429,68 @@ void EasyUIGetItemPos(EasyUIPage_t *page, EasyUIItem_t *item, uint8_t index, uin
  *
  * @note    Internal call
  */
-void EasyUIDisplayItem(EasyUIItem_t *item)
+void EasyUIDisplayItem(EasyUIItem_t* item)
 {
-    switch (item->funcType)
-    {
-    case ITEM_JUMP_PAGE:
-        EasyUIDisplayStr(2, item->position, "+");
-        EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
-        break;
-    case ITEM_PAGE_DESCRIPTION:
-        EasyUIDisplayStr(2, item->position, item->title);
-        break;
-    case ITEM_RADIO_BUTTON:
-        EasyUIDisplayStr(2, item->position, "-");
-        EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
-        EasyUIDrawRadio(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - Item_height + 2,
-                           item->position - (Item_height - Font_height) / 2 + 1, Item_height - 2, RADIO_BUTTON_OFFSET,
-                           *item->flag, (Item_height - 2)/2);
-        break;
-    case ITEM_CHECKBOX:
-        EasyUIDisplayStr(2, item->position, "-");
-        EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
-        EasyUIDrawCheckbox(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - Item_height + 2,
-                           item->position - (Item_height - Font_height) / 2 + 1, Item_height - 2, CHECK_BOX_OFFSET,
-                           *item->flag, 1);
-        break;
-    case ITEM_SWITCH:
-        EasyUIDisplayStr(2, item->position, "-");
-        EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
-        if (*item->flag)
-            EasyUIDisplayStr(SCREEN_WIDTH - 7 - 2 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position, "on");
-        else
-            EasyUIDisplayStr(SCREEN_WIDTH - 7 - 3 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position, "off");
-        break;
-    case ITEM_PROGRESS_BAR:
-    case ITEM_CHANGE_VALUE:
-        EasyUIDisplayStr(2, item->position, "-");
-        EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
-        if (*item->param < 10 && *item->param >= 0)
-            EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 4 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
-                               *item->param, 4, 2);
-        else if (*item->param < 100 && *item->param > -10)
-            EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 5 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
-                               *item->param, 4, 2);
-        else if (*item->param < 1000 && *item->param > -100)
-            EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 6 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
-                               *item->param, 4, 2);
-        else if (*item->param < 10000 && *item->param > -1000)
-            EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 7 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
-                               *item->param, 4, 2);
-        else    // Hide because it's too long
-            EasyUIDisplayStr(SCREEN_WIDTH - 7 - 5 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position, "**.**");
-        break;
-    case ITEM_DETAIL:
-				EasyUISetFont(NV3030B_6X8_FONT);
-        EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
-				EasyUISetFont(NV3030B_12X16_OCR);
-        break;
-    default:
-        EasyUIDisplayStr(2, item->position, "-");
-        EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
-        break;
-    }
+  switch(item->funcType)
+  {
+  case ITEM_JUMP_PAGE:
+    EasyUIDisplayStr(2, item->position, "+");
+    EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
+    break;
+  case ITEM_PAGE_DESCRIPTION:
+    EasyUIDisplayStr(2, item->position, item->title);
+    break;
+  case ITEM_RADIO_BUTTON:
+    EasyUIDisplayStr(2, item->position, "-");
+    EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
+    EasyUIDrawRadio(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - Item_height + 2,
+                    item->position - (Item_height - Font_height) / 2 + 1, Item_height - 2, RADIO_BUTTON_OFFSET,
+                    *item->flag, (Item_height - 2) / 2);
+    break;
+  case ITEM_CHECKBOX:
+    EasyUIDisplayStr(2, item->position, "-");
+    EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
+    EasyUIDrawCheckbox(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - Item_height + 2,
+                       item->position - (Item_height - Font_height) / 2 + 1, Item_height - 2, CHECK_BOX_OFFSET,
+                       *item->flag, 1);
+    break;
+  case ITEM_SWITCH:
+    EasyUIDisplayStr(2, item->position, "-");
+    EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
+    if(*item->flag)
+      EasyUIDisplayStr(SCREEN_WIDTH - 7 - 2 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position, "ON");
+    else
+      EasyUIDisplayStr(SCREEN_WIDTH - 7 - 3 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position, "OFF");
+    break;
+  case ITEM_PROGRESS_BAR:
+  case ITEM_CHANGE_VALUE:
+    EasyUIDisplayStr(2, item->position, "-");
+    EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
+    if(*item->param < 10 && *item->param >= 0)
+      EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 4 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
+                         *item->param, 4, 2);
+    else if(*item->param < 100 && *item->param > -10)
+      EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 5 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
+                         *item->param, 4, 2);
+    else if(*item->param < 1000 && *item->param > -100)
+      EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 6 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
+                         *item->param, 4, 2);
+    else if(*item->param < 10000 && *item->param > -1000)
+      EasyUIDisplayFloat(SCREEN_WIDTH - 0 - 7 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position,
+                         *item->param, 4, 2);
+    else    // Hide because it's too long
+      EasyUIDisplayStr(SCREEN_WIDTH - 7 - 5 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position, "**.**");
+    break;
+  case ITEM_DETAIL:
+    EasyUISetFont(NV3030B_6X8_FONT);
+    EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
+    EasyUISetFont(NV3030B_12X16_OCR);
+    break;
+  default:
+    EasyUIDisplayStr(2, item->position, "-");
+    EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
+    break;
+  }
 }
 
 
@@ -495,78 +505,79 @@ void EasyUIDisplayItem(EasyUIItem_t *item)
  *
  * @note    Internal call
  */
-void EasyUIDrawIndicator(EasyUIPage_t *page, uint8_t index, uint8_t timer, uint8_t status)
+void EasyUIDrawIndicator(EasyUIPage_t* page, uint8_t index, uint8_t timer, uint8_t status)
 {
-    static float stepLength = 0, stepY = 0, length = 0, y = 0;
-    static uint16_t time = 0;
-    static uint8_t lastIndex = 0;
-    static uint16_t lengthTarget = 0, yTarget = 0;
-    uint8_t speed = INDICATOR_MOVE_TIME / timer;
+  static float stepLength = 0, stepY = 0, length = 0, y = 0;
+  static uint16_t time = 0;
+  static uint8_t lastIndex = 0;
+  static uint16_t lengthTarget = 0, yTarget = 0;
+  uint8_t speed = INDICATOR_MOVE_TIME / timer;
 
-    if (status)
-        y = SCREEN_HEIGHT;
+  if(status)
+    y = 0;
 
-    if (page->funcType != PAGE_LIST)
-        return;
+  if(page->funcType != PAGE_LIST)
+    return;
 
-    // Get Initial length
-    if ((int) length == 0)
-    {
-        if (page->itemHead->funcType == ITEM_PAGE_DESCRIPTION)
-            length = (float) (strlen(page->itemHead->title)) * FONT_WIDTH + 5;
-        else
-            length = (float) (strlen(page->itemHead->title) + 1) * FONT_WIDTH + 8;
-    }
-
-    // Get target length and y
-    for (EasyUIItem_t *itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
-    {
-        if (index == itemTmp->id)
-        {
-            if (itemTmp->funcType == ITEM_PAGE_DESCRIPTION)
-                lengthTarget = (strlen(itemTmp->title)) * FONT_WIDTH + 5;
-            else
-                lengthTarget = (strlen(itemTmp->title) + 1) * FONT_WIDTH + 8;
-            yTarget = itemTmp->lineId * Item_height;
-            if (index != lastIndex && abs(index - lastIndex) < page->itemTail->id)
-            {
-                if (itemTmp->position < 0)
-                    y = (float) 3 * Item_height / 4;
-                else if (itemTmp->position >= (ITEM_LINES) * Item_height)
-                    y = (ITEM_LINES - 2) * Item_height + (float) Item_height / 4;
-            }
-            break;
-        }
-    }
-
-    // Calculate current position
-    if (time == 0 || index != lastIndex)
-    {
-        stepLength = ((float) lengthTarget - (float) length) / (float) speed;
-        stepY = ((float) yTarget - (float) y) / (float) speed;
-    }
-    if (time >= ITEM_MOVE_TIME)
-    {
-        length = lengthTarget;
-        y = yTarget;
-    } else
-    {
-        length += stepLength;
-        y += stepY;
-    }
-
-    // Draw rounded box and scroll bar
-    EasyUISetDrawColor(XOR);
-    EasyUIDrawRBox(0, (int16_t) y, (int16_t) length, Item_height, NV3030B_penColor, 1);
-    EasyUISetDrawColor(NORMAL);
-    EasyUIDrawRBox(SCREEN_WIDTH - SCROLL_BAR_WIDTH, (int16_t) y, SCROLL_BAR_WIDTH, Item_height, NV3030B_penColor, 1);
-    lastIndex = index;
-
-    // Time counter
-    if ((int) length == lengthTarget && (int) y == yTarget)
-        time = 0;
+  // Get Initial length
+  if((int) length == 0)
+  {
+    if(page->itemHead->funcType == ITEM_PAGE_DESCRIPTION)
+      length = (float)(strlen(page->itemHead->title)) * FONT_WIDTH + 5;
     else
-        time += timer;
+      length = (float)(strlen(page->itemHead->title) + 1) * FONT_WIDTH + 8;
+  }
+
+  // Get target length and y
+  for(EasyUIItem_t* itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
+  {
+    if(index == itemTmp->id)
+    {
+      if(itemTmp->funcType == ITEM_PAGE_DESCRIPTION)
+        lengthTarget = (strlen(itemTmp->title)) * FONT_WIDTH + 5;
+      else
+        lengthTarget = (strlen(itemTmp->title) + 1) * FONT_WIDTH + 8;
+      yTarget = itemTmp->lineId * Item_height;
+      if(index != lastIndex && abs(index - lastIndex) < page->itemTail->id)
+      {
+        if(itemTmp->position < 0)
+          y = (float) 3 * Item_height / 4;
+        else if(itemTmp->position >= (ITEM_LINES) * Item_height)
+          y = (ITEM_LINES - 2) * Item_height + (float) Item_height / 4;
+      }
+      break;
+    }
+  }
+
+  // Calculate current position
+  if(time == 0 || index != lastIndex)
+  {
+    stepLength = ((float) lengthTarget - (float) length) / (float) speed;
+    stepY = ((float) yTarget - (float) y) / (float) speed;
+  }
+  if(time >= ITEM_MOVE_TIME)
+  {
+    length = lengthTarget;
+    y = yTarget;
+  }
+  else
+  {
+    length += stepLength;
+    y += stepY;
+  }
+
+  // Draw rounded box and scroll bar
+  EasyUISetDrawColor(XOR);
+  EasyUIDrawRBox(0, (int16_t) y, (int16_t) length, Item_height, NV3030B_penColor, 1);
+  EasyUISetDrawColor(NORMAL);
+  EasyUIDrawRBox(SCREEN_WIDTH - SCROLL_BAR_WIDTH, (int16_t) y, SCROLL_BAR_WIDTH, Item_height, NV3030B_penColor, 1);
+  lastIndex = index;
+
+  // Time counter
+  if((int) length == lengthTarget && (int) y == yTarget)
+    time = 0;
+  else
+    time += timer;
 }
 
 
@@ -580,52 +591,52 @@ void EasyUIDrawIndicator(EasyUIPage_t *page, uint8_t index, uint8_t timer, uint8
  *
  * @note    Internal call
  */
-void EasyUIItemOperationResponse(EasyUIPage_t *page, EasyUIItem_t *item, uint8_t *index)
+void EasyUIItemOperationResponse(EasyUIPage_t* page, EasyUIItem_t* item, uint8_t* index)
 {
-    switch (item->funcType)
+  switch(item->funcType)
+  {
+  case ITEM_JUMP_PAGE:
+    if(layer == MAX_LAYER - 1)
+      break;
+    if(pageIndex[layer] == item->pageId)
+      break;
+    itemIndex[layer++] = *index;
+    pageIndex[layer] = item->pageId;
+    *index = 0;
+    for(EasyUIItem_t* itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
     {
-    case ITEM_JUMP_PAGE:
-        if (layer == MAX_LAYER - 1)
-            break;
-				if(pageIndex[layer] == item->pageId)
-					break;
-        itemIndex[layer++] = *index;
-        pageIndex[layer] = item->pageId;
-        *index = 0;
-        for (EasyUIItem_t *itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
-        {
-            if (itemTmp->lineId < 0)
-                continue;
+      if(itemTmp->lineId < 0)
+        continue;
 
-            itemTmp->position = 0;
-            itemTmp->posForCal = 0;
-        }
-        EasyUITransitionAnim();
-        break;
-    case ITEM_CHECKBOX:
-    case ITEM_SWITCH:
-        *item->flag = !*item->flag;
-        break;
-    case ITEM_RADIO_BUTTON:
-        for (EasyUIItem_t *itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
-        {
-            if (itemTmp->funcType == ITEM_RADIO_BUTTON && itemTmp->id != item->id)
-                *itemTmp->flag = false;
-        }
-        *item->flag = !*item->flag;
-        break;
-    case ITEM_PROGRESS_BAR:
-    case ITEM_CHANGE_VALUE:
-        functionIsRunning = true;
-        EasyUIBackgroundBlur();
-        break;
-    case ITEM_MESSAGE:
-        functionIsRunning = true;
-        EasyUIDrawMsgBox(item->msg);
-        break;
-    default:
-        break;
+      itemTmp->position = 0;
+      itemTmp->posForCal = 0;
     }
+    EasyUITransitionAnim();
+    break;
+  case ITEM_CHECKBOX:
+  case ITEM_SWITCH:
+    *item->flag = !*item->flag;
+    break;
+  case ITEM_RADIO_BUTTON:
+    for(EasyUIItem_t* itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
+    {
+      if(itemTmp->funcType == ITEM_RADIO_BUTTON && itemTmp->id != item->id)
+        *itemTmp->flag = false;
+    }
+    *item->flag = !*item->flag;
+    break;
+  case ITEM_PROGRESS_BAR:
+  case ITEM_CHANGE_VALUE:
+    functionIsRunning = true;
+    EasyUIBackgroundBlur();
+    break;
+  case ITEM_MESSAGE:
+    functionIsRunning = true;
+    EasyUIDrawMsgBox(item->msg);
+    break;
+  default:
+    break;
+  }
 }
 
 
@@ -635,418 +646,427 @@ void EasyUIItemOperationResponse(EasyUIPage_t *page, EasyUIItem_t *item, uint8_t
  * @param   item    EasyUI item struct
  * @return  void
  */
-void EasyUIEventChangeUint(EasyUIItem_t *item)
+void EasyUIEventChangeUint(EasyUIItem_t* item)
 {
-    static int16_t x, y;
-    static uint16_t width, height;
-    static uint8_t index = 1, step = 1;
-    static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1;
-    static bool changeVal = false, changeStep = false;
+  static int16_t x, y;
+  static uint16_t width, height;
+  static uint8_t index = 1, step = 1;
+  static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1;
+  static bool changeVal = false, changeStep = false;
 
+  EasyUISetDrawColor(NORMAL);
+
+  // Display information and draw box
+  height = ITEM_HEIGHT * 4 + 2;
+  if(strlen(item->title) + 1 > 12)
+    width = (strlen(item->title) + 1) * FONT_WIDTH + 7;
+  else
+    width = 12 * FONT_WIDTH + 7;
+  if(width < 2 * SCREEN_WIDTH / 3)
+    width = 2 * SCREEN_WIDTH / 3;
+  x = (SCREEN_WIDTH - width) / 2;
+  y = (SCREEN_HEIGHT - height) / 2;
+  EasyUIDrawFrame(x - 1, y - 1, width + 2, height + 2, NV3030B_penColor);
+  EasyUIDrawBox(x, y, width, height, NV3030B_backgroundColor);
+  EasyUIDisplayStr(x + 3, y + itemHeightOffset, item->title);
+  EasyUIDisplayStr(x + 3 + strlen(item->title) * FONT_WIDTH, y + itemHeightOffset, ":");
+  EasyUIDisplayStr(x + 3, y + 2 * ITEM_HEIGHT + itemHeightOffset, "Step:");
+  EasyUIDisplayStr(x + 3, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Save");
+  EasyUIDisplayStr(x + width - 6 * FONT_WIDTH - 4, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Return");
+
+  // Change value of param or step
+  if(changeVal)
+  {
+    EasyUISetDrawColor(XOR);
+    EasyUIDrawBox(x + 2, y + 2, (strlen(item->title) + 1) * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
     EasyUISetDrawColor(NORMAL);
-
-    // Display information and draw box
-    height = ITEM_HEIGHT * 4 + 2;
-    if (strlen(item->title) + 1 > 12)
-        width = (strlen(item->title) + 1) * FONT_WIDTH + 7;
-    else
-        width = 12 * FONT_WIDTH + 7;
-    if (width < 2 * SCREEN_WIDTH / 3)
-        width = 2 * SCREEN_WIDTH / 3;
-    x = (SCREEN_WIDTH - width) / 2;
-    y = (SCREEN_HEIGHT - height) / 2;
-    EasyUIDrawFrame(x - 1, y - 1, width + 2, height + 2, NV3030B_penColor);
-    EasyUIDrawBox(x, y, width, height, NV3030B_backgroundColor);
-    EasyUIDisplayStr(x + 3, y + itemHeightOffset, item->title);
-    EasyUIDisplayStr(x + 3 + strlen(item->title) * FONT_WIDTH, y + itemHeightOffset, ":");
-    EasyUIDisplayStr(x + 3, y + 2 * ITEM_HEIGHT + itemHeightOffset, "Step:");
-    EasyUIDisplayStr(x + 3, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Save");
-    EasyUIDisplayStr(x + width - 6 * FONT_WIDTH - 4, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Return");
-
-    // Change value of param or step
-    if (changeVal)
+    if(opnUp)
+      *item->param += step;
+    if(opnDown)
     {
-        EasyUISetDrawColor(XOR);
-        EasyUIDrawBox(x + 2, y + 2, (strlen(item->title) + 1) * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
-        EasyUISetDrawColor(NORMAL);
-        if (opnUp)
-            *item->param += step;
-        if (opnDown)
-        {
-            if (*item->param - step >= 0)
-                *item->param -= step;
-            else
-                *item->param = 0;
-        }
-    } else if (changeStep)
-    {
-        EasyUISetDrawColor(XOR);
-        EasyUIDrawBox(x + 2, y + 2 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
-        EasyUISetDrawColor(NORMAL);
-        if (opnUp)
-        {
-            if (step == 1)
-                step = 10;
-            else if (step == 10)
-                step = 100;
-            else
-                step = 1;
-        }
-        if (opnDown)
-        {
-            if (step == 100)
-                step = 10;
-            else if (step == 10)
-                step = 1;
-            else
-                step = 100;
-        }
-    } else
-    {
-        if (opnForward)
-        {
-            if (index < 4)
-                index++;
-            else
-                index = 1;
-        }
-        if (opnBackward)
-        {
-            if (index > 1)
-                index--;
-            else
-                index = 4;
-        }
+      if(*item->param - step >= 0)
+        *item->param -= step;
+      else
+        *item->param = 0;
     }
-
-    // Display step
-    EasyUIDisplayFloat(x + 3, y + ITEM_HEIGHT + itemHeightOffset, *item->param, 8, 2);
-    if (step == 1)
-        EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+1");
-    else if (step == 10)
-        EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+10");
-    else
-        EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+100");
-
-    // Draw indicator
-    if (index == 1)
-        EasyUIDrawRFrame(x + 1, y + 1, (strlen(item->title) + 1) * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-    else if (index == 2)
-        EasyUIDrawRFrame(x + 1, y + 1 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-    else if (index == 3)
-        EasyUIDrawRFrame(x + 1, y + 1 + 3 * ITEM_HEIGHT, 4 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-    else
-        EasyUIDrawRFrame(x + width - 6 * FONT_WIDTH - 6, y + 1 + 3 * ITEM_HEIGHT, 6 * FONT_WIDTH + 5, ITEM_HEIGHT,
-                         NV3030B_penColor, 1);
-
-    // Operation move reaction
-    if (opnEnter)
+  }
+  else if(changeStep)
+  {
+    EasyUISetDrawColor(XOR);
+    EasyUIDrawBox(x + 2, y + 2 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
+    EasyUISetDrawColor(NORMAL);
+    if(opnUp)
     {
-        if (index == 1)
-            changeVal = true;
-        else if (index == 2)
-            changeStep = true;
-        else if (index == 3)
-        {
-            item->paramBackup = *item->param;
-            functionIsRunning = false;
-            EasyUIBackgroundBlur();
-            index = 1;
-            step = 1;
-        } else
-        {
-            *item->param = item->paramBackup;
-            functionIsRunning = false;
-            EasyUIBackgroundBlur();
-            index = 1;
-            step = 1;
-        }
+      if(step == 1)
+        step = 10;
+      else if(step == 10)
+        step = 100;
+      else
+        step = 1;
     }
-    if (opnExit)
+    if(opnDown)
     {
-        if (index == 1)
-            changeVal = false;
-        else if (index == 2)
-            changeStep = false;
+      if(step == 100)
+        step = 10;
+      else if(step == 10)
+        step = 1;
+      else
+        step = 100;
     }
+  }
+  else
+  {
+    if(opnForward)
+    {
+      if(index < 4)
+        index++;
+      else
+        index = 1;
+    }
+    if(opnBackward)
+    {
+      if(index > 1)
+        index--;
+      else
+        index = 4;
+    }
+  }
 
-    // Clear the states of key to monitor next key action
-    opnForward = opnBackward = opnEnter = opnExit = opnUp = opnDown = false;
+  // Display step
+  EasyUIDisplayFloat(x + 3, y + ITEM_HEIGHT + itemHeightOffset, *item->param, 8, 2);
+  if(step == 1)
+    EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+1");
+  else if(step == 10)
+    EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+10");
+  else
+    EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+100");
 
-    NV3030B_SendBuffer();
+  // Draw indicator
+  if(index == 1)
+    EasyUIDrawRFrame(x + 1, y + 1, (strlen(item->title) + 1) * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
+  else if(index == 2)
+    EasyUIDrawRFrame(x + 1, y + 1 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
+  else if(index == 3)
+    EasyUIDrawRFrame(x + 1, y + 1 + 3 * ITEM_HEIGHT, 4 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
+  else
+    EasyUIDrawRFrame(x + width - 6 * FONT_WIDTH - 6, y + 1 + 3 * ITEM_HEIGHT, 6 * FONT_WIDTH + 5, ITEM_HEIGHT,
+                     NV3030B_penColor, 1);
+
+  // Operation move reaction
+  if(opnEnter)
+  {
+    if(index == 1)
+      changeVal = true;
+    else if(index == 2)
+      changeStep = true;
+    else if(index == 3)
+    {
+      item->paramBackup = *item->param;
+      functionIsRunning = false;
+      EasyUIBackgroundBlur();
+      index = 1;
+      step = 1;
+    }
+    else
+    {
+      *item->param = item->paramBackup;
+      functionIsRunning = false;
+      EasyUIBackgroundBlur();
+      index = 1;
+      step = 1;
+    }
+  }
+  if(opnExit)
+  {
+    if(index == 1)
+      changeVal = false;
+    else if(index == 2)
+      changeStep = false;
+  }
+
+  // Clear the states of key to monitor next key action
+  opnForward = opnBackward = opnEnter = opnExit = opnUp = opnDown = false;
+
+  NV3030B_SendBuffer();
 }
 
-void EasyUIEventChangeInt(EasyUIItem_t *item)
+void EasyUIEventChangeInt(EasyUIItem_t* item)
 {
-    static int16_t x, y;
-    static uint16_t width, height;
-    static uint8_t index = 1, step = 1;
-    static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1;
-    static bool changeVal = false, changeStep = false;
+  static int16_t x, y;
+  static uint16_t width, height;
+  static uint8_t index = 1, step = 1;
+  static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1;
+  static bool changeVal = false, changeStep = false;
 
+  EasyUISetDrawColor(NORMAL);
+
+  // Display information and draw box
+  height = ITEM_HEIGHT * 4 + 2;
+  if(strlen(item->title) + 1 > 12)
+    width = (strlen(item->title) + 1) * FONT_WIDTH + 7;
+  else
+    width = 12 * FONT_WIDTH + 7;
+  if(width < 2 * SCREEN_WIDTH / 3)
+    width = 2 * SCREEN_WIDTH / 3;
+  x = (SCREEN_WIDTH - width) / 2;
+  y = (SCREEN_HEIGHT - height) / 2;
+  EasyUIDrawFrame(x - 1, y - 1, width + 2, height + 2, NV3030B_penColor);
+  EasyUIDrawBox(x, y, width, height, NV3030B_backgroundColor);
+  EasyUIDisplayStr(x + 3, y + itemHeightOffset, item->title);
+  EasyUIDisplayStr(x + 3 + strlen(item->title) * FONT_WIDTH, y + itemHeightOffset, ":");
+  EasyUIDisplayStr(x + 3, y + 2 * ITEM_HEIGHT + itemHeightOffset, "Step:");
+  EasyUIDisplayStr(x + 3, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Save");
+  EasyUIDisplayStr(x + width - 6 * FONT_WIDTH - 4, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Return");
+
+  // Change value of param or step
+  if(changeVal)
+  {
+    EasyUISetDrawColor(XOR);
+    EasyUIDrawBox(x + 2, y + 2, (strlen(item->title) + 1) * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
     EasyUISetDrawColor(NORMAL);
-
-    // Display information and draw box
-    height = ITEM_HEIGHT * 4 + 2;
-    if (strlen(item->title) + 1 > 12)
-        width = (strlen(item->title) + 1) * FONT_WIDTH + 7;
-    else
-        width = 12 * FONT_WIDTH + 7;
-    if (width < 2 * SCREEN_WIDTH / 3)
-        width = 2 * SCREEN_WIDTH / 3;
-    x = (SCREEN_WIDTH - width) / 2;
-    y = (SCREEN_HEIGHT - height) / 2;
-    EasyUIDrawFrame(x - 1, y - 1, width + 2, height + 2, NV3030B_penColor);
-    EasyUIDrawBox(x, y, width, height, NV3030B_backgroundColor);
-    EasyUIDisplayStr(x + 3, y + itemHeightOffset, item->title);
-    EasyUIDisplayStr(x + 3 + strlen(item->title) * FONT_WIDTH, y + itemHeightOffset, ":");
-    EasyUIDisplayStr(x + 3, y + 2 * ITEM_HEIGHT + itemHeightOffset, "Step:");
-    EasyUIDisplayStr(x + 3, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Save");
-    EasyUIDisplayStr(x + width - 6 * FONT_WIDTH - 4, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Return");
-
-    // Change value of param or step
-    if (changeVal)
+    if(opnUp)
+      *item->param += step;
+    if(opnDown)
+      *item->param -= step;
+  }
+  else if(changeStep)
+  {
+    EasyUISetDrawColor(XOR);
+    EasyUIDrawBox(x + 2, y + 2 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
+    EasyUISetDrawColor(NORMAL);
+    if(opnUp)
     {
-        EasyUISetDrawColor(XOR);
-        EasyUIDrawBox(x + 2, y + 2, (strlen(item->title) + 1) * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
-        EasyUISetDrawColor(NORMAL);
-        if (opnUp)
-            *item->param += step;
-        if (opnDown)
-            *item->param -= step;
-    } else if (changeStep)
-    {
-        EasyUISetDrawColor(XOR);
-        EasyUIDrawBox(x + 2, y + 2 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
-        EasyUISetDrawColor(NORMAL);
-        if (opnUp)
-        {
-            if (step == 1)
-                step = 10;
-            else if (step == 10)
-                step = 100;
-            else
-                step = 1;
-        }
-        if (opnDown)
-        {
-            if (step == 100)
-                step = 10;
-            else if (step == 10)
-                step = 1;
-            else
-                step = 100;
-        }
-    } else
-    {
-        if (opnForward)
-        {
-            if (index < 4)
-                index++;
-            else
-                index = 1;
-        }
-        if (opnBackward)
-        {
-            if (index > 1)
-                index--;
-            else
-                index = 4;
-        }
+      if(step == 1)
+        step = 10;
+      else if(step == 10)
+        step = 100;
+      else
+        step = 1;
     }
-
-    // Display step
-    EasyUIDisplayFloat(x + 3, y + ITEM_HEIGHT + itemHeightOffset, *item->param, 8, 2);
-    if (step == 1)
-        EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+1");
-    else if (step == 10)
-        EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+10");
-    else
-        EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+100");
-
-    // Draw indicator
-    if (index == 1)
-        EasyUIDrawRFrame(x + 1, y + 1, (strlen(item->title) + 1) * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-    else if (index == 2)
-        EasyUIDrawRFrame(x + 1, y + 1 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-    else if (index == 3)
-        EasyUIDrawRFrame(x + 1, y + 1 + 3 * ITEM_HEIGHT, 4 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-    else
-        EasyUIDrawRFrame(x + width - 6 * FONT_WIDTH - 6, y + 1 + 3 * ITEM_HEIGHT, 6 * FONT_WIDTH + 5, ITEM_HEIGHT,
-                         NV3030B_penColor, 1);
-
-    // Operation move reaction
-    if (opnEnter)
+    if(opnDown)
     {
-        if (index == 1)
-            changeVal = true;
-        else if (index == 2)
-            changeStep = true;
-        else if (index == 3)
-        {
-            item->paramBackup = *item->param;
-            functionIsRunning = false;
-            EasyUIBackgroundBlur();
-            index = 1;
-            step = 1;
-        } else
-        {
-            *item->param = item->paramBackup;
-            functionIsRunning = false;
-            EasyUIBackgroundBlur();
-            index = 1;
-            step = 1;
-        }
+      if(step == 100)
+        step = 10;
+      else if(step == 10)
+        step = 1;
+      else
+        step = 100;
     }
-    if (opnExit)
+  }
+  else
+  {
+    if(opnForward)
     {
-        if (index == 1)
-            changeVal = false;
-        else if (index == 2)
-            changeStep = false;
+      if(index < 4)
+        index++;
+      else
+        index = 1;
     }
+    if(opnBackward)
+    {
+      if(index > 1)
+        index--;
+      else
+        index = 4;
+    }
+  }
 
-    // Clear the states of key to monitor next key action
-    opnForward = opnBackward = opnEnter = opnExit = opnUp = opnDown = false;
+  // Display step
+  EasyUIDisplayFloat(x + 3, y + ITEM_HEIGHT + itemHeightOffset, *item->param, 8, 2);
+  if(step == 1)
+    EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+1");
+  else if(step == 10)
+    EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+10");
+  else
+    EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+100");
 
-    NV3030B_SendBuffer();
+  // Draw indicator
+  if(index == 1)
+    EasyUIDrawRFrame(x + 1, y + 1, (strlen(item->title) + 1) * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
+  else if(index == 2)
+    EasyUIDrawRFrame(x + 1, y + 1 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
+  else if(index == 3)
+    EasyUIDrawRFrame(x + 1, y + 1 + 3 * ITEM_HEIGHT, 4 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
+  else
+    EasyUIDrawRFrame(x + width - 6 * FONT_WIDTH - 6, y + 1 + 3 * ITEM_HEIGHT, 6 * FONT_WIDTH + 5, ITEM_HEIGHT,
+                     NV3030B_penColor, 1);
+
+  // Operation move reaction
+  if(opnEnter)
+  {
+    if(index == 1)
+      changeVal = true;
+    else if(index == 2)
+      changeStep = true;
+    else if(index == 3)
+    {
+      item->paramBackup = *item->param;
+      functionIsRunning = false;
+      EasyUIBackgroundBlur();
+      index = 1;
+      step = 1;
+    }
+    else
+    {
+      *item->param = item->paramBackup;
+      functionIsRunning = false;
+      EasyUIBackgroundBlur();
+      index = 1;
+      step = 1;
+    }
+  }
+  if(opnExit)
+  {
+    if(index == 1)
+      changeVal = false;
+    else if(index == 2)
+      changeStep = false;
+  }
+
+  // Clear the states of key to monitor next key action
+  opnForward = opnBackward = opnEnter = opnExit = opnUp = opnDown = false;
+
+  NV3030B_SendBuffer();
 }
 
-void EasyUIEventChangeFloat(EasyUIItem_t *item)
+void EasyUIEventChangeFloat(EasyUIItem_t* item)
 {
-    static int16_t x, y;
-    static uint16_t width, height;
-    static uint8_t index = 1;
-    static double step = 0.01;
-    static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1;
-    static bool changeVal = false, changeStep = false;
+  static int16_t x, y;
+  static uint16_t width, height;
+  static uint8_t index = 1;
+  static double step = 0.01;
+  static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1;
+  static bool changeVal = false, changeStep = false;
 
+  EasyUISetDrawColor(NORMAL);
+
+  // Display information and draw box
+  height = ITEM_HEIGHT * 4 + 2;
+  if(strlen(item->title) + 1 > 12)
+    width = (strlen(item->title) + 1) * FONT_WIDTH + 7;
+  else
+    width = 12 * FONT_WIDTH + 7;
+  if(width < 2 * SCREEN_WIDTH / 3)
+    width = 2 * SCREEN_WIDTH / 3;
+  x = (SCREEN_WIDTH - width) / 2;
+  y = (SCREEN_HEIGHT - height) / 2;
+  EasyUIDrawFrame(x - 1, y - 1, width + 2, height + 2, NV3030B_penColor);
+  EasyUIDrawBox(x, y, width, height, NV3030B_backgroundColor);
+  EasyUIDisplayStr(x + 3, y + itemHeightOffset, item->title);
+  EasyUIDisplayStr(x + 3 + strlen(item->title) * FONT_WIDTH, y + itemHeightOffset, ":");
+  EasyUIDisplayStr(x + 3, y + 2 * ITEM_HEIGHT + itemHeightOffset, "Step:");
+  EasyUIDisplayStr(x + 3, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Save");
+  EasyUIDisplayStr(x + width - 6 * FONT_WIDTH - 4, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Return");
+
+  // Change value of param or step
+  if(changeVal)
+  {
+    EasyUISetDrawColor(XOR);
+    EasyUIDrawBox(x + 2, y + 2, (strlen(item->title) + 1) * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
     EasyUISetDrawColor(NORMAL);
-
-    // Display information and draw box
-    height = ITEM_HEIGHT * 4 + 2;
-    if (strlen(item->title) + 1 > 12)
-        width = (strlen(item->title) + 1) * FONT_WIDTH + 7;
-    else
-        width = 12 * FONT_WIDTH + 7;
-    if (width < 2 * SCREEN_WIDTH / 3)
-        width = 2 * SCREEN_WIDTH / 3;
-    x = (SCREEN_WIDTH - width) / 2;
-    y = (SCREEN_HEIGHT - height) / 2;
-    EasyUIDrawFrame(x - 1, y - 1, width + 2, height + 2, NV3030B_penColor);
-    EasyUIDrawBox(x, y, width, height, NV3030B_backgroundColor);
-    EasyUIDisplayStr(x + 3, y + itemHeightOffset, item->title);
-    EasyUIDisplayStr(x + 3 + strlen(item->title) * FONT_WIDTH, y + itemHeightOffset, ":");
-    EasyUIDisplayStr(x + 3, y + 2 * ITEM_HEIGHT + itemHeightOffset, "Step:");
-    EasyUIDisplayStr(x + 3, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Save");
-    EasyUIDisplayStr(x + width - 6 * FONT_WIDTH - 4, y + 3 * ITEM_HEIGHT + itemHeightOffset, "Return");
-
-    // Change value of param or step
-    if (changeVal)
+    if(opnUp)
+      *item->param += step;
+    if(opnDown)
+      *item->param -= step;
+  }
+  else if(changeStep)
+  {
+    EasyUISetDrawColor(XOR);
+    EasyUIDrawBox(x + 2, y + 2 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
+    EasyUISetDrawColor(NORMAL);
+    if(opnUp)
     {
-        EasyUISetDrawColor(XOR);
-        EasyUIDrawBox(x + 2, y + 2, (strlen(item->title) + 1) * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
-        EasyUISetDrawColor(NORMAL);
-        if (opnUp)
-            *item->param += step;
-        if (opnDown)
-            *item->param -= step;
-    } else if (changeStep)
-    {
-        EasyUISetDrawColor(XOR);
-        EasyUIDrawBox(x + 2, y + 2 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 3, ITEM_HEIGHT - 2, NV3030B_penColor);
-        EasyUISetDrawColor(NORMAL);
-        if (opnUp)
-        {
-            if (step == 0.01)
-                step = 0.1;
-            else if (step == 0.1)
-                step = 1;
-            else
-                step = 0.01;
-        }
-        if (opnDown)
-        {
-            if (step == 0.01)
-                step = 1;
-            else if (step == 1)
-                step = 0.1;
-            else
-                step = 0.01;
-        }
-    } else
-    {
-        if (opnForward)
-        {
-            if (index < 4)
-                index++;
-            else
-                index = 1;
-        }
-        if (opnBackward)
-        {
-            if (index > 1)
-                index--;
-            else
-                index = 4;
-        }
+      if(step == 0.01)
+        step = 0.1;
+      else if(step == 0.1)
+        step = 1;
+      else
+        step = 0.01;
     }
-
-    // Display step
-    EasyUIDisplayFloat(x + 3, y + ITEM_HEIGHT + itemHeightOffset, *item->param, 8, 2);
-    if (step == 0.01)
-        EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+0.01");
-    else if (step == 0.1)
-        EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+0.1");
-    else
-        EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+1");
-
-    // Draw indicator
-    if (index == 1)
-        EasyUIDrawRFrame(x + 1, y + 1, (strlen(item->title) + 1) * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-    else if (index == 2)
-        EasyUIDrawRFrame(x + 1, y + 1 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-    else if (index == 3)
-        EasyUIDrawRFrame(x + 1, y + 1 + 3 * ITEM_HEIGHT, 4 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
-    else
-        EasyUIDrawRFrame(x + width - 6 * FONT_WIDTH - 6, y + 1 + 3 * ITEM_HEIGHT, 6 * FONT_WIDTH + 5, ITEM_HEIGHT,
-                         NV3030B_penColor, 1);
-
-    // Operation move reaction
-    if (opnEnter)
+    if(opnDown)
     {
-        if (index == 1)
-            changeVal = true;
-        else if (index == 2)
-            changeStep = true;
-        else if (index == 3)
-        {
-            item->paramBackup = *item->param;
-            functionIsRunning = false;
-            EasyUIBackgroundBlur();
-            index = 1;
-            step = 0.01;
-        } else
-        {
-            *item->param = item->paramBackup;
-            functionIsRunning = false;
-            EasyUIBackgroundBlur();
-            index = 1;
-            step = 0.01;
-        }
+      if(step == 0.01)
+        step = 1;
+      else if(step == 1)
+        step = 0.1;
+      else
+        step = 0.01;
     }
-    if (opnExit)
+  }
+  else
+  {
+    if(opnForward)
     {
-        if (index == 1)
-            changeVal = false;
-        else if (index == 2)
-            changeStep = false;
+      if(index < 4)
+        index++;
+      else
+        index = 1;
     }
+    if(opnBackward)
+    {
+      if(index > 1)
+        index--;
+      else
+        index = 4;
+    }
+  }
 
-    // Clear the states of key to monitor next key action
-    opnForward = opnBackward = opnEnter = opnExit = opnUp = opnDown = false;
+  // Display step
+  EasyUIDisplayFloat(x + 3, y + ITEM_HEIGHT + itemHeightOffset, *item->param, 8, 2);
+  if(step == 0.01)
+    EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+0.01");
+  else if(step == 0.1)
+    EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+0.1");
+  else
+    EasyUIDisplayStr(x + 3 + 6 * FONT_WIDTH, y + 2 * ITEM_HEIGHT + itemHeightOffset, "+1");
 
-    NV3030B_SendBuffer();
+  // Draw indicator
+  if(index == 1)
+    EasyUIDrawRFrame(x + 1, y + 1, (strlen(item->title) + 1) * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
+  else if(index == 2)
+    EasyUIDrawRFrame(x + 1, y + 1 + 2 * ITEM_HEIGHT, 5 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
+  else if(index == 3)
+    EasyUIDrawRFrame(x + 1, y + 1 + 3 * ITEM_HEIGHT, 4 * FONT_WIDTH + 5, ITEM_HEIGHT, NV3030B_penColor, 1);
+  else
+    EasyUIDrawRFrame(x + width - 6 * FONT_WIDTH - 6, y + 1 + 3 * ITEM_HEIGHT, 6 * FONT_WIDTH + 5, ITEM_HEIGHT,
+                     NV3030B_penColor, 1);
+
+  // Operation move reaction
+  if(opnEnter)
+  {
+    if(index == 1)
+      changeVal = true;
+    else if(index == 2)
+      changeStep = true;
+    else if(index == 3)
+    {
+      item->paramBackup = *item->param;
+      functionIsRunning = false;
+      EasyUIBackgroundBlur();
+      index = 1;
+      step = 0.01;
+    }
+    else
+    {
+      *item->param = item->paramBackup;
+      functionIsRunning = false;
+      EasyUIBackgroundBlur();
+      index = 1;
+      step = 0.01;
+    }
+  }
+  if(opnExit)
+  {
+    if(index == 1)
+      changeVal = false;
+    else if(index == 2)
+      changeStep = false;
+  }
+
+  // Clear the states of key to monitor next key action
+  opnForward = opnBackward = opnEnter = opnExit = opnUp = opnDown = false;
+
+  NV3030B_SendBuffer();
 }
 
 
@@ -1055,7 +1075,7 @@ void EasyUIEventChangeFloat(EasyUIItem_t *item)
  *
  * @param   item    Useless param, just be there to meet the function requirement;
  */
-void EasyUIEventSaveSettings(EasyUIItem_t *item)
+void EasyUIEventSaveSettings(EasyUIItem_t* item)
 {
 //    interrupt_global_disable();
 //    for (EasyUIPage_t *page = pageHead; page != NULL; page = page->next)
@@ -1080,35 +1100,54 @@ void EasyUIEventSaveSettings(EasyUIItem_t *item)
 //    }
 //    FlashOperationEnd();
 //    interrupt_global_enable(1);
-    functionIsRunning = false;
-    EasyUIBackgroundBlur();
+  functionIsRunning = false;
+  EasyUIBackgroundBlur();
 }
 
-void EasyUIEventResetSettings(EasyUIItem_t *item)
+void EasyUIEventResetSettings(EasyUIItem_t* item)
 {
-    for (EasyUIPage_t *page = pageHead; page != NULL; page = page->next)
+  for(EasyUIPage_t* page = pageHead; page != NULL; page = page->next)
+  {
+    for(EasyUIItem_t* itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
     {
-        for (EasyUIItem_t *itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
-        {
-            switch (itemTmp->funcType)
-            {
-            case ITEM_CHECKBOX:
-            case ITEM_RADIO_BUTTON:
-            case ITEM_SWITCH:
-                *itemTmp->flag = itemTmp->flagDefault;
-                break;
-            case ITEM_PROGRESS_BAR:
-            case ITEM_CHANGE_VALUE:
-                *itemTmp->param = itemTmp->paramDefault;
-            default:
-                break;
-            }
-        }
+      switch(itemTmp->funcType)
+      {
+      case ITEM_CHECKBOX:
+      case ITEM_RADIO_BUTTON:
+      case ITEM_SWITCH:
+        *itemTmp->flag = itemTmp->flagDefault;
+        break;
+      case ITEM_PROGRESS_BAR:
+      case ITEM_CHANGE_VALUE:
+        *itemTmp->param = itemTmp->paramDefault;
+      default:
+        break;
+      }
     }
-    functionIsRunning = false;
-    EasyUIBackgroundBlur();
+  }
+  functionIsRunning = false;
+  EasyUIBackgroundBlur();
 }
 
+
+void set_remind_value(void *obj, int32_t value)
+{
+	if(value == 0)
+	{
+		dbmsg("EasyUIShutDown");
+    EasyUIShutDown();
+	}
+}
+
+void ready_remind_value(struct _lv_anim_t *obj)
+{
+	// dbmsg("brightness: %d", value);
+//	if(((lv_anim_t*)obj)->end_value < 5)
+//	{
+//		dbmsg("EasyUIShutDown");
+//    EasyUIShutDown();
+//	}
+}
 
 /*!
  * @brief   Welcome Page with two size of photo, and read params from flash if not empty
@@ -1117,11 +1156,11 @@ void EasyUIEventResetSettings(EasyUIItem_t *item)
  * @return  void
  */
 void EasyUIInit(uint8_t mode)
-{        
-		extern uint16_t grambuff[];
-    EasyUIScreenInit(grambuff);
+{
+  extern uint16_t grambuff[];
+  EasyUIScreenInit(grambuff);
 
-    // Power-off storage
+  // Power-off storage
 //    if (flash_check(flashSecIndex, flashPageIndex))
 //    {
 //        interrupt_global_disable();
@@ -1149,19 +1188,131 @@ void EasyUIInit(uint8_t mode)
 //        interrupt_global_enable(1);
 //    }
 
-    // Display the welcome photo and info
-    EasyUIModifyColor();
-    EasyUIClearBuffer();
-    if (mode)
-        EasyUIDisplayBMP((SCREEN_WIDTH - 58) / 2, (SCREEN_HEIGHT - 56) / 2, 58, 56, ErBW_s_5856);
+
+	lv_anim_add(&anim_remind, remindsec * LCD_W / HOLDTIME, set_remind_value);
+	lv_anim_ready_set_cb(&anim_remind, ready_remind_value);
+}
+
+extern __IO bool usbinhibit;
+
+// 更新滤波器，根据变化的幅度选择步进大小
+void update_filter(Filter* filter)
+{
+  float diff = fabs(filter->target_value - filter->current_value);
+
+  if(diff > 20.0f)
+  {
+    filter->current_value = filter->target_value;  // 立即变化到新值
+  }
+  else if(diff > 10.0f)
+  {
+    if(filter->target_value > filter->current_value)
+      filter->current_value += 2.0f;
     else
-        EasyUIDisplayBMP((SCREEN_WIDTH - 29) / 2, (SCREEN_HEIGHT - 28) / 2, 29, 28, ErBW_s_2928);
-    if (2 * SCREEN_WIDTH / 3 > (25 * FONT_WIDTH + 1))
-        EasyUIDisplayStr(SCREEN_WIDTH - 1 - 25 * FONT_WIDTH, SCREEN_HEIGHT - 1 - FONT_HEIGHT,
-                         "Powered by EasyUI(ErBW_s)");
-    else if (SCREEN_WIDTH > (14 * FONT_WIDTH + 1))
-        EasyUIDisplayStr(SCREEN_WIDTH - 1 - 14 * FONT_WIDTH, SCREEN_HEIGHT - 1 - FONT_HEIGHT, "EasyUI(ErBW_s)");
-    EasyUISendBuffer();
+      filter->current_value -= 2.0f;
+  }
+  else if(diff > 5.0f)
+  {
+    if(filter->target_value > filter->current_value)
+      filter->current_value += 1.0f;
+    else
+      filter->current_value -= 1.0f;
+  }
+  else if(diff > 2.0f)
+  {
+    if(filter->target_value > filter->current_value)
+      filter->current_value += 0.5f;
+    else
+      filter->current_value -= 0.5f;
+  }
+  else if(diff > 0.5f)
+  {
+    if(filter->target_value > filter->current_value)
+      filter->current_value += 0.1f;
+    else
+      filter->current_value -= 0.1f;
+  }
+  else
+  {
+    filter->current_value = filter->target_value;  // 立即变化到新值
+  }
+}
+
+
+bool IsConnect()
+{
+	if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port, PW_CHARGE_Pin) == GPIO_PIN_RESET) 
+	{
+    remindsec = HOLDTIME;
+		return true;
+	}
+	else if(BatteryVoltage_To_Level(Get_Battery_Value()) == 4)
+	{
+    remindsec = HOLDTIME;
+		return true;
+	}
+	else 
+		return false;
+}
+
+void EasyUIDrawStatusBar()
+{
+  static int levelrun = 0;
+	static char tempstr[64];
+  static struct tm time_user;
+  int screen_delta = 10;
+  static long last_update_time = 0;
+	static bool tick = 0;
+  long now_tick = HAL_GetTick();
+  if(now_tick - last_update_time > 500)
+  {
+		tick = 1 - tick;
+    fltvoltagex100.target_value = Get_Battery_Value() * 100;
+    update_filter(&fltvoltagex100);
+
+    if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port, PW_CHARGE_Pin) == GPIO_PIN_RESET)
+      levelrun = (levelrun + 1) % 4;
+    else if(BatteryVoltage_To_Level(fltvoltagex100.current_value / 100.0f) != -1)
+      levelrun = BatteryVoltage_To_Level(fltvoltagex100.current_value / 100.0f);
+    else
+      levelrun = levelrun ? 0 : 1;
+    RX8900_GetTime(&time_user);
+//    BMP280_GetData(&pressure, &temperature, &humidity, &asl);
+//		fltaltitude.target_value = BMP280_PressureToAltitude(&pressure);
+//		update_filter(&fltaltitude);
+		if(!IsConnect() && remindsec>0)
+		{
+			remindsec --;
+			lv_anim_start(&anim_remind, remindsec * LCD_W / HOLDTIME, 200);
+		}
+    last_update_time = HAL_GetTick();
+  }
+  // NV3030B_8X16_OCRB
+  EasyUISetFont(NV3030B_8X16_OCRB);
+  screen_delta += 64;
+	snprintf(tempstr, sizeof tempstr, "%02ds", remindsec/2);
+	if(remindsec != HOLDTIME)
+		NV3030B_ShowStr(screen_delta, 1, tempstr);
+  screen_delta += 32;
+	if(tick)
+		snprintf(tempstr, sizeof tempstr, "%02d:%02d:%02d", time_user.tm_hour, time_user.tm_min, time_user.tm_sec);
+	else
+		snprintf(tempstr, sizeof tempstr, "%02d %02d %02d", time_user.tm_hour, time_user.tm_min, time_user.tm_sec);
+	
+  NV3030B_ShowStr(screen_delta, 1, tempstr);
+  screen_delta += 68+12;
+  NV3030B_DrawBMP232(screen_delta, 4, 19, 10, gImage_Bat[levelrun]);
+  EasyUISetFont(NV3030B_12X16_OCR);
+
+	if(remindsec != HOLDTIME)
+		NV3030B_FastHLine(0, 0, anim_remind.current_value, 0xFF00);
+}
+
+void ClearRemind()
+{
+//		dbmsg("ClearRemind");
+		remindsec = HOLDTIME;
+		lv_anim_start(&anim_remind, remindsec * LCD_W / HOLDTIME, 200);
 }
 
 void EventMotion(void);
@@ -1197,188 +1348,192 @@ void EasyUIEvent(uint8_t timer)
 //        return;
 //    }
 
-    static uint8_t index = 0, itemSum = 0;
+  static uint8_t index = 0, itemSum = 0;
 
-    EasyUIModifyColor();
-    EasyUISetDrawColor(NORMAL);
+  EasyUIModifyColor();
+  EasyUISetDrawColor(NORMAL);
 
-    // Get current page by id
-    EasyUIPage_t *page = pageHead;
-    while (page->id != pageIndex[layer])
+  // Get current page by id
+  EasyUIPage_t* page = pageHead;
+  while(page->id != pageIndex[layer])
+  {
+    page = page->next;
+  }
+
+  // Quit UI to run function
+  // If running function and hold the confirm button, quit the function
+  if(functionIsRunning)
+  {
+    for(EasyUIItem_t* item = page->itemHead; item != NULL; item = item->next)
     {
-        page = page->next;
+      if(item->id != index)
+      {
+        continue;
+      }
+
+      switch(item->funcType)
+      {
+      case ITEM_PROGRESS_BAR:
+        EasyUIDrawProgressBar(item);
+        item->Event(item);
+        break;
+      default:
+        item->Event(item);
+        break;
+      }
+      break;
     }
+    return;
+  }
 
-    // Quit UI to run function
-    // If running function and hold the confirm button, quit the function
-    if (functionIsRunning)
-    {
-        for (EasyUIItem_t *item = page->itemHead; item != NULL; item = item->next)
-        {
-            if (item->id != index)
-            {
-                continue;
-            }
-
-            switch (item->funcType)
-            {
-            case ITEM_PROGRESS_BAR:
-                EasyUIDrawProgressBar(item);
-                item->Event(item);
-                break;
-            default:
-                item->Event(item);
-                break;
-            }
-            break;
-        }
-        return;
-    }
-
-		extern __IO bool usbinhibit;
-		if(usbinhibit)
-		{
-			EasyUIClearBuffer();
-			EventMotion();
-		}
-    // Custom page--------------------------------------------------------------------------------
-    if (page->funcType == PAGE_CUSTOM)
-    {
-        page->Event(page);
-
-        // Clear the states of key to monitor next key action
-        opnForward = opnBackward = opnEnter = opnUp = opnDown = false;
-
-        if (layer == 0)
-        {
-            opnExit = false;
-            EasyUISendBuffer();
-            return;
-        }
-
-        if (opnExit)
-        {
-            opnExit = false;
-            pageIndex[layer] = 0;
-            itemIndex[layer--] = 0;
-            index = itemIndex[layer];
-            EasyUITransitionAnim();
-            EasyUIDrawIndicator(page, index, timer, 1);
-        }
-				if(usbinhibit)
-					EasyUISendBuffer();
-        return;
-    }
-	
-		if(!menuisvisible)
-		{
-			EasyUISendBuffer();
-			return;
-		}
-    // -------------------------------------------------------------------------------------------
-
-    // Icon page----------------------------------------------------------------------------------
-    if (page->funcType == PAGE_ICON)
-    {
-
-        // Clear the states of key to monitor next key action
-        opnForward = opnBackward = opnEnter = opnUp = opnDown = false;
-
-        if (layer == 0)
-        {
-            opnExit = false;
-            EasyUISendBuffer();
-            return;
-        }
-
-        if (opnExit)
-        {
-            opnExit = false;
-            pageIndex[layer] = 0;
-            itemIndex[layer--] = 0;
-            index = itemIndex[layer];
-            EasyUITransitionAnim();
-            EasyUIDrawIndicator(page, index, timer, 1);
-        }
-
-        EasyUISendBuffer();
-        return;
-    }
-    // -------------------------------------------------------------------------------------------
-    // List page----------------------------------------------------------------------------------
-    for (EasyUIItem_t *item = page->itemHead; item != NULL; item = item->next)
-    {
-				if(item->funcType == ITEM_DETAIL)
-				{
-					Font_height = FONT_HEIGHT/2;
-					Item_height = ITEM_HEIGHT/2;
-				}
-				else
-				{
-					Font_height = FONT_HEIGHT;
-					Item_height = ITEM_HEIGHT;
-				}
-        EasyUIGetItemPos(page, item, index, timer);
-        EasyUIDisplayItem(item);
-    }
-    // Draw indicator and scroll bar
-    EasyUIDrawIndicator(page, index, timer, 0);
-
-    // Operation move reaction
-    itemSum = page->itemTail->id;
-    if (opnForward)
-    {
-        if (index < itemSum)
-            index++;
-        else if (listLoop)
-            index = 0;
-    }
-    if (opnBackward)
-    {
-        if (index > 0)
-            index--;
-        else if (listLoop)
-            index = itemSum;
-    }
-    if (opnEnter)
-    {
-        for (EasyUIItem_t *item = page->itemHead; item != NULL; item = item->next)
-        {
-            if (item->id != index)
-            {
-                continue;
-            }
-
-            EasyUIItemOperationResponse(page, item, &index);
-            break;
-        }
-    }
+  if(usbinhibit)
+  {
+    EasyUIClearBuffer();
+    EventMotion();
+  }
+  // Custom page--------------------------------------------------------------------------------
+  if(page->funcType == PAGE_CUSTOM)
+  {
+    page->Event(page);
 
     // Clear the states of key to monitor next key action
     opnForward = opnBackward = opnEnter = opnUp = opnDown = false;
 
-    if (layer == 0)
+    if(layer == 0)
     {
-        opnExit = false;
-        EasyUISendBuffer();
-        return;
+      opnExit = false;
+      EasyUISendBuffer();
+      return;
     }
-    if (opnExit)
+
+    if(opnExit)
     {
-        opnExit = false;
-        pageIndex[layer] = 0;
-        itemIndex[layer--] = 0;
-        index = itemIndex[layer];
-        for (EasyUIItem_t *itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
-        {
-            itemTmp->position = 0;
-            itemTmp->posForCal = 0;
-        }
-        EasyUITransitionAnim();
+      opnExit = false;
+      pageIndex[layer] = 0;
+      itemIndex[layer--] = 0;
+      index = itemIndex[layer];
+      EasyUITransitionAnim();
+      EasyUIDrawIndicator(page, index, timer, 1);
     }
-    // -------------------------------------------------------------------------------------------
+    if(usbinhibit)
+      EasyUISendBuffer();
+    return;
+  }
+
+  if(!menuisvisible)
+  {
+    EasyUISendBuffer();
+    return;
+  }
+  // -------------------------------------------------------------------------------------------
+  // Icon page----------------------------------------------------------------------------------
+  if(page->funcType == PAGE_ICON)
+  {
+
+    // Clear the states of key to monitor next key action
+    opnForward = opnBackward = opnEnter = opnUp = opnDown = false;
+
+    if(layer == 0)
+    {
+      opnExit = false;
+      EasyUISendBuffer();
+      return;
+    }
+
+    if(opnExit)
+    {
+      opnExit = false;
+      pageIndex[layer] = 0;
+      itemIndex[layer--] = 0;
+      index = itemIndex[layer];
+      EasyUITransitionAnim();
+      EasyUIDrawIndicator(page, index, timer, 1);
+    }
 
     EasyUISendBuffer();
+    return;
+  }
+
+  if(page->itemHead->funcType == ITEM_DETAIL)
+  {
+    Font_height = FONT_HEIGHT / 2;
+    Item_height = ITEM_HEIGHT / 2;
+  }
+  else
+  {
+    Font_height = FONT_HEIGHT;
+    Item_height = ITEM_HEIGHT;
+
+    // -------------------------------------------------------------------------------------------
+    // Status Bar----------------------------------------------------------------------------------
+
+    EasyUIDrawStatusBar();
+  }
+  // -------------------------------------------------------------------------------------------
+  // List page----------------------------------------------------------------------------------
+  for(EasyUIItem_t* item = page->itemHead; item != NULL; item = item->next)
+  {
+    EasyUIGetItemPos(page, item, index, timer);
+    EasyUIDisplayItem(item);
+  }
+  // Draw indicator and scroll bar
+  EasyUIDrawIndicator(page, index, timer, 0);
+
+  // Operation move reaction
+  itemSum = page->itemTail->id;
+  if(opnForward)
+  {
+    if(index < itemSum)
+      index++;
+    else if(listLoop)
+      index = 0;
+  }
+  if(opnBackward)
+  {
+    if(index > 0)
+      index--;
+    else if(listLoop)
+      index = itemSum;
+  }
+  if(opnEnter)
+  {
+    for(EasyUIItem_t* item = page->itemHead; item != NULL; item = item->next)
+    {
+      if(item->id != index)
+      {
+        continue;
+      }
+
+      EasyUIItemOperationResponse(page, item, &index);
+      break;
+    }
+  }
+
+  // Clear the states of key to monitor next key action
+  opnForward = opnBackward = opnEnter = opnUp = opnDown = false;
+
+  if(layer == 0)
+  {
+    opnExit = false;
+    EasyUISendBuffer();
+    return;
+  }
+  if(opnExit)
+  {
+    opnExit = false;
+    pageIndex[layer] = 0;
+    itemIndex[layer--] = 0;
+    index = itemIndex[layer];
+    for(EasyUIItem_t* itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
+    {
+      itemTmp->position = 0;
+      itemTmp->posForCal = 0;
+    }
+    EasyUITransitionAnim();
+  }
+  // -------------------------------------------------------------------------------------------
+
+  EasyUISendBuffer();
 
 }
 

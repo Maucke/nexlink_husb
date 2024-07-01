@@ -247,7 +247,8 @@ int main(void)
   MX_TIM14_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
-  dbusbmsg("system initialized");
+	MenuInit();
+  dbmsg("system initialized");
 
 	set_brightness_value(NULL, 0);
   USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
@@ -258,10 +259,9 @@ int main(void)
   HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);
 	HAL_TIM_Base_Start_IT(&htim3);
 	HAL_TIM_Base_Start_IT(&htim14);
-	MenuInit();
 	RX8900_Init();
 	EasyUIInit(1);
-	dbusbmsg("MPU_Init = %d", MPU_Init());
+	dbmsg("MPU_Init = %d", MPU_Init());
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
@@ -273,7 +273,7 @@ int main(void)
 	lv_anim_ready_set_cb(&anim_beep, ready_beep_value);
 //	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,1024);	
 //  arm_rfft_fast_init_f32(&fft_handler, 512);
-  dbusbmsg("application initialized");
+  dbmsg("application initialized");
 
   /* USER CODE END 2 */
 
@@ -288,8 +288,8 @@ int main(void)
 		EasyUIEvent(5);
 		EventJump();
 		MPU_CRL(10);
-		BMP280_Test(1000);
-		RX8900_Test(1000);
+//		BMP280_Test(1000);
+//		RX8900_Test(1000);
 //		HAL_WWDG_Refresh(&hwwdg);
   }
   /* USER CODE END 3 */

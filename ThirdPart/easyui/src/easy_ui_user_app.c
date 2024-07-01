@@ -38,6 +38,12 @@ __IO bool jump2winform = false;
 EasyKey_t keyUp, keyDown;
 extern __IO bool menuisvisible;
 extern lv_anim_t anim_beep;
+
+void EasyUIShutDown()
+{
+	lv_anim_start(&anim_backlight, 0, 1000);
+}
+
 /*!
  * @brief   Sync the operation bool value
  *
@@ -74,6 +80,10 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
 			dbusbmsg("keyDown:holdTime:%d", keyDown.holdTime);
 			lv_anim_start(&anim_backlight, 0, 1000);
 		}
+		if(keyDown.holdTime>5000)
+		{
+			HAL_GPIO_WritePin(PW_HOLD_GPIO_Port, PW_HOLD_Pin, GPIO_PIN_RESET);
+		}
 		
 		if(!menuisvisible)
         return;
@@ -86,6 +96,12 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
 		opnDown = mpu_left;
 		opnForward = mpu_left;
 		opnBackward = mpu_right;
+		
+		if (opnForward || opnBackward || opnEnter || opnExit || opnUp || opnDown)
+		{
+			ClearRemind();
+		}
+		
 		mpu_left=mpu_right= mpu_ok=mpu_quit=0;
 		if(opnEnter!=0)
 		dbusbmsg("opnEnter:%d",opnEnter);
@@ -271,72 +287,13 @@ int batteryVoltageToPercentage(float voltage) {
     }
 }
 
-int batteryVoltageToLevel(float voltage) {
-    float minVoltage = 3.0f;
-    float maxVoltage = 4.2f;
-    
-    // 计算电压在范围内的百分比
-    float percentage = (voltage - minVoltage) / (maxVoltage - minVoltage) * 100.0f;
-    
-    // 将百分比映射到-1到4的级别
-    if (percentage < 20.0f) {
-        return -1;
-    } else if (percentage < 40.0f) {
-        return 0;
-    } else if (percentage < 60.0f) {
-        return 1;
-    } else if (percentage < 75.0f) {
-        return 2;
-    } else if (percentage <= 90.0f) { // 考虑到小数精度可能性，这里增加一个等于的情况
-        return 3;
-    } else {
-        return 4; 
-    }
-}
-
-typedef struct {
-    float current_value;  // 当前值
-    float target_value;   // 目标值
-} Filter;
-
-// 更新滤波器，根据变化的幅度选择步进大小
-void update_filter(Filter *filter) {
-    float diff = fabs(filter->target_value - filter->current_value);
-    
-    if (diff > 20.0f) {
-        filter->current_value = filter->target_value;  // 立即变化到新值
-    } else if (diff > 10.0f) {
-        if (filter->target_value > filter->current_value)
-            filter->current_value += 2.0f;
-        else
-            filter->current_value -= 2.0f;
-    } else if (diff > 5.0f) {
-        if (filter->target_value > filter->current_value)
-            filter->current_value += 1.0f;
-        else
-            filter->current_value -= 1.0f;
-    } else if (diff > 2.0f) {
-        if (filter->target_value > filter->current_value)
-            filter->current_value += 0.5f;
-        else
-            filter->current_value -= 0.5f;
-    } else if (diff > 0.5f) {
-        if (filter->target_value > filter->current_value)
-            filter->current_value += 0.1f;
-        else
-            filter->current_value -= 0.1f;
-    } else {
-        filter->current_value = filter->target_value;  // 立即变化到新值
-    }
-}
-
-Filter fltaltitude;
-Filter fltvoltagex10;
+static Filter fltaltitude;
+static Filter fltvoltagex100;
 
 void PageSensor(EasyUIItem_t* page)
 {
 	static int levelrun = 0;
-	char tempstr[128];
+	char tempstr[64];
 	int screen_delta = 10;
 	static struct tm time_user;
   static float pressure, temperature, humidity, asl;
@@ -344,13 +301,13 @@ void PageSensor(EasyUIItem_t* page)
   long now_tick = HAL_GetTick();
   if(now_tick - last_update_time > 500)
   {
-		fltvoltagex10.target_value = Get_ADC_Value(&hadc1) * 3.28f * 2.0f / 40.960f;
-		update_filter(&fltvoltagex10);
+		fltvoltagex100.target_value = Get_Battery_Value()*100;
+		update_filter(&fltvoltagex100);
 		
 		if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port,PW_CHARGE_Pin)==GPIO_PIN_RESET)
 			levelrun = (levelrun+1)%4;
-		else if(batteryVoltageToLevel(fltvoltagex10.current_value/100.0f)!=-1)
-			levelrun = batteryVoltageToLevel(fltvoltagex10.current_value/100.0f);
+		else if(BatteryVoltage_To_Level(fltvoltagex100.current_value/100.0f)!=-1)
+			levelrun = BatteryVoltage_To_Level(fltvoltagex100.current_value/100.0f);
 		else
 			levelrun = levelrun?0:1;
     RX8900_GetTime(&time_user);
@@ -362,7 +319,7 @@ void PageSensor(EasyUIItem_t* page)
   }
 	
 	
-	snprintf(tempstr, sizeof tempstr, "BAT: %.1f V", fltvoltagex10.current_value/100.0f);
+	snprintf(tempstr, sizeof tempstr, "BAT: %.1f V", fltvoltagex100.current_value/100.0f);
 	EasyUIDisplayStr(10, screen_delta, tempstr);
 	screen_delta += ITEM_HEIGHT;
 	if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port,PW_CHARGE_Pin)==GPIO_PIN_RESET)

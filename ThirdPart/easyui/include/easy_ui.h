@@ -19,6 +19,7 @@ extern "C"
 #include <stdarg.h>
 #include <stdbool.h>
 #include "profile_photo_erbws.h"
+#include "adc.h"
 
 // Operation response
 extern uint8_t opnForward, opnBackward;
@@ -27,9 +28,6 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define MPUCRL          1
 #define KEY_NUM         3
 #define ROTARY          0
-
-#define BATTERY_ADC_PIN         ADC2_IN2_A2
-#define LOWEST_BATTERY_VOLTAGE  0.0f
 
 #define FONT_WIDTH              12
 #define FONT_HEIGHT             16
@@ -67,10 +65,20 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define EasyUIDrawCircle(x, y, r, color, section)                 (NV3030B_DrawCircle((x) + OFFSET_X, (y) + OFFSET_Y, r, color, section))
 #define EasyUIDrawDisc(x, y, r, color, section)                 (NV3030B_DrawDisc((x) + OFFSET_X, (y) + OFFSET_Y, r, color, section))
 
-#define EasyUIGetBatVoltage(void)                                   (4.2f)
+#define EasyUIGetBatVoltage(void)                                   (Get_Battery_Value())
 #define EasyUIDelay_ms(time)                                    (HAL_Delay(time))
 
+#define HOLDTIME 120 //s
+void ClearRemind(void);
+
 typedef     float      paramType;
+
+typedef struct {
+    float current_value;  // 当前值
+    float target_value;   // 目标值
+} Filter;
+
+void update_filter(Filter *filter);
 
 typedef enum
 {

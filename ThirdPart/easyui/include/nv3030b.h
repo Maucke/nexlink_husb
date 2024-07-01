@@ -105,6 +105,7 @@ void NV3030B_ClearBuffer(void);
 
 void NV3030B_SetDrawColor(NV3030B_ColorMode_e mode);
 void NV3030B_DrawPoint (int16 x, int16 y, uint16 color);
+void NV3030B_DrawPoint8(int16 x, int16 y, const uint8 color);
 void NV3030B_DrawLine (int16 x_start, int16 y_start, int16 x_end, int16 y_end, uint16 color);
 void NV3030B_ShowChar(int16 x, int16 y, char dat);
 void NV3030B_ShowStr (int16 x, int16 y, const char dat[]);
@@ -131,6 +132,7 @@ void NV3030B_Triangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
 void NV3030B_FillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
 void NV3030B_SetColor (const uint16 pen, const uint16 bgcolor);
 void NV3030B_Init (uint16 *gram);
+void NV3030B_FastHLine(int16_t x, int16_t y, int16_t length, uint16_t color);
 
 __inline uint8_t color16to8(uint16_t c);
 __inline uint16_t color8to16(uint8_t color);
