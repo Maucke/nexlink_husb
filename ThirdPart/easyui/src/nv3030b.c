@@ -20,6 +20,11 @@ static uint8_t NV3030B_colorMode = NORMAL;
 static uint8_t NV3030B_buffer[LCD_H][LCD_W] = {0};
 uint16 *localgram;
 
+void NV3030B_SetFont(nv3030b_font_size_enum font)
+{
+  nv3030b_display_font = font;
+}
+
 bool reversedColor = false;
 // LCD串行数据写入
 static void spi_write_bus(uint8_t dat)
@@ -554,37 +559,74 @@ void NV3030B_ShowChar(int16 x, int16 y, const char dat)
 void NV3030B_ShowStr(int16 x, int16 y, const char dat[])
 {
     uint16 j = 0;
+	  int16 x_start = x;
+		int16 y_start = y;
     while (dat[j] != '\0')
     {
         switch (nv3030b_display_font)
         {
         case NV3030B_6X8_FONT:
-            NV3030B_ShowChar(x + 6 * j, y, dat[j]);
-            j++;
+					if(dat[j]=='\n')
+					{
+							x=x_start;y+=8+2;
+					}
+					else
+					{
+            NV3030B_ShowChar(x, y, dat[j]);
+            x+=6;
+						if(x>=LCD_W-x_start-6)
+						{
+							x=x_start;y+=8+2;
+						}
+					}
             break;
         case NV3030B_8X16_FONT:
 				case NV3030B_8X16_OCRB:
-            NV3030B_ShowChar(x + 8 * j, y, dat[j]);
-            j++;
+            NV3030B_ShowChar(x, y, dat[j]);
+            x+=8;
+						if(x>=LCD_W-x_start-8)
+						{
+							x=x_start;y+=16+4;
+						}
             break;           
 				case NV3030B_10X16_OCR:
-            NV3030B_ShowChar(x + 10 * j, y, dat[j]);
-            j++;
+            NV3030B_ShowChar(x, y, dat[j]);
+            x+=10;
+						if(x>=LCD_W-x_start-10)
+						{
+							x=x_start;y+=16+4;
+						}
             break;
 				case NV3030B_12X16_OCR:
 				case NV3030B_12X16_OCRB:
+            NV3030B_ShowChar(x, y, dat[j]);
+            x+=12;
+						if(x>=LCD_W-x_start-12)
+						{
+							x=x_start;y+=16+24;
+						}
+						break;
 				case NV3030B_12X24_AGENCY:
-            NV3030B_ShowChar(x + 12 * j, y, dat[j]);
-            j++;
+            NV3030B_ShowChar(x, y, dat[j]);
+            x+=12;
+						if(x>=LCD_W-x_start-12)
+						{
+							x=x_start;y+=24+6;
+						}
             break;
 				case NV3030B_16X24_OCR:
 				case NV3030B_16X24_OCRB:
-            NV3030B_ShowChar(x + 16 * j, y, dat[j]);
-            j++;
+            NV3030B_ShowChar(x, y, dat[j]);
+            x+=16;
+						if(x>=LCD_W-x_start-16)
+						{
+							x=x_start;y+=24+6;
+						}
             break;
         default:
             break;
         }
+				j++;
     }
 }
 

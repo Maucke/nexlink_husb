@@ -17,11 +17,11 @@
 #include "bmp280.h"
 #include <time.h>
 // Pages
-EasyUIPage_t pageMain, pageUSBForm, pageFFT, pageSensor, pageAnimation, pageSetting, pageAbout;
+EasyUIPage_t pageMain, pageUSBForm, pageDialog, pageSensor, pageAnimation, pageSetting, pageAbout;
 
 // Items
 EasyUIItem_t itemUSBForm;
-EasyUIItem_t itemFFT;
+EasyUIItem_t itemDebug;
 EasyUIItem_t itemSensor;
 EasyUIItem_t itemAnimation;
 EasyUIItem_t itemSetting, itemColor, itemReset, itemBrightness, titleSetting;
@@ -98,6 +98,43 @@ void EasyUIKeyActionMonitor()
 
 #if ROTARY == 1
 #endif
+}
+
+#define DIALOGITEMSIZE 40
+
+EasyUIItem_t itemDialog[DIALOGITEMSIZE];
+char* itemDialogStr[DIALOGITEMSIZE];
+int itemDialogIndex = 0;
+int itemDialogCount = 0;
+
+extern uint8_t debug_buf[DEBUG_BUF_SIZE];
+int dbug_printf(const char* pcFormat, ...)
+{
+  va_list args;
+  int len = 0;
+  memset(debug_buf, 0, sizeof debug_buf);
+  va_start(args, pcFormat);
+
+  len = vsnprintf((char*)debug_buf, sizeof(debug_buf), pcFormat, args);
+	
+	free(itemDialogStr[itemDialogIndex]);
+	itemDialogStr[itemDialogIndex] = (char*)malloc(len+1);
+	memcpy(itemDialogStr[itemDialogIndex], debug_buf, len);
+	itemDialogStr[itemDialogIndex][len] = 0;
+	if(itemDialogCount<DIALOGITEMSIZE)
+		itemDialog[itemDialogIndex].title = itemDialogStr[itemDialogIndex];
+	else
+	{
+		for(int i= 0;i<DIALOGITEMSIZE-1;i++)
+			itemDialog[i].title = itemDialog[i+1].title;
+		itemDialog[DIALOGITEMSIZE-1].title = itemDialogStr[itemDialogIndex];
+	}
+	
+	itemDialogIndex = (itemDialogIndex+1)%DIALOGITEMSIZE;
+	itemDialogCount++;
+  va_end(args);
+
+  return len;
 }
 
 void EventJump()
@@ -354,12 +391,10 @@ void PageSensor(EasyUIItem_t* page)
 	screen_delta += ITEM_HEIGHT;
 }
 extern USBD_HandleTypeDef hUSB;extern bool usbavaliable;
-void PageFFT(EasyUIItem_t* page)
+
+void PageDialog(EasyUIItem_t* page)
 {
-	extern int32_t fft_input_buffer[];
-	extern uint32_t adc_buffer[];
-	for(int i=0;i<LCD_W;i++)
-		EasyUIDrawDot(i,LCD_H/2+adc_buffer[i],0xFF00);
+	
 }
 
 void MenuInit()
@@ -370,13 +405,13 @@ void MenuInit()
   EasyUIAddPage(&pageMain, PAGE_LIST);
   EasyUIAddPage(&pageSetting, PAGE_LIST);
   EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
-  EasyUIAddPage(&pageFFT, PAGE_CUSTOM, PageFFT);
+  EasyUIAddPage(&pageDialog, PAGE_LIST);
   EasyUIAddPage(&pageSensor, PAGE_CUSTOM, PageSensor);
   EasyUIAddPage(&pageAnimation, PAGE_LIST);
   EasyUIAddPage(&pageAbout, PAGE_CUSTOM, PageAbout);
 
   EasyUIAddItem(&pageMain, &itemUSBForm, "USBForm", ITEM_JUMP_PAGE, pageUSBForm.id);
-  EasyUIAddItem(&pageMain, &itemFFT, "FFT", ITEM_JUMP_PAGE, pageFFT.id);
+  EasyUIAddItem(&pageMain, &itemDebug, "Debug", ITEM_JUMP_PAGE, pageDialog.id);
   EasyUIAddItem(&pageMain, &itemSensor, "Sensor", ITEM_JUMP_PAGE, pageSensor.id);
   EasyUIAddItem(&pageMain, &itemAnimation, "Animation", ITEM_JUMP_PAGE, pageAnimation.id);
   EasyUIAddItem(&pageMain, &itemSetting, "Setting", ITEM_JUMP_PAGE, pageSetting.id);
@@ -398,6 +433,14 @@ void MenuInit()
   EasyUIAddItem(&pageAnimation, &itemFirework, "Firework", ITEM_CHECKBOX, &enFirework);
   dbusbmsg("setting_brightness: %f", setting_brightness);
 
+
+	for(int itemDialogIndex=0;itemDialogIndex<DIALOGITEMSIZE;itemDialogIndex++)
+	{
+		itemDialogStr[itemDialogIndex] = (char*)malloc(1);
+		itemDialogStr[itemDialogIndex][0] = 0;
+		EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
+		itemDialog[itemDialogIndex].title = itemDialogStr[itemDialogIndex];
+	}
 //		EasyUIItemOperationResponse(&pageAnimation, &itemAnimation, &itemAnimation.id);
   Motion_Init();
 	// Key init

@@ -20,6 +20,8 @@ uint8_t opnEnter, opnExit, opnUp, opnDown;
 __IO bool menuisvisible = true;
 char *EasyUIVersion = "Ver. 1.0.0";
 bool functionIsRunning = false, listLoop = true, errorOccurred = false, batteryMonitor = true;
+int Item_height = ITEM_HEIGHT;
+int Font_height = FONT_HEIGHT;
 
 /*!
  * @brief   Add item to page
@@ -77,6 +79,7 @@ void EasyUIAddItem(EasyUIPage_t *page, EasyUIItem_t *item, char *_title, EasyUII
     case ITEM_MESSAGE:
         item->msg = va_arg(variableArg, char *);
         item->Event = va_arg(variableArg, void (*)(EasyUIItem_t * ));
+        break;
     default:
         break;
     }
@@ -382,7 +385,7 @@ void EasyUIGetItemPos(EasyUIPage_t *page, EasyUIItem_t *item, uint8_t index, uin
     }
     move = 0;
     moveFlag = 0;
-    target = itemHeightOffset + item->lineId * ITEM_HEIGHT;
+    target = itemHeightOffset + item->lineId * Item_height;
 
     // Calculate current position
     if (time == 0 || index != lastIndex)
@@ -430,15 +433,15 @@ void EasyUIDisplayItem(EasyUIItem_t *item)
     case ITEM_RADIO_BUTTON:
         EasyUIDisplayStr(2, item->position, "-");
         EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
-        EasyUIDrawRadio(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - ITEM_HEIGHT + 2,
-                           item->position - (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1, ITEM_HEIGHT - 2, RADIO_BUTTON_OFFSET,
-                           *item->flag, (ITEM_HEIGHT - 2)/2);
+        EasyUIDrawRadio(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - Item_height + 2,
+                           item->position - (Item_height - Font_height) / 2 + 1, Item_height - 2, RADIO_BUTTON_OFFSET,
+                           *item->flag, (Item_height - 2)/2);
         break;
     case ITEM_CHECKBOX:
         EasyUIDisplayStr(2, item->position, "-");
         EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
-        EasyUIDrawCheckbox(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - ITEM_HEIGHT + 2,
-                           item->position - (ITEM_HEIGHT - FONT_HEIGHT) / 2 + 1, ITEM_HEIGHT - 2, CHECK_BOX_OFFSET,
+        EasyUIDrawCheckbox(SCREEN_WIDTH - 7 - SCROLL_BAR_WIDTH - Item_height + 2,
+                           item->position - (Item_height - Font_height) / 2 + 1, Item_height - 2, CHECK_BOX_OFFSET,
                            *item->flag, 1);
         break;
     case ITEM_SWITCH:
@@ -468,6 +471,11 @@ void EasyUIDisplayItem(EasyUIItem_t *item)
         else    // Hide because it's too long
             EasyUIDisplayStr(SCREEN_WIDTH - 7 - 5 * FONT_WIDTH - SCROLL_BAR_WIDTH, item->position, "**.**");
         break;
+    case ITEM_DETAIL:
+				EasyUISetFont(NV3030B_6X8_FONT);
+        EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
+				EasyUISetFont(NV3030B_12X16_OCR);
+        break;
     default:
         EasyUIDisplayStr(2, item->position, "-");
         EasyUIDisplayStr(5 + FONT_WIDTH, item->position, item->title);
@@ -495,8 +503,8 @@ void EasyUIDrawIndicator(EasyUIPage_t *page, uint8_t index, uint8_t timer, uint8
     static uint16_t lengthTarget = 0, yTarget = 0;
     uint8_t speed = INDICATOR_MOVE_TIME / timer;
 
-//    if (status)
-//        y = SCREEN_HEIGHT;
+    if (status)
+        y = SCREEN_HEIGHT;
 
     if (page->funcType != PAGE_LIST)
         return;
@@ -519,13 +527,13 @@ void EasyUIDrawIndicator(EasyUIPage_t *page, uint8_t index, uint8_t timer, uint8
                 lengthTarget = (strlen(itemTmp->title)) * FONT_WIDTH + 5;
             else
                 lengthTarget = (strlen(itemTmp->title) + 1) * FONT_WIDTH + 8;
-            yTarget = itemTmp->lineId * ITEM_HEIGHT;
+            yTarget = itemTmp->lineId * Item_height;
             if (index != lastIndex && abs(index - lastIndex) < page->itemTail->id)
             {
                 if (itemTmp->position < 0)
-                    y = (float) 3 * ITEM_HEIGHT / 4;
-                else if (itemTmp->position >= (ITEM_LINES) * ITEM_HEIGHT)
-                    y = (ITEM_LINES - 2) * ITEM_HEIGHT + (float) ITEM_HEIGHT / 4;
+                    y = (float) 3 * Item_height / 4;
+                else if (itemTmp->position >= (ITEM_LINES) * Item_height)
+                    y = (ITEM_LINES - 2) * Item_height + (float) Item_height / 4;
             }
             break;
         }
@@ -549,9 +557,9 @@ void EasyUIDrawIndicator(EasyUIPage_t *page, uint8_t index, uint8_t timer, uint8
 
     // Draw rounded box and scroll bar
     EasyUISetDrawColor(XOR);
-    EasyUIDrawRBox(0, (int16_t) y, (int16_t) length, ITEM_HEIGHT, NV3030B_penColor, 1);
+    EasyUIDrawRBox(0, (int16_t) y, (int16_t) length, Item_height, NV3030B_penColor, 1);
     EasyUISetDrawColor(NORMAL);
-    EasyUIDrawRBox(SCREEN_WIDTH - SCROLL_BAR_WIDTH, (int16_t) y, SCROLL_BAR_WIDTH, ITEM_HEIGHT, NV3030B_penColor, 1);
+    EasyUIDrawRBox(SCREEN_WIDTH - SCROLL_BAR_WIDTH, (int16_t) y, SCROLL_BAR_WIDTH, Item_height, NV3030B_penColor, 1);
     lastIndex = index;
 
     // Time counter
@@ -1156,7 +1164,6 @@ void EasyUIInit(uint8_t mode)
     EasyUISendBuffer();
 }
 
-
 void EventMotion(void);
 /*!
  * @brief   Main function of EasyUI
@@ -1298,10 +1305,19 @@ void EasyUIEvent(uint8_t timer)
         return;
     }
     // -------------------------------------------------------------------------------------------
-
     // List page----------------------------------------------------------------------------------
     for (EasyUIItem_t *item = page->itemHead; item != NULL; item = item->next)
     {
+				if(item->funcType == ITEM_DETAIL)
+				{
+					Font_height = FONT_HEIGHT/2;
+					Item_height = ITEM_HEIGHT/2;
+				}
+				else
+				{
+					Font_height = FONT_HEIGHT;
+					Item_height = ITEM_HEIGHT;
+				}
         EasyUIGetItemPos(page, item, index, timer);
         EasyUIDisplayItem(item);
     }

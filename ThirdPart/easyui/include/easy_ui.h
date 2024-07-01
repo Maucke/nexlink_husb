@@ -51,6 +51,7 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define SCREEN_WIDTH            (LCD_W - OFFSET_X*2)
 #define SCREEN_HEIGHT           (LCD_H - OFFSET_Y*2)
 #define EasyUIScreenInit(gram)                                  (NV3030B_Init(gram))
+#define EasyUISetFont(font)                                  (NV3030B_SetFont(font))
 #define EasyUIDisplayStr(x, y, str)                             (NV3030B_ShowStr((x) + OFFSET_X, (y) + OFFSET_Y, str))
 #define EasyUIDisplayFloat(x, y, dat, num, pointNum)            (NV3030B_ShowFloat((x) + OFFSET_X, (y) + OFFSET_Y, dat, num, pointNum))
 #define EasyUIDrawDot(x, y, color)                              (NV3030B_DrawPoint((x) + OFFSET_X, (y) + OFFSET_Y, color))
@@ -80,7 +81,8 @@ typedef enum
     ITEM_PROGRESS_BAR,
     ITEM_RADIO_BUTTON,
     ITEM_CHECKBOX,
-    ITEM_MESSAGE
+    ITEM_MESSAGE,
+    ITEM_DETAIL,
 } EasyUIItem_e;
 
 typedef enum

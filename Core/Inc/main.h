@@ -109,8 +109,11 @@ extern "C" {
 #define PKout(n)   BIT_ADDR(GPIOK_ODR_Addr,n)  //输出 
 #define PKin(n)    BIT_ADDR(GPIOK_IDR_Addr,n)  //输入
 
+#define DEBUG_BUF_SIZE 1024
 int usb_printf(const char* pcFormat, ...);
+int dbug_printf(const char* pcFormat, ...);
 #define dbusbmsg(fmt, args...) usb_printf("%s[%d]: " fmt "  \r\n", __FUNCTION__, __LINE__, ##args) //__FILE__,
+#define dbmsg(fmt, args...) dbug_printf("[%08d]: " fmt "  \n", HAL_GetTick(), ##args) //__FILE__,
 
 /* Exported types ------------------------------------------------------------*/
 /* for block FIR module */

@@ -89,18 +89,18 @@ void SystemClock_Config(void);
 //  return ch;
 //}
 
+uint8_t debug_buf[DEBUG_BUF_SIZE] = {0};
 extern bool usbavaliable;
 int usb_printf(const char* pcFormat, ...)
 {
-	static unsigned char buf[1024] = {0};
   va_list args;
   int len = 0;
-  memset(buf, 0, sizeof buf);
+  memset(debug_buf, 0, sizeof debug_buf);
   va_start(args, pcFormat);
 
-  len = vsnprintf((char*)buf, sizeof(buf), pcFormat, args);
+  len = vsnprintf((char*)debug_buf, sizeof(debug_buf), pcFormat, args);
 	if(usbavaliable)
-		USBD_NEX_LINK_Transmit(&hUSB, buf, len);
+		USBD_NEX_LINK_Transmit(&hUSB, debug_buf, len);
   va_end(args);
 
   return len;
@@ -289,7 +289,7 @@ int main(void)
 		EventJump();
 		MPU_CRL(10);
 //		BMP280_Test(1000);
-//		RX8900_Test(1000);
+		RX8900_Test(1000);
 //		HAL_WWDG_Refresh(&hwwdg);
   }
   /* USER CODE END 3 */
