@@ -162,49 +162,6 @@ void ready_beep_value(struct _lv_anim_t *obj)
 	}
 }
 
-enum buffer_states{FFT_BUFFER_CLEAR, FFT_BUFFER_HALF, FFT_BUFFER_FULL, FFT_DISPLAY};
-enum display_states{DISPLAY_MANY, DISPLAY_FEW, DISPLAY_COW};
-arm_rfft_fast_instance_f32 fft_handler;
-uint8_t buffer_state = FFT_BUFFER_CLEAR;
-uint8_t display_state = DISPLAY_MANY;
-uint32_t adc_buffer[1024] = {0};
-int32_t fft_input_buffer[512] = {0};
-float32_t fft_output_buffer[512] = {0};
-uint16_t chosen_freqs[32] = {4,
-		5,
-		6,
-		7,
-		8,
-		9,
-		10,
-		11,
-		12,
-		13,
-		14,
-		15,
-		16,
-		17,
-		18,
-		20,
-		23,
-		26,
-		29,
-		32,
-		36,
-		41,
-		45,
-		51,
-		57,
-		64,
-		72,
-		80,
-		90,
-		101,
-		113,
-		127
-
-
-};
 /* USER CODE END 0 */
 
 /**
@@ -268,11 +225,8 @@ int main(void)
 	lv_anim_ready_set_cb(&anim_backlight, ready_brightness_value);
 	
 	lv_anim_add(&anim_beep, 0, set_beep_value);
-//	lv_anim_start(&anim_beep, 0, 2000);
 	lv_anim_path_set_cb(&anim_beep, lv_anim_path_onoff);
 	lv_anim_ready_set_cb(&anim_beep, ready_beep_value);
-//	HAL_I2S_Receive_DMA(&hi2s3,(uint16_t *)adc_buffer,1024);	
-//  arm_rfft_fast_init_f32(&fft_handler, 512);
   dbmsg("application initialized");
 
   /* USER CODE END 2 */
@@ -290,7 +244,6 @@ int main(void)
 		MPU_CRL(10);
 //		BMP280_Test(1000);
 //		RX8900_Test(1000);
-//		HAL_WWDG_Refresh(&hwwdg);
   }
   /* USER CODE END 3 */
 }
@@ -341,67 +294,17 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-//float offset;
-float32_t maxValue;
-uint32_t maxIndex;
-//int offset2 = 190;
-//float32_t freqs[512] = {0};
-//// Returns absolute value of complex number
-//float abs_complex(float real, float imag)
-//{
-//	return sqrtf(real * real + imag * imag);
-//}
-
-//void FFT()
-//{
-//	//arm_scale_f32(fft_input_buffer, 1.0f/1024, fft_input_buffer, 1024);
-//	arm_mean_f32((float32_t*)fft_input_buffer, 512, &offset);
-//		//arm_cmplx_mag_f32(fft_output_buffer, output_buffer2, 1024);
-//		for (int i=0; i<512; i++)
-//			{
-//			fft_input_buffer[i] -= offset;
-//			}
-//	arm_rfft_fast_f32(&fft_handler, (float32_t*)fft_input_buffer, fft_output_buffer, 0);
-
-//	//(output_buffer2, 1.0f/1024, output_buffer2, 1024);
-//	//arm_rfft_q15(&fft_handler, fft_input_buffer, fft_output_buffer);
-//	//arm_cmplx_mag_f32(fft_output_buffer, output_buffer2, 1024);
-//	//arm_cmplx_mag_q15(fft_output_buffer, (q15_t*) fft_input_buffer, 1024);	//вычисление амплитуд гармоник
-//	int freqs_ptr = 0;
-
-//	for (int i=1; i<512; i++)
-//	{
-
-//		freqs[freqs_ptr] = (int)(20*log10f(abs_complex(fft_output_buffer[i], fft_output_buffer[i+1]))) - offset2;
-//		//freqs[freqs_ptr] = (int)(20*log10f(fft_output_buffer[i]));
-
-//		if (freqs[freqs_ptr] < 0)
-//			freqs[freqs_ptr] = 0;
-
-//     	++freqs_ptr;
-//		//freqs[0] = 0;
-//	}
-//	arm_max_f32(freqs, 512, &maxValue, &maxIndex);
-////
-////		// Normalize spectrum
-//		for (int i = 0; i < 512; i++)
-//		{
-//			freqs[i] = freqs[i] * 128 / maxValue;
-//		}
-//	buffer_state = FFT_DISPLAY;
-//}
-
 void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	if(hi2s==&hi2s3){
-		for (int i = 0;i < 256; i++)
-		{
- 			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
-			
-			if(fft_input_buffer[i] & 0x800000){//negative
-					fft_input_buffer[i]|=0xff000000;
-			}
-		}
+//		for (int i = 0;i < 256; i++)
+//		{
+// 			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
+//			
+//			if(fft_input_buffer[i] & 0x800000){//negative
+//					fft_input_buffer[i]|=0xff000000;
+//			}
+//		}
 	}
 }
 #define FLASH_ADDRESS 0x08000000 

@@ -4,69 +4,69 @@
 #include "math.h"
 #include "arm_math.h"
 
-static int16_t dampfft[FFT_SAMPLE];
+//static int16_t dampfft[FFT_SAMPLE];
 
-static int absl(int num)
-{
-	if(num>=0)
-		return num;
-	else
-		return -num;
-}
+//static int absl(int num)
+//{
+//	if(num>=0)
+//		return num;
+//	else
+//		return -num;
+//}
 
-void FFT_Run(int32_t* fftraw)
-{
-	int i;
-	float step;
-	for(i=0;i<FFT_SAMPLE;i++)
-	{
-		step = absl(fftraw[i]-dampfft[i])/8+1;
-		if(fftraw[i] > dampfft[i]+step)
-			dampfft[i] += step;
-		else if(fftraw[i] < dampfft[i]-step)
-			dampfft[i] -= step;
-		else if(absl(fftraw[i]-dampfft[i])<=step)
-			dampfft[i] = fftraw[i];
-	}
-}
-int random_value;extern uint16_t chosen_freqs[32];
-extern uint16_t maxValue;
-extern uint32_t maxIndex;
+//void FFT_Run(int32_t* fftraw)
+//{
+//	int i;
+//	float step;
+//	for(i=0;i<FFT_SAMPLE;i++)
+//	{
+//		step = absl(fftraw[i]-dampfft[i])/8+1;
+//		if(fftraw[i] > dampfft[i]+step)
+//			dampfft[i] += step;
+//		else if(fftraw[i] < dampfft[i]-step)
+//			dampfft[i] -= step;
+//		else if(absl(fftraw[i]-dampfft[i])<=step)
+//			dampfft[i] = fftraw[i];
+//	}
+//}
+//int random_value;extern uint16_t chosen_freqs[32];
+//extern uint16_t maxValue;
+//extern uint32_t maxIndex;
 
-float32_t maxMagnitude = 32;
-uint8_t audio_bar_height[32]; // sizes for the individual bars
-uint8_t audio_bar_peak[32]; // positions for the individual peaks (lines over the bars)
-float value = 2.5;
-void Display_Style1(float32_t* freqs)
-{
-	for (int i=0; i<32; i++) // loop for every fraquency (63Hz, 160Hz, 400Hz, 1kHz, 2.5kHz, 6.25kHz and 16kHz)
-	{
+//float32_t maxMagnitude = 32;
+//uint8_t audio_bar_height[32]; // sizes for the individual bars
+//uint8_t audio_bar_peak[32]; // positions for the individual peaks (lines over the bars)
+//float value = 2.5;
+//void Display_Style1(float32_t* freqs)
+//{
+//	for (int i=0; i<32; i++) // loop for every fraquency (63Hz, 160Hz, 400Hz, 1kHz, 2.5kHz, 6.25kHz and 16kHz)
+//	{
 
-		//random_value = freqs[chosen_freqs[i]]/maxMagnitude;//freqs[chosen_freqs[i]];//(rand()%53 + 0);//bandValues[i];//(rand()%53 + 0);; // calculate random value between 0-1024
+//		//random_value = freqs[chosen_freqs[i]]/maxMagnitude;//freqs[chosen_freqs[i]];//(rand()%53 + 0);//bandValues[i];//(rand()%53 + 0);; // calculate random value between 0-1024
 
-		random_value = freqs [chosen_freqs[i]]-maxValue-maxMagnitude;//maxValue*2;//bandValues[i]/maxMagnitude;
-		if (random_value > 40) random_value = 40;
-		audio_bar_height[i] = audio_bar_height[i] + ((random_value - audio_bar_height[i]))/value; // update the bar with a new value (slowly)
+//		random_value = freqs [chosen_freqs[i]]-maxValue-maxMagnitude;//maxValue*2;//bandValues[i]/maxMagnitude;
+//		if (random_value > 40) random_value = 40;
+//		audio_bar_height[i] = audio_bar_height[i] + ((random_value - audio_bar_height[i]))/value; // update the bar with a new value (slowly)
 
-		// calculate the peak position
-		if (audio_bar_peak[i] < audio_bar_height[i]) // if the peak is below the current bar size
-		{
-			audio_bar_peak[i] = audio_bar_height[i]; // move peak to the new max. position (i.e. size of the bar)
-		}
-		else if (audio_bar_peak[i] > audio_bar_height[i])
-		{ // if the bar is lower than the peak
-			audio_bar_peak[i]--; // slowly move the peak down, one pixel every frame
-			//audio_bar_peak[i]--; // slowly move the peak down, one pixel every frame
-			//audio_bar_peak[i]--; // slowly move the peak down, one pixel every frame
-		}
+//		// calculate the peak position
+//		if (audio_bar_peak[i] < audio_bar_height[i]) // if the peak is below the current bar size
+//		{
+//			audio_bar_peak[i] = audio_bar_height[i]; // move peak to the new max. position (i.e. size of the bar)
+//		}
+//		else if (audio_bar_peak[i] > audio_bar_height[i])
+//		{ // if the bar is lower than the peak
+//			audio_bar_peak[i]--; // slowly move the peak down, one pixel every frame
+//			//audio_bar_peak[i]--; // slowly move the peak down, one pixel every frame
+//			//audio_bar_peak[i]--; // slowly move the peak down, one pixel every frame
+//		}
 
 
-		NV3030B_DrawBox(1 + i*5, 40, 3, audio_bar_height[i], 0x3fe0);
-		NV3030B_DrawBox(1 + i*5, 40-audio_bar_height[i], 3, audio_bar_height[i], 0xf7e0);
-		NV3030B_DrawBox(1 + i*5, 40-audio_bar_peak[i], 3, 3, 0x04bf);//(rand()%65534 + 0)); // draw peak 64-audio_bar_peak[i]
-		NV3030B_DrawBox(1 + i*5, 40+audio_bar_peak[i], 3, 3, 0xf816);//(rand()%65534 + 0)); // draw peak 64-audio_bar_peak[i]
-	}
-}
+//		NV3030B_DrawBox(1 + i*5, 40, 3, audio_bar_height[i], 0x3fe0);
+//		NV3030B_DrawBox(1 + i*5, 40-audio_bar_height[i], 3, audio_bar_height[i], 0xf7e0);
+//		NV3030B_DrawBox(1 + i*5, 40-audio_bar_peak[i], 3, 3, 0x04bf);//(rand()%65534 + 0)); // draw peak 64-audio_bar_peak[i]
+//		NV3030B_DrawBox(1 + i*5, 40+audio_bar_peak[i], 3, 3, 0xf816);//(rand()%65534 + 0)); // draw peak 64-audio_bar_peak[i]
+//	}
+//}
 
 //void Display_Style2(void)
 //{

@@ -44,6 +44,7 @@ void EasyUIShutDown()
 	lv_anim_start(&anim_backlight, 0, 1000);
 }
 
+void dbug_clear(EasyUIPage_t* page);
 /*!
  * @brief   Sync the operation bool value
  *
@@ -74,13 +75,18 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
 			if(menuisvisible)
 				jump2winform = true;
 		}
-		if(keyDown.isHold)
+		if(keyDown.isPressed)
+		{
+			dbug_clear(&pageDialog);
+			dbug_printf("Dialog has been clear");
+		}
+		else if(keyDown.isHold)
 		{
 			lv_anim_start(&anim_beep, 2000, 500);
 			dbusbmsg("keyDown:holdTime:%d", keyDown.holdTime);
 			lv_anim_start(&anim_backlight, 0, 1000);
 		}
-		if(keyDown.holdTime>5000)
+		else if(keyDown.holdTime>5000)
 		{
 			HAL_GPIO_WritePin(PW_HOLD_GPIO_Port, PW_HOLD_Pin, GPIO_PIN_RESET);
 		}
@@ -116,7 +122,7 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
 #endif
 }
 
-#define DIALOGITEMSIZE 40
+#define DIALOGITEMSIZE 100
 
 EasyUIItem_t itemDialog[DIALOGITEMSIZE];
 char* itemDialogStr[DIALOGITEMSIZE];
@@ -138,7 +144,10 @@ int dbug_printf(const char* pcFormat, ...)
 	memcpy(itemDialogStr[itemDialogIndex], debug_buf, len);
 	itemDialogStr[itemDialogIndex][len] = 0;
 	if(itemDialogCount<DIALOGITEMSIZE)
+	{
+		EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
 		itemDialog[itemDialogIndex].title = itemDialogStr[itemDialogIndex];
+	}
 	else
 	{
 		for(int i= 0;i<DIALOGITEMSIZE-1;i++)
@@ -147,10 +156,19 @@ int dbug_printf(const char* pcFormat, ...)
 	}
 	
 	itemDialogIndex = (itemDialogIndex+1)%DIALOGITEMSIZE;
-	itemDialogCount++;
+	if(itemDialogCount<256)
+		itemDialogCount++;
   va_end(args);
 
   return len;
+}
+
+void dbug_clear(EasyUIPage_t* page)
+{
+	itemDialogIndex = 0;
+	itemDialogCount = 0;
+	page->itemHead = NULL;
+	page->itemTail = NULL;
 }
 
 void EventJump()
@@ -390,14 +408,6 @@ void MenuInit()
   EasyUIAddItem(&pageAnimation, &itemFirework, "Firework", ITEM_CHECKBOX, &enFirework);
   dbusbmsg("setting_brightness: %f", setting_brightness);
 
-
-	for(int itemDialogIndex=0;itemDialogIndex<DIALOGITEMSIZE;itemDialogIndex++)
-	{
-		itemDialogStr[itemDialogIndex] = (char*)malloc(1);
-		itemDialogStr[itemDialogIndex][0] = 0;
-		EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
-		itemDialog[itemDialogIndex].title = itemDialogStr[itemDialogIndex];
-	}
 //		EasyUIItemOperationResponse(&pageAnimation, &itemAnimation, &itemAnimation.id);
   Motion_Init();
 	// Key init

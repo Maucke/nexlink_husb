@@ -1290,9 +1290,9 @@ void EasyUIDrawStatusBar()
   // NV3030B_8X16_OCRB
   EasyUISetFont(NV3030B_8X16_OCRB);
   screen_delta += 64;
-	snprintf(tempstr, sizeof tempstr, "%02ds", remindsec/2);
-	if(remindsec != HOLDTIME)
-		NV3030B_ShowStr(screen_delta, 1, tempstr);
+//	snprintf(tempstr, sizeof tempstr, "%02ds", remindsec/2);
+//	if(remindsec != HOLDTIME)
+//		NV3030B_ShowStr(screen_delta, 1, tempstr);
   screen_delta += 32;
 	if(tick)
 		snprintf(tempstr, sizeof tempstr, "%02d:%02d:%02d", time_user.tm_hour, time_user.tm_min, time_user.tm_sec);
@@ -1481,6 +1481,8 @@ void EasyUIEvent(uint8_t timer)
 
   // Operation move reaction
   itemSum = page->itemTail->id;
+	if(itemSum < index)
+		index = 0;
   if(opnForward)
   {
     if(index < itemSum)
