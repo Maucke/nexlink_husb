@@ -288,7 +288,7 @@ int main(void)
 		EasyUIEvent(5);
 		EventJump();
 		MPU_CRL(10);
-//		BMP280_Test(1000);
+		BMP280_Test(1000);
 		RX8900_Test(1000);
 //		HAL_WWDG_Refresh(&hwwdg);
   }

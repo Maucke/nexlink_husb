@@ -44,7 +44,7 @@ extern lv_anim_t anim_beep;
  * @param   void
  * @return  void
  */
-void EasyUIKeyActionMonitor()
+void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
 {
 		extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
     if(keyUp.isPressed)
