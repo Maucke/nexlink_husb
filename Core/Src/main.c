@@ -122,7 +122,7 @@ void set_brightness_value(void *obj, int32_t value)
 
 void ready_brightness_value(struct _lv_anim_t *obj)
 {
-	// dbmsg("brightness: %d", value);
+	dbmsg("brightness: %d", ((lv_anim_t*)obj)->end_value);
 	if(((lv_anim_t*)obj)->end_value == 0)
 	{
 			dbusbmsg("system shutdown");
@@ -148,13 +148,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 lv_anim_t anim_beep;
 void set_beep_value(void *obj, int32_t value)
 {
-	// dbmsg("brightness: %d", value);
 	Set_Freqeucy_Cycle(value);
 }
 
 void ready_beep_value(struct _lv_anim_t *obj)
 {
-	// dbmsg("brightness: %d", value);
 	if(((lv_anim_t*)obj)->end_value != 0)
 	{
 			dbusbmsg("beep");

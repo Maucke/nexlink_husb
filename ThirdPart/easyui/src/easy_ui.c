@@ -361,12 +361,12 @@ void EasyUIDrawRadio(int16_t x, int16_t y, uint16_t size, uint8_t offset, bool b
  */
 void EasyUIGetItemPos(EasyUIPage_t* page, EasyUIItem_t* item, uint8_t index, uint8_t timer)
 {
-  static uint8_t itemHeightOffset = (ITEM_HEIGHT - FONT_HEIGHT) / 2;
+  uint8_t itemHeightOffset = 0;
   static uint16_t time = 0;
   static int16_t move = 0, target = 0;
   static uint8_t lastIndex = 0, moveFlag = 0;
   uint8_t speed = ITEM_MOVE_TIME / timer;
-
+  itemHeightOffset = (Item_height - Font_height) / 2;
   // Item need to move or not
   if(moveFlag == 0)
   {
@@ -378,9 +378,9 @@ void EasyUIGetItemPos(EasyUIPage_t* page, EasyUIItem_t* item, uint8_t index, uin
         moveFlag = 1;
         break;
       }
-      else if(index == itemTmp->id && itemTmp->lineId > ITEM_LINES - 1)
+      else if(index == itemTmp->id && itemTmp->lineId > ((uint8_t)(SCREEN_HEIGHT / Item_height)) - 1)
       {
-        move = itemTmp->lineId - ITEM_LINES + 1;
+        move = itemTmp->lineId - ((uint8_t)(SCREEN_HEIGHT / Item_height)) + 1;
         moveFlag = 1;
         break;
       }
@@ -542,8 +542,8 @@ void EasyUIDrawIndicator(EasyUIPage_t* page, uint8_t index, uint8_t timer, uint8
       {
         if(itemTmp->position < 0)
           y = (float) 3 * Item_height / 4;
-        else if(itemTmp->position >= (ITEM_LINES) * Item_height)
-          y = (ITEM_LINES - 2) * Item_height + (float) Item_height / 4;
+        else if(itemTmp->position >= (((uint8_t)(SCREEN_HEIGHT / Item_height))) * Item_height)
+          y = (((uint8_t)(SCREEN_HEIGHT / Item_height)) - 2) * Item_height + (float) Item_height / 4;
       }
       break;
     }
@@ -1195,14 +1195,14 @@ void EasyUIInit(uint8_t mode)
 
 extern __IO bool usbinhibit;
 
-// ¸üÐÂÂË²¨Æ÷£¬¸ù¾Ý±ä»¯µÄ·ù¶ÈÑ¡Ôñ²½½ø´óÐ¡
+// ï¿½ï¿½ï¿½ï¿½ï¿½Ë²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý±ä»¯ï¿½Ä·ï¿½ï¿½ï¿½Ñ¡ï¿½ñ²½½ï¿½ï¿½ï¿½Ð¡
 void update_filter(Filter* filter)
 {
   float diff = fabs(filter->target_value - filter->current_value);
 
   if(diff > 20.0f)
   {
-    filter->current_value = filter->target_value;  // Á¢¼´±ä»¯µ½ÐÂÖµ
+    filter->current_value = filter->target_value;  // ï¿½ï¿½ï¿½ï¿½ï¿½ä»¯ï¿½ï¿½ï¿½ï¿½Öµ
   }
   else if(diff > 10.0f)
   {
@@ -1234,7 +1234,7 @@ void update_filter(Filter* filter)
   }
   else
   {
-    filter->current_value = filter->target_value;  // Á¢¼´±ä»¯µ½ÐÂÖµ
+    filter->current_value = filter->target_value;  // ï¿½ï¿½ï¿½ï¿½ï¿½ä»¯ï¿½ï¿½ï¿½ï¿½Öµ
   }
 }
 
@@ -1305,7 +1305,7 @@ void EasyUIDrawStatusBar()
   EasyUISetFont(NV3030B_12X16_OCR);
 
 	if(remindsec != HOLDTIME)
-		NV3030B_FastHLine(0, 0, anim_remind.current_value, 0xFF00);
+		NV3030B_FastHLine(0, LCD_H-1, anim_remind.current_value, 0x0055);
 }
 
 void ClearRemind()

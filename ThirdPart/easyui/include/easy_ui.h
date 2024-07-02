@@ -35,7 +35,7 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define CHECK_BOX_OFFSET        2
 #define RADIO_BUTTON_OFFSET        3
 #define SCROLL_BAR_WIDTH        4
-#define ITEM_LINES              ((uint8_t)(SCREEN_HEIGHT / ITEM_HEIGHT))
+//#define ITEM_LINES              ((uint8_t)(SCREEN_HEIGHT / ITEM_HEIGHT))
 #define MAX_LAYER               10
 #define ICON_SIZE               50
 

@@ -41,7 +41,7 @@ extern lv_anim_t anim_beep;
 
 void EasyUIShutDown()
 {
-	lv_anim_start(&anim_backlight, 0, 1000);
+  lv_anim_start(&anim_backlight, 0, 1000);
 }
 
 void dbug_clear(EasyUIPage_t* page);
@@ -53,76 +53,78 @@ void dbug_clear(EasyUIPage_t* page);
  */
 void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
 {
-		extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
-    if(keyUp.isPressed)
-		{
-			lv_anim_start(&anim_beep, 1000, 200);
-			dbusbmsg("keyUp:isPressed");
-			if(des.brides.brightness == 0)
-			{
-				lv_anim_start(&anim_backlight, des.brides.brightness?des.brides.brightness:300, 2000);
-				return;
-			}
-			
-			menuisvisible = !menuisvisible;
-			if(menuisvisible)
-				mpu_left=mpu_right= mpu_ok=mpu_quit=0;
-		}
-    else if(keyUp.isHold)
-		{
-			lv_anim_start(&anim_beep, 2000, 500);
-			dbusbmsg("keyUp:holdTime:%d", keyUp.holdTime);
-			if(menuisvisible)
-				jump2winform = true;
-		}
-		if(keyDown.isPressed)
-		{
-			dbug_clear(&pageDialog);
-			dbug_printf("Dialog has been clear");
-		}
-		else if(keyDown.isHold)
-		{
-			lv_anim_start(&anim_beep, 2000, 500);
-			dbusbmsg("keyDown:holdTime:%d", keyDown.holdTime);
-			lv_anim_start(&anim_backlight, 0, 1000);
-		}
-		else if(keyDown.holdTime>5000)
-		{
-			HAL_GPIO_WritePin(PW_HOLD_GPIO_Port, PW_HOLD_Pin, GPIO_PIN_RESET);
-		}
-		
-		if(!menuisvisible)
-        return;
-    if (opnForward || opnBackward || opnEnter || opnExit || opnUp || opnDown)
-        return;
-		
-		opnEnter = mpu_ok;
-		opnExit = mpu_quit;
-		opnUp = mpu_right;
-		opnDown = mpu_left;
-		opnForward = mpu_left;
-		opnBackward = mpu_right;
-		
-		if (opnForward || opnBackward || opnEnter || opnExit || opnUp || opnDown)
-		{
-			ClearRemind();
-		}
-		
-		mpu_left=mpu_right= mpu_ok=mpu_quit=0;
-		if(opnEnter!=0)
-		dbusbmsg("opnEnter:%d",opnEnter);
-		if(opnExit!=0)
-		dbusbmsg("opnExit:%d",opnExit);
-		if(opnUp!=0)
-		dbusbmsg("opnUp:%d",opnUp);
-		if(opnDown!=0)
-		dbusbmsg("opnDown:%d",opnDown);
+  extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
+  if(keyUp.isPressed)
+  {
+    dbmsg("keyUp:isPressed");
+    lv_anim_start(&anim_beep, 1000, 200);
+    dbusbmsg("keyUp:isPressed");
+    if(des.brides.brightness == 0)
+    {
+      lv_anim_start(&anim_backlight, des.brides.brightness ? des.brides.brightness : 300, 2000);
+      return;
+    }
 
-#if ROTARY == 1
+    menuisvisible = !menuisvisible;
+    if(menuisvisible)
+      mpu_left = mpu_right = mpu_ok = mpu_quit = 0;
+  }
+  else if(keyUp.isHold)
+  {
+    dbmsg("keyUp:isHold");
+    lv_anim_start(&anim_beep, 2000, 500);
+    dbusbmsg("keyUp:holdTime:%d", keyUp.holdTime);
+    if(menuisvisible)
+      jump2winform = true;
+  }
+  if(keyDown.isPressed)
+  {
+    dbmsg("keyDown:isPressed");
+    dbug_clear(&pageDialog);
+    dbug_printf("dialog has been clear");
+  }
+  else if(keyDown.isHold)
+  {
+    dbmsg("keyDown:isHold");
+    lv_anim_start(&anim_beep, 2000, 500);
+    dbusbmsg("keyDown:holdTime:%d", keyDown.holdTime);
+    lv_anim_start(&anim_backlight, 0, 1000);
+  }
+  else if(keyDown.holdTime > 5000)
+  {
+    dbmsg("keyDown:holdTime:%d", keyDown.holdTime);
+    HAL_GPIO_WritePin(PW_HOLD_GPIO_Port, PW_HOLD_Pin, GPIO_PIN_RESET);
+  }
+
+  if(!menuisvisible)
+    return;
+  if(opnForward || opnBackward || opnEnter || opnExit || opnUp || opnDown)
+    return;
+
+  opnEnter = mpu_ok;
+  opnExit = mpu_quit;
+  opnUp = mpu_right;
+  opnDown = mpu_left;
+  opnForward = mpu_left;
+  opnBackward = mpu_right;
+
+  if(opnForward || opnBackward || opnEnter || opnExit || opnUp || opnDown)
+    ClearRemind();
+
+  mpu_left = mpu_right = mpu_ok = mpu_quit = 0;
+#if 0
+  if(opnEnter != 0)
+    dbmsg("opnEnter:%d", opnEnter);
+  if(opnExit != 0)
+    dbmsg("opnExit:%d", opnExit);
+  if(opnUp != 0)
+    dbmsg("opnUp:%d", opnUp);
+  if(opnDown != 0)
+    dbmsg("opnDown:%d", opnDown);
 #endif
 }
 
-#define DIALOGITEMSIZE 100
+#define DIALOGITEMSIZE 70
 
 EasyUIItem_t itemDialog[DIALOGITEMSIZE];
 char* itemDialogStr[DIALOGITEMSIZE];
@@ -138,26 +140,33 @@ int dbug_printf(const char* pcFormat, ...)
   va_start(args, pcFormat);
 
   len = vsnprintf((char*)debug_buf, sizeof(debug_buf), pcFormat, args);
-	
-	free(itemDialogStr[itemDialogIndex]);
-	itemDialogStr[itemDialogIndex] = (char*)malloc(len+1);
-	memcpy(itemDialogStr[itemDialogIndex], debug_buf, len);
-	itemDialogStr[itemDialogIndex][len] = 0;
-	if(itemDialogCount<DIALOGITEMSIZE)
+
+	if(itemDialogStr[itemDialogIndex] != NULL)
+		free(itemDialogStr[itemDialogIndex]);
+  itemDialogStr[itemDialogIndex] = (char*)malloc(len + 1);
+	if(itemDialogStr[itemDialogIndex] == NULL)
 	{
+    dbug_clear(&pageDialog);
+    dbug_printf("dialog overflow");
+    dbug_printf("dialog has been clear");//watchout the ring
+	}
+  memcpy(itemDialogStr[itemDialogIndex], debug_buf, len);
+  itemDialogStr[itemDialogIndex][len] = 0;
+  if(itemDialogCount < DIALOGITEMSIZE)
+  {
 		EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
-		itemDialog[itemDialogIndex].title = itemDialogStr[itemDialogIndex];
-	}
-	else
-	{
-		for(int i= 0;i<DIALOGITEMSIZE-1;i++)
-			itemDialog[i].title = itemDialog[i+1].title;
-		itemDialog[DIALOGITEMSIZE-1].title = itemDialogStr[itemDialogIndex];
-	}
-	
-	itemDialogIndex = (itemDialogIndex+1)%DIALOGITEMSIZE;
-	if(itemDialogCount<256)
-		itemDialogCount++;
+    itemDialog[itemDialogIndex].title = itemDialogStr[itemDialogIndex];
+  }
+  else
+  {
+    for(int i = 0; i < DIALOGITEMSIZE - 1; i++)
+      itemDialog[i].title = itemDialog[i + 1].title;
+    itemDialog[DIALOGITEMSIZE - 1].title = itemDialogStr[itemDialogIndex];
+  }
+
+  itemDialogIndex = (itemDialogIndex + 1) % DIALOGITEMSIZE;
+  if(itemDialogCount < 256)
+    itemDialogCount++;
   va_end(args);
 
   return len;
@@ -165,19 +174,25 @@ int dbug_printf(const char* pcFormat, ...)
 
 void dbug_clear(EasyUIPage_t* page)
 {
-	itemDialogIndex = 0;
-	itemDialogCount = 0;
-	page->itemHead = NULL;
-	page->itemTail = NULL;
+  itemDialogIndex = 0;
+  itemDialogCount = 0;
+  page->itemHead = NULL;
+  page->itemTail = NULL;
+	for(int i=0;i<DIALOGITEMSIZE;i++)
+		if(itemDialogStr[itemDialogIndex] != NULL)
+		{
+			free(itemDialogStr[itemDialogIndex]);
+			itemDialogStr[itemDialogIndex] = NULL;
+		}
 }
 
 void EventJump()
 {
-		if(jump2winform)
-		{
-			jump2winform = false;
-			EasyUIItemOperationResponse(&pageUSBForm, &itemUSBForm, &itemUSBForm.id); 
-		}
+  if(jump2winform)
+  {
+    jump2winform = false;
+    EasyUIItemOperationResponse(&pageUSBForm, &itemUSBForm, &itemUSBForm.id);
+  }
 }
 
 void EventMotion()
@@ -210,8 +225,8 @@ void EventChangeBrightness(EasyUIItem_t* item)
       *item->param += 10;
     else
       *item->param = 100;
-		des.brides.brightness =  *item->param == 100 ? 999 : (*item->param) * 10;
-    lv_anim_start(&anim_backlight,des.brides.brightness, 100);
+    des.brides.brightness =  *item->param == 100 ? 999 : (*item->param) * 10;
+    lv_anim_start(&anim_backlight, des.brides.brightness, 100);
     opnUp = opnForward = false;
   }
   if(opnDown)
@@ -220,8 +235,8 @@ void EventChangeBrightness(EasyUIItem_t* item)
       *item->param -= 10;
     else
       *item->param = 10;
-		des.brides.brightness =  *item->param == 100 ? 999 : (*item->param) * 10;
-    lv_anim_start(&anim_backlight,des.brides.brightness, 100);
+    des.brides.brightness =  *item->param == 100 ? 999 : (*item->param) * 10;
+    lv_anim_start(&anim_backlight, des.brides.brightness, 100);
     opnDown = opnBackward = false;
   }
 
@@ -235,8 +250,8 @@ void EventChangeBrightness(EasyUIItem_t* item)
   if(opnExit)
   {
     *item->param = item->paramBackup;
-		des.brides.brightness =  *item->param == 100 ? 999 : (*item->param) * 10;
-    lv_anim_start(&anim_backlight,des.brides.brightness, 100);
+    des.brides.brightness =  *item->param == 100 ? 999 : (*item->param) * 10;
+    lv_anim_start(&anim_backlight, des.brides.brightness, 100);
     EasyUIBackgroundBlur();
     functionIsRunning = false;
     opnExit = false;
@@ -247,35 +262,35 @@ void EventChangeBrightness(EasyUIItem_t* item)
 
 void PageAbout(EasyUIItem_t* page)
 {
-	char tempstr[128];
-	int screen_delta = 10;
+  char tempstr[128];
+  int screen_delta = 10;
 
   EasyUIDisplayStr(10, screen_delta, "MCU: STM32F405");
-	screen_delta += ITEM_HEIGHT;
+  screen_delta += ITEM_HEIGHT;
   EasyUIDisplayStr(10, screen_delta, "MPU: MPU6050");
-	screen_delta += ITEM_HEIGHT;
+  screen_delta += ITEM_HEIGHT;
   EasyUIDisplayStr(10, screen_delta, "CLOCK: RX8900");
-	screen_delta += ITEM_HEIGHT;
-  EasyUIDisplayStr(10, screen_delta, "I2S: INMP441");
-	screen_delta += ITEM_HEIGHT;
+  screen_delta += ITEM_HEIGHT;
+  EasyUIDisplayStr(10, screen_delta, "SEN: BMP280");
+  screen_delta += ITEM_HEIGHT;
   EasyUIDisplayStr(10, screen_delta, "Author: DPJ");
-	screen_delta += ITEM_HEIGHT;
+  screen_delta += ITEM_HEIGHT;
   EasyUIDisplayStr(10, screen_delta, EasyUIVersion);
-	screen_delta += ITEM_HEIGHT;
-	snprintf(tempstr, sizeof tempstr, "Rel. %s", __DATE__);
+  screen_delta += ITEM_HEIGHT;
+  snprintf(tempstr, sizeof tempstr, "Rel. %s", __DATE__);
   EasyUIDisplayStr(10, screen_delta, tempstr);
-	screen_delta += ITEM_HEIGHT;
+  screen_delta += ITEM_HEIGHT;
 }
 
 void PageUSBForm(EasyUIItem_t* page)
 {
-	if(usbinhibit)
-	{
-		EasyUITransitionAnim();
+  if(usbinhibit)
+  {
+    EasyUITransitionAnim();
     EasyUIClearBuffer();
     EasyUISendBuffer();
-		usbinhibit = false;
-	}
+    usbinhibit = false;
+  }
   if(opnExit)
   {
     usbinhibit = true;
@@ -284,25 +299,31 @@ void PageUSBForm(EasyUIItem_t* page)
 
 void lowBatteryAction()
 {
-	float battery = Get_ADC_Value(&hadc1) * 3.28f * 2.0f / 4096.0f;
-	if(battery<3.2f)
-    lv_anim_start(&anim_backlight,0 , 100);
+  float battery = Get_Battery_Value();
+  if(battery < 3.2f)
+    lv_anim_start(&anim_backlight, 0, 100);
 }
 
-int batteryVoltageToPercentage(float voltage) {
-    float minVoltage = 3.0f;
-    float maxVoltage = 4.2f;
-    
-    // 计算电压在范围内的百分比
-    if (voltage < minVoltage) {
-        return 0; // 如果电压低于最小值，返回0%
-    } else if (voltage > maxVoltage) {
-        return 100; // 如果电压高于最大值，返回100%
-    } else {
-        // 在最小值和最大值之间进行线性插值计算
-        float percentage = (voltage - minVoltage) / (maxVoltage - minVoltage) * 100.0f;
-        return (int)percentage;
-    }
+int batteryVoltageToPercentage(float voltage)
+{
+  float minVoltage = 3.0f;
+  float maxVoltage = 4.2f;
+
+  // 计算电压在范围内的百分比
+  if(voltage < minVoltage)
+  {
+    return 0; // 如果电压低于最小值，返回0%
+  }
+  else if(voltage > maxVoltage)
+  {
+    return 100; // 如果电压高于最大值，返回100%
+  }
+  else
+  {
+    // 在最小值和最大值之间进行线性插值计算
+    float percentage = (voltage - minVoltage) / (maxVoltage - minVoltage) * 100.0f;
+    return (int)percentage;
+  }
 }
 
 static Filter fltaltitude;
@@ -310,73 +331,74 @@ static Filter fltvoltagex100;
 
 void PageSensor(EasyUIItem_t* page)
 {
-	static int levelrun = 0;
-	char tempstr[64];
-	int screen_delta = 10;
-	static struct tm time_user;
+  static int levelrun = 0;
+  char tempstr[64];
+  int screen_delta = 10;
+  static struct tm time_user;
   static float pressure, temperature, humidity, asl;
   static long last_update_time = 0;
   long now_tick = HAL_GetTick();
   if(now_tick - last_update_time > 500)
   {
-		fltvoltagex100.target_value = Get_Battery_Value()*100;
-		update_filter(&fltvoltagex100);
-		
-		if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port,PW_CHARGE_Pin)==GPIO_PIN_RESET)
-			levelrun = (levelrun+1)%4;
-		else if(BatteryVoltage_To_Level(fltvoltagex100.current_value/100.0f)!=-1)
-			levelrun = BatteryVoltage_To_Level(fltvoltagex100.current_value/100.0f);
-		else
-			levelrun = levelrun?0:1;
+    fltvoltagex100.target_value = Get_Battery_Value() * 100;
+    update_filter(&fltvoltagex100);
+
+    if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port, PW_CHARGE_Pin) == GPIO_PIN_RESET)
+      levelrun = (levelrun + 1) % 4;
+    else if(BatteryVoltage_To_Level(fltvoltagex100.current_value / 100.0f) != -1)
+      levelrun = BatteryVoltage_To_Level(fltvoltagex100.current_value / 100.0f);
+    else
+      levelrun = levelrun ? 0 : 1;
     RX8900_GetTime(&time_user);
     BMP280_GetData(&pressure, &temperature, &humidity, &asl);
-		fltaltitude.target_value = BMP280_PressureToAltitude(&pressure);
-		update_filter(&fltaltitude);
-		
-		last_update_time = HAL_GetTick();
-  }
-	
-	
-	snprintf(tempstr, sizeof tempstr, "BAT: %.1f V", fltvoltagex100.current_value/100.0f);
-	EasyUIDisplayStr(10, screen_delta, tempstr);
-	screen_delta += ITEM_HEIGHT;
-	if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port,PW_CHARGE_Pin)==GPIO_PIN_RESET)
-		snprintf(tempstr, sizeof tempstr,"CHARGING");
-	else
-		snprintf(tempstr, sizeof tempstr,"DISCHARGE");
-	EasyUIDisplayStr(10, screen_delta, tempstr);
-	screen_delta += ITEM_HEIGHT;
-	NV3030B_DrawBMP565(165, screen_delta, 36, 36, gImage_Battery[levelrun]);
+    fltaltitude.target_value = BMP280_PressureToAltitude(&pressure);
+    update_filter(&fltaltitude);
 
-	snprintf(tempstr, sizeof tempstr, "%04d-%02d-%02d, %s", time_user.tm_year+1900,time_user.tm_mon+1,time_user.tm_mday,weekdays[time_user.tm_wday%7]);
-	EasyUIDisplayStr(10, screen_delta, tempstr);
-	screen_delta += ITEM_HEIGHT;
-	snprintf(tempstr, sizeof tempstr, "%02d:%02d:%02d", time_user.tm_hour%100, time_user.tm_min%100, time_user.tm_sec%100);
-	EasyUIDisplayStr(10, screen_delta, tempstr);
-	screen_delta += ITEM_HEIGHT;
-	
-	snprintf(tempstr, sizeof tempstr, "P: %.1f Pa", pressure);
-	EasyUIDisplayStr(10, screen_delta, tempstr);
-	screen_delta += ITEM_HEIGHT;
-	snprintf(tempstr, sizeof tempstr, "T: %.1f C", temperature);
-	EasyUIDisplayStr(10, screen_delta, tempstr);
-	screen_delta += ITEM_HEIGHT;
-	snprintf(tempstr, sizeof tempstr, "Alt: %.1f M", fltaltitude.current_value);
-	EasyUIDisplayStr(10, screen_delta, tempstr);
-	screen_delta += ITEM_HEIGHT;
+    last_update_time = HAL_GetTick();
+  }
+
+
+  snprintf(tempstr, sizeof tempstr, "BAT: %.1f V", fltvoltagex100.current_value / 100.0f);
+  EasyUIDisplayStr(10, screen_delta, tempstr);
+  screen_delta += ITEM_HEIGHT;
+  if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port, PW_CHARGE_Pin) == GPIO_PIN_RESET)
+    snprintf(tempstr, sizeof tempstr, "CHARGING");
+  else
+    snprintf(tempstr, sizeof tempstr, "DISCHARGE");
+  EasyUIDisplayStr(10, screen_delta, tempstr);
+  screen_delta += ITEM_HEIGHT;
+  NV3030B_DrawBMP565(165, screen_delta, 36, 36, gImage_Battery[levelrun]);
+
+  snprintf(tempstr, sizeof tempstr, "%04d-%02d-%02d, %s", time_user.tm_year + 1900, time_user.tm_mon + 1, time_user.tm_mday, weekdays[time_user.tm_wday % 7]);
+  EasyUIDisplayStr(10, screen_delta, tempstr);
+  screen_delta += ITEM_HEIGHT;
+  snprintf(tempstr, sizeof tempstr, "%02d:%02d:%02d", time_user.tm_hour % 100, time_user.tm_min % 100, time_user.tm_sec % 100);
+  EasyUIDisplayStr(10, screen_delta, tempstr);
+  screen_delta += ITEM_HEIGHT;
+
+  snprintf(tempstr, sizeof tempstr, "P: %.1f Pa", pressure);
+  EasyUIDisplayStr(10, screen_delta, tempstr);
+  screen_delta += ITEM_HEIGHT;
+  snprintf(tempstr, sizeof tempstr, "T: %.1f C", temperature);
+  EasyUIDisplayStr(10, screen_delta, tempstr);
+  screen_delta += ITEM_HEIGHT;
+  snprintf(tempstr, sizeof tempstr, "Alt: %.1f M", fltaltitude.current_value);
+  EasyUIDisplayStr(10, screen_delta, tempstr);
+  screen_delta += ITEM_HEIGHT;
 }
-extern USBD_HandleTypeDef hUSB;extern bool usbavaliable;
+extern USBD_HandleTypeDef hUSB;
+extern bool usbavaliable;
 
 void PageDialog(EasyUIItem_t* page)
 {
-	
+
 }
 
 void MenuInit()
 {
   setting_brightness = (des.brides.brightness + 1) / 10;
-	enFirework = true;
-	enStarwar = true;
+  enFirework = true;
+  enStarwar = true;
   EasyUIAddPage(&pageMain, PAGE_LIST);
   EasyUIAddPage(&pageSetting, PAGE_LIST);
   EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
@@ -410,7 +432,7 @@ void MenuInit()
 
 //		EasyUIItemOperationResponse(&pageAnimation, &itemAnimation, &itemAnimation.id);
   Motion_Init();
-	// Key init
-	EasyKeyInit(&keyUp, GPIOB, GPIO_PIN_6);
-	EasyKeyInit(&keyDown, GPIOB, GPIO_PIN_7);
+  // Key init
+  EasyKeyInit(&keyUp, GPIOB, GPIO_PIN_6);
+  EasyKeyInit(&keyDown, GPIOB, GPIO_PIN_7);
 }

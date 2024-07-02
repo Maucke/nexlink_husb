@@ -231,8 +231,9 @@ void lv_anim_run()
       /*If the time is elapsed the animation is ready*/
       if(a->act_time >= a->time)
       {
-        if(a->ready_cb)
-          a->ready_cb(a);
+				if(a->start_value != a->end_value)
+					if(a->ready_cb)
+						a->ready_cb(a);
 				a->start_value = a->end_value;
       }
     }

@@ -3,7 +3,7 @@
 #include "usart.h"
 #include "mpu6050.h"
 #include "stdbool.h"
-
+#include "stdlib.h"
 // 初始化MPU6050
 // 返回值:0,成功
 //     其他,错误代码
@@ -168,6 +168,8 @@ void MPU_CRL(int interval)
 			mpu_ok = true;
 			last_update_time = HAL_GetTick() + 600;return; 
 		}
+		if(abs(az)>3000)
+			dbmsg("az: %d", az);
 
 		last_update_time = HAL_GetTick();
 	}
