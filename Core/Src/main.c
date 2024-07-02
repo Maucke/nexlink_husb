@@ -108,9 +108,11 @@ int usb_printf(const char* pcFormat, ...)
 
 uint16_t grambuff[1024];
 uint16_t grambuff_usb[1024];
+
 nex_usb_des des = {
 .brides = {
-	.brightness = 299
+	.brightness = 299,
+	.damp = 500
 }
 };
 lv_anim_t anim_backlight;
@@ -217,15 +219,16 @@ int main(void)
 	RX8900_Init();
 	EasyUIInit(1);
 	dbmsg("MPU_Init = %d", MPU_Init());
+//	dbmsg("mpu_init = %d", mpu_init());
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
-	lv_anim_start(&anim_backlight, des.brides.brightness, 2000);
 	lv_anim_ready_set_cb(&anim_backlight, ready_brightness_value);
 	
 	lv_anim_add(&anim_beep, 0, set_beep_value);
 	lv_anim_path_set_cb(&anim_beep, lv_anim_path_onoff);
 	lv_anim_ready_set_cb(&anim_beep, ready_beep_value);
   dbmsg("application initialized");
+	lv_anim_start(&anim_backlight, des.brides.brightness, des.brides.damp);
 
   /* USER CODE END 2 */
 

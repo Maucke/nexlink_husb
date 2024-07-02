@@ -387,10 +387,12 @@ void EasyUIGetItemPos(EasyUIPage_t* page, EasyUIItem_t* item, uint8_t index, uin
     }
   }
 
+  page->itemHead->lineId -= move;
   // Change the item lineId and get target position
   for(EasyUIItem_t* itemTmp = page->itemHead; itemTmp != NULL; itemTmp = itemTmp->next)
   {
-    itemTmp->lineId -= move;
+    if(itemTmp->next != NULL)
+      itemTmp->next->lineId = itemTmp->lineId + 1;
   }
   move = 0;
   moveFlag = 0;
@@ -1130,18 +1132,18 @@ void EasyUIEventResetSettings(EasyUIItem_t* item)
 }
 
 
-void set_remind_value(void *obj, int32_t value)
+void set_remind_value(void* obj, int32_t value)
 {
-	if(value == 0)
-	{
-		dbmsg("EasyUIShutDown");
+  if(value == 0)
+  {
+    dbmsg("EasyUIShutDown");
     EasyUIShutDown();
-	}
+  }
 }
 
-void ready_remind_value(struct _lv_anim_t *obj)
+void ready_remind_value(struct _lv_anim_t* obj)
 {
-	// dbmsg("brightness: %d", value);
+  // dbmsg("brightness: %d", value);
 //	if(((lv_anim_t*)obj)->end_value < 5)
 //	{
 //		dbmsg("EasyUIShutDown");
@@ -1189,8 +1191,8 @@ void EasyUIInit(uint8_t mode)
 //    }
 
 
-	lv_anim_add(&anim_remind, remindsec * LCD_W / HOLDTIME, set_remind_value);
-	lv_anim_ready_set_cb(&anim_remind, ready_remind_value);
+  lv_anim_add(&anim_remind, remindsec * LCD_W / HOLDTIME, set_remind_value);
+  lv_anim_ready_set_cb(&anim_remind, ready_remind_value);
 }
 
 extern __IO bool usbinhibit;
@@ -1241,32 +1243,32 @@ void update_filter(Filter* filter)
 
 bool IsConnect()
 {
-	if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port, PW_CHARGE_Pin) == GPIO_PIN_RESET) 
-	{
+  if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port, PW_CHARGE_Pin) == GPIO_PIN_RESET)
+  {
     remindsec = HOLDTIME;
-		return true;
-	}
-	else if(BatteryVoltage_To_Level(Get_Battery_Value()) == 4)
-	{
+    return true;
+  }
+  else if(BatteryVoltage_To_Level(Get_Battery_Value()) == 4)
+  {
     remindsec = HOLDTIME;
-		return true;
-	}
-	else 
-		return false;
+    return true;
+  }
+  else
+    return false;
 }
 
 void EasyUIDrawStatusBar()
 {
   static int levelrun = 0;
-	static char tempstr[64];
+  static char tempstr[64];
   static struct tm time_user;
   int screen_delta = 10;
   static long last_update_time = 0;
-	static bool tick = 0;
+  static bool tick = 0;
   long now_tick = HAL_GetTick();
   if(now_tick - last_update_time > 500)
   {
-		tick = 1 - tick;
+    tick = 1 - tick;
     fltvoltagex100.target_value = Get_Battery_Value() * 100;
     update_filter(&fltvoltagex100);
 
@@ -1280,11 +1282,11 @@ void EasyUIDrawStatusBar()
 //    BMP280_GetData(&pressure, &temperature, &humidity, &asl);
 //		fltaltitude.target_value = BMP280_PressureToAltitude(&pressure);
 //		update_filter(&fltaltitude);
-		if(!IsConnect() && remindsec>0)
-		{
-			remindsec --;
-			lv_anim_start(&anim_remind, remindsec * LCD_W / HOLDTIME, 200);
-		}
+    if(!IsConnect() && remindsec > 0)
+    {
+      remindsec --;
+      lv_anim_start(&anim_remind, remindsec * LCD_W / HOLDTIME, 200);
+    }
     last_update_time = HAL_GetTick();
   }
   // NV3030B_8X16_OCRB
@@ -1294,25 +1296,25 @@ void EasyUIDrawStatusBar()
 //	if(remindsec != HOLDTIME)
 //		NV3030B_ShowStr(screen_delta, 1, tempstr);
   screen_delta += 32;
-	if(tick)
-		snprintf(tempstr, sizeof tempstr, "%02d:%02d:%02d", time_user.tm_hour, time_user.tm_min, time_user.tm_sec);
-	else
-		snprintf(tempstr, sizeof tempstr, "%02d %02d %02d", time_user.tm_hour, time_user.tm_min, time_user.tm_sec);
-	
+  if(tick)
+    snprintf(tempstr, sizeof tempstr, "%02d:%02d:%02d", time_user.tm_hour, time_user.tm_min, time_user.tm_sec);
+  else
+    snprintf(tempstr, sizeof tempstr, "%02d %02d %02d", time_user.tm_hour, time_user.tm_min, time_user.tm_sec);
+
   NV3030B_ShowStr(screen_delta, 1, tempstr);
-  screen_delta += 68+12;
+  screen_delta += 68 + 12;
   NV3030B_DrawBMP232(screen_delta, 4, 19, 10, gImage_Bat[levelrun]);
   EasyUISetFont(NV3030B_12X16_OCR);
 
-	if(remindsec != HOLDTIME)
-		NV3030B_FastHLine(0, LCD_H-1, anim_remind.current_value, 0x0055);
+  if(remindsec != HOLDTIME)
+    NV3030B_FastHLine(0, LCD_H - 1, anim_remind.current_value, 0x0055);
 }
 
 void ClearRemind()
 {
 //		dbmsg("ClearRemind");
-		remindsec = HOLDTIME;
-		lv_anim_start(&anim_remind, remindsec * LCD_W / HOLDTIME, 200);
+  remindsec = HOLDTIME;
+  lv_anim_start(&anim_remind, remindsec * LCD_W / HOLDTIME, 200);
 }
 
 void EventMotion(void);
@@ -1478,11 +1480,17 @@ void EasyUIEvent(uint8_t timer)
   }
   // Draw indicator and scroll bar
   EasyUIDrawIndicator(page, index, timer, 0);
-
+	
+	if(itemSum == index)
+	{
+		if(page->itemTail->id > itemSum)
+			index = page->itemTail->id;
+	}
   // Operation move reaction
   itemSum = page->itemTail->id;
-	if(itemSum < index)
-		index = 0;
+  if(itemSum < index)
+    index = 0;
+		
   if(opnForward)
   {
     if(index < itemSum)

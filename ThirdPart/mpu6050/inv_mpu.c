@@ -3029,7 +3029,7 @@ void mpu_test(int interval)
 	{
 		// dbusbmsg("HAL_GetTick() - last_update_time :%ld", now_tick- last_update_time);
 		mpu_dmp_get_data(&pitch, &roll, &yaw);
-		dbusbmsg("pitch: %.1f, roll: %.1f, yaw: %.1f", pitch, roll, yaw);
+		dbmsg("pitch: %.1f, roll: %.1f, yaw: %.1f", pitch, roll, yaw);
 		last_update_time = HAL_GetTick();
 	}
 }

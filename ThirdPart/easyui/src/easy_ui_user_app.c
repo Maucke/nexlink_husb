@@ -28,7 +28,27 @@ EasyUIItem_t itemSetting, itemColor, itemReset, itemBrightness, titleSetting;
 EasyUIItem_t itemAbout;
 EasyUIItem_t itemMind, itemCircle, itemSnowflake, itemMeteo, itemPlanet, itemTriangle, itemStarwar, itemBlast, itemGCircle, itemFirework, titleAnimation;
 
-bool enMind, enCircle, enSnowflake, enMeteo, enPlanet, enTriangle, enStarwar, enGCircle, enFirework;
+
+typedef struct {
+	nex_brightness_des brides;
+	nex_screen_des scrdes;
+}eeprom_data;
+
+typedef struct {
+	bool enMind;
+	bool enCircle;
+	bool enSnowflake;
+	bool enMeteo;
+	bool enPlanet;
+	bool enTriangle;
+	bool enStarwar;
+	bool enGCircle; 
+	bool enFirework;
+	bool reserved;
+}motion_status;
+
+motion_status mt;
+
 extern lv_anim_t anim_backlight;
 extern nex_usb_des des;
 float setting_brightness;
@@ -197,23 +217,23 @@ void EventJump()
 
 void EventMotion()
 {
-  if(enMind)
+  if(mt.enMind)
     Motion_Mind();
-  if(enCircle)
+  if(mt.enCircle)
     Motion_Circle();
-  if(enSnowflake)
+  if(mt.enSnowflake)
     Motion_Snowflake();
-  if(enMeteo)
+  if(mt.enMeteo)
     Motion_Movmeteor();
-  if(enPlanet)
+  if(mt.enPlanet)
     Motion_Planet();
-  if(enTriangle)
+  if(mt.enTriangle)
     Motion_Triangle();
-  if(enStarwar)
+  if(mt.enStarwar)
     Motion_StarWar();
-  if(enGCircle)
+  if(mt.enGCircle)
     Motion_GCFireworks();
-  if(enFirework)
+  if(mt.enFirework)
     Motion_Firework();
 }
 
@@ -397,8 +417,8 @@ void PageDialog(EasyUIItem_t* page)
 void MenuInit()
 {
   setting_brightness = (des.brides.brightness + 1) / 10;
-  enFirework = true;
-  enStarwar = true;
+  mt.enFirework = true;
+  mt.enStarwar = true;
   EasyUIAddPage(&pageMain, PAGE_LIST);
   EasyUIAddPage(&pageSetting, PAGE_LIST);
   EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
@@ -419,15 +439,15 @@ void MenuInit()
   EasyUIAddItem(&pageSetting, &itemBrightness, "Brightness", ITEM_PROGRESS_BAR, &setting_brightness, EventChangeBrightness);
 
   EasyUIAddItem(&pageAnimation, &titleAnimation, "[Animation]", ITEM_PAGE_DESCRIPTION);
-  EasyUIAddItem(&pageAnimation, &itemMind, "Mind", ITEM_CHECKBOX, &enMind);
-  EasyUIAddItem(&pageAnimation, &itemCircle, "Circle", ITEM_CHECKBOX, &enCircle);
-  EasyUIAddItem(&pageAnimation, &itemSnowflake, "Snowflake", ITEM_CHECKBOX, &enSnowflake);
-  EasyUIAddItem(&pageAnimation, &itemMeteo, "Meteo", ITEM_CHECKBOX, &enMeteo);
-  EasyUIAddItem(&pageAnimation, &itemPlanet, "Planet", ITEM_CHECKBOX, &enPlanet);
-  EasyUIAddItem(&pageAnimation, &itemTriangle, "Triangle", ITEM_CHECKBOX, &enTriangle);
-  EasyUIAddItem(&pageAnimation, &itemStarwar, "Starwar", ITEM_CHECKBOX, &enStarwar);
-  EasyUIAddItem(&pageAnimation, &itemGCircle, "GCircle", ITEM_CHECKBOX, &enGCircle);
-  EasyUIAddItem(&pageAnimation, &itemFirework, "Firework", ITEM_CHECKBOX, &enFirework);
+  EasyUIAddItem(&pageAnimation, &itemMind, "Mind", ITEM_CHECKBOX, &mt.enMind);
+  EasyUIAddItem(&pageAnimation, &itemCircle, "Circle", ITEM_CHECKBOX, &mt.enCircle);
+  EasyUIAddItem(&pageAnimation, &itemSnowflake, "Snowflake", ITEM_CHECKBOX, &mt.enSnowflake);
+  EasyUIAddItem(&pageAnimation, &itemMeteo, "Meteo", ITEM_CHECKBOX, &mt.enMeteo);
+  EasyUIAddItem(&pageAnimation, &itemPlanet, "Planet", ITEM_CHECKBOX, &mt.enPlanet);
+  EasyUIAddItem(&pageAnimation, &itemTriangle, "Triangle", ITEM_CHECKBOX, &mt.enTriangle);
+  EasyUIAddItem(&pageAnimation, &itemStarwar, "Starwar", ITEM_CHECKBOX, &mt.enStarwar);
+  EasyUIAddItem(&pageAnimation, &itemGCircle, "GCircle", ITEM_CHECKBOX, &mt.enGCircle);
+  EasyUIAddItem(&pageAnimation, &itemFirework, "Firework", ITEM_CHECKBOX, &mt.enFirework);
   dbusbmsg("setting_brightness: %f", setting_brightness);
 
 //		EasyUIItemOperationResponse(&pageAnimation, &itemAnimation, &itemAnimation.id);
