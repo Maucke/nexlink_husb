@@ -90,9 +90,9 @@ typedef enum
     NV3030B_16X24_OCR,    
 		NV3030B_16X24_OCRB,      //不好看       
     NV3030B_NUM_FONT          
-}nv3030b_font_size_enum;
+}Font_Type_t;
 
-void NV3030B_SetFont(nv3030b_font_size_enum font);
+void NV3030B_SetFont(Font_Type_t font);
 void NV3030B_DrawBMP232(int16_t x, int16_t y, uint16_t width, uint16_t height, const uint8_t* pic);
 void NV3030B_DrawBMP565(int16_t x, int16_t y, uint16_t width, uint16_t height, const uint8_t* pic);
 

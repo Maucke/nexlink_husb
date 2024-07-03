@@ -1604,11 +1604,6 @@
               <FilePath>..\ThirdPart\easyui\src\my_math.c</FilePath>
             </File>
             <File>
-              <FileName>profile_photo_erbws.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\ThirdPart\easyui\src\profile_photo_erbws.c</FilePath>
-            </File>
-            <File>
               <FileName>zf_common_font.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\easyui\src\zf_common_font.c</FilePath>
@@ -2938,11 +2933,6 @@
               <FileName>my_math.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\easyui\src\my_math.c</FilePath>
-            </File>
-            <File>
-              <FileName>profile_photo_erbws.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\ThirdPart\easyui\src\profile_photo_erbws.c</FilePath>
             </File>
             <File>
               <FileName>zf_common_font.c</FileName>

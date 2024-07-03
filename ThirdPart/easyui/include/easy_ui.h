@@ -18,7 +18,6 @@ extern "C"
 #include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include "profile_photo_erbws.h"
 #include "adc.h"
 
 // Operation response
@@ -49,7 +48,7 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define SCREEN_WIDTH            (LCD_W - OFFSET_X*2)
 #define SCREEN_HEIGHT           (LCD_H - OFFSET_Y*2)
 #define EasyUIScreenInit(gram)                                  (NV3030B_Init(gram))
-#define EasyUISetFont(font)                                  (NV3030B_SetFont(font))
+#define EasyUISetFont(font)                                     (NV3030B_SetFont(font))
 #define EasyUIDisplayStr(x, y, str)                             (NV3030B_ShowStr((x) + OFFSET_X, (y) + OFFSET_Y, str))
 #define EasyUIDisplayFloat(x, y, dat, num, pointNum)            (NV3030B_ShowFloat((x) + OFFSET_X, (y) + OFFSET_Y, dat, num, pointNum))
 #define EasyUIDrawDot(x, y, color)                              (NV3030B_DrawPoint((x) + OFFSET_X, (y) + OFFSET_Y, color))
@@ -57,15 +56,15 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define EasyUIDrawFrame(x, y, width, height, color)             (NV3030B_DrawFrame((x) + OFFSET_X, (y) + OFFSET_Y, width, height, color))
 #define EasyUIDrawRFrame(x, y, width, height, color, r)         (NV3030B_DrawRFrame((x) + OFFSET_X, (y) + OFFSET_Y, width, height, color, r))
 #define EasyUIDrawRBox(x, y, width, height, color, r)           (NV3030B_DrawRBox((x) + OFFSET_X, (y) + OFFSET_Y, width, height, color, r))
-#define EasyUIClearBuffer(void)                                     (NV3030B_ClearBuffer())
-#define EasyUISendBuffer(void)                                      (NV3030B_SendBuffer())
+#define EasyUIClearBuffer(void)                                 (NV3030B_ClearBuffer())
+#define EasyUISendBuffer(void)                                  (NV3030B_SendBuffer())
 #define EasyUISetDrawColor(mode)                                (NV3030B_SetDrawColor(mode))
 #define EasyUIDisplayBMP(x, y, width, height, pic)              (NV3030B_ShowBMP((x) + OFFSET_X, (y) + OFFSET_Y, width, height, pic))
-#define EasyUIModifyColor(void)                                     (NV3030B_ModifyColor())
-#define EasyUIDrawCircle(x, y, r, color, section)                 (NV3030B_DrawCircle((x) + OFFSET_X, (y) + OFFSET_Y, r, color, section))
+#define EasyUIModifyColor(void)                                 (NV3030B_ModifyColor())
+#define EasyUIDrawCircle(x, y, r, color, section)               (NV3030B_DrawCircle((x) + OFFSET_X, (y) + OFFSET_Y, r, color, section))
 #define EasyUIDrawDisc(x, y, r, color, section)                 (NV3030B_DrawDisc((x) + OFFSET_X, (y) + OFFSET_Y, r, color, section))
 
-#define EasyUIGetBatVoltage(void)                                   (Get_Battery_Value())
+#define EasyUIGetBatVoltage(void)                               (Get_Battery_Value())
 #define EasyUIDelay_ms(time)                                    (HAL_Delay(time))
 
 #define HOLDTIME 120 //s
@@ -100,6 +99,13 @@ typedef enum
     PAGE_CUSTOM
 } EasyUIPage_e;
 
+typedef struct
+{
+//		uint8_t width;
+		uint8_t height;
+		Font_Type_t type;
+} Font_t;
+
 typedef struct EasyUI_item
 {
     struct EasyUI_item *next;
@@ -111,7 +117,6 @@ typedef struct EasyUI_item
     float step;
     int16_t position;
     char *title;
-
     char *msg;                                  // ITEM_MESSAGE
     bool *flag;                                 // ITEM_CHECKBOX and ITEM_RADIO_BUTTON and ITEM_SWITCH
     bool flagDefault;                           // Factory default setting
@@ -126,6 +131,8 @@ typedef struct EasyUI_page
 {
     struct EasyUI_page *next;
 
+		uint8_t rowheight;
+		Font_t font;
     EasyUIPage_e funcType;
     EasyUIItem_t *itemHead, *itemTail;
     uint8_t id;
@@ -137,17 +144,17 @@ extern char *EasyUIVersion;
 extern bool functionIsRunning, listLoop, errorOccurred, batteryMonitor;
 extern EasyUIPage_t *pageHead, *pageTail;
 
-void EasyUIAddItem(EasyUIPage_t *page, EasyUIItem_t *item, char *_title, EasyUIItem_e func, ...);
-void EasyUIAddPage(EasyUIPage_t *page, EasyUIPage_e func, ...);
+void EasyUIAddItem(EasyUIPage_t* page, EasyUIItem_t* item, char* _title, EasyUIItem_e func, ...);
+void EasyUIAddPage(EasyUIPage_t* page, Font_Type_t fonttype, EasyUIPage_e func, ...);
 void EasyUITransitionAnim(void);
 void EasyUIBackgroundBlur(void);
 
 void EasyUIDrawMsgBox(char *msg);
 float EasyUIGetBatteryVoltage(void);
 
-void EasyUIEventChangeUint(EasyUIItem_t *item);
-void EasyUIEventChangeInt(EasyUIItem_t *item);
-void EasyUIEventChangeFloat(EasyUIItem_t *item);
+void EasyUIEventChangeUint(EasyUIPage_t* page, EasyUIItem_t *item);
+void EasyUIEventChangeInt(EasyUIPage_t* page, EasyUIItem_t *item);
+void EasyUIEventChangeFloat(EasyUIPage_t* page, EasyUIItem_t *item);
 void EasyUIEventSaveSettings(EasyUIItem_t *item);
 void EasyUIEventResetSettings(EasyUIItem_t *item);
 void EasyUIEventChangeFloatForYaw(EasyUIItem_t *item);

@@ -97,6 +97,10 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
     if(menuisvisible)
       jump2winform = true;
   }
+  else if(keyUp.holdTime > 5000)
+  {
+    dbmsg("keyUp:holdTime:%d", keyDown.holdTime);                                                   
+	}
   if(keyDown.isPressed)
   {
     dbmsg("keyDown:isPressed");
@@ -144,16 +148,16 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
 #endif
 }
 
-#define DIALOGITEMSIZE 70
+#define DIALOGITEMSIZE 200
 
 EasyUIItem_t itemDialog[DIALOGITEMSIZE];
 char* itemDialogStr[DIALOGITEMSIZE];
 int itemDialogIndex = 0;
 int itemDialogCount = 0;
 
-extern uint8_t debug_buf[DEBUG_BUF_SIZE];
 int dbug_printf(const char* pcFormat, ...)
 {
+	uint8_t debug_buf[DEBUG_BUF_SIZE];
   va_list args;
   int len = 0;
   memset(debug_buf, 0, sizeof debug_buf);
@@ -162,19 +166,28 @@ int dbug_printf(const char* pcFormat, ...)
   len = vsnprintf((char*)debug_buf, sizeof(debug_buf), pcFormat, args);
 
 	if(itemDialogStr[itemDialogIndex] != NULL)
+	{
 		free(itemDialogStr[itemDialogIndex]);
+		itemDialogStr[itemDialogIndex] = NULL;
+	}
   itemDialogStr[itemDialogIndex] = (char*)malloc(len + 1);
 	if(itemDialogStr[itemDialogIndex] == NULL)
 	{
+		int lastItemDialogCount = itemDialogCount;
     dbug_clear(&pageDialog);
-    dbug_printf("dialog overflow");
+    dbug_printf("dialog overflow-%d",lastItemDialogCount);
     dbug_printf("dialog has been clear");//watchout the ring
+		return -1;
 	}
   memcpy(itemDialogStr[itemDialogIndex], debug_buf, len);
   itemDialogStr[itemDialogIndex][len] = 0;
   if(itemDialogCount < DIALOGITEMSIZE)
   {
-		EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
+		if(itemDialogCount&1)
+			EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
+		else
+			EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
+			
     itemDialog[itemDialogIndex].title = itemDialogStr[itemDialogIndex];
   }
   else
@@ -185,7 +198,7 @@ int dbug_printf(const char* pcFormat, ...)
   }
 
   itemDialogIndex = (itemDialogIndex + 1) % DIALOGITEMSIZE;
-  if(itemDialogCount < 256)
+  if(itemDialogCount < DIALOGITEMSIZE)
     itemDialogCount++;
   va_end(args);
 
@@ -285,7 +298,7 @@ void PageAbout(EasyUIItem_t* page)
   char tempstr[128];
   int screen_delta = 10;
 
-  EasyUIDisplayStr(10, screen_delta, "MCU: STM32F405");
+  EasyUIDisplayStr(10, screen_delta, "MCU: STM32F405RG");
   screen_delta += ITEM_HEIGHT;
   EasyUIDisplayStr(10, screen_delta, "MPU: MPU6050");
   screen_delta += ITEM_HEIGHT;
@@ -419,13 +432,13 @@ void MenuInit()
   setting_brightness = (des.brides.brightness + 1) / 10;
   mt.enFirework = true;
   mt.enStarwar = true;
-  EasyUIAddPage(&pageMain, PAGE_LIST);
-  EasyUIAddPage(&pageSetting, PAGE_LIST);
-  EasyUIAddPage(&pageUSBForm, PAGE_CUSTOM, PageUSBForm);
-  EasyUIAddPage(&pageDialog, PAGE_LIST);
-  EasyUIAddPage(&pageSensor, PAGE_CUSTOM, PageSensor);
-  EasyUIAddPage(&pageAnimation, PAGE_LIST);
-  EasyUIAddPage(&pageAbout, PAGE_CUSTOM, PageAbout);
+  EasyUIAddPage(&pageMain, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_LIST);
+  EasyUIAddPage(&pageSetting, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_LIST);
+  EasyUIAddPage(&pageUSBForm, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_CUSTOM, PageUSBForm);
+  EasyUIAddPage(&pageDialog, NV3030B_6X8_FONT, PAGE_LIST);
+  EasyUIAddPage(&pageSensor, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_CUSTOM, PageSensor);
+  EasyUIAddPage(&pageAnimation, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_LIST);
+  EasyUIAddPage(&pageAbout, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_CUSTOM, PageAbout);
 
   EasyUIAddItem(&pageMain, &itemUSBForm, "USBForm", ITEM_JUMP_PAGE, pageUSBForm.id);
   EasyUIAddItem(&pageMain, &itemDebug, "Debug", ITEM_JUMP_PAGE, pageDialog.id);

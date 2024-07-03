@@ -91,5 +91,6 @@ u8 MPU_Get_Gyroscope(short *gx, short *gy, short *gz);
 u8 MPU_Get_Accelerometer(short *ax, short *ay, short *az);
 
 void MPU_CRL(int interval);
+void MPU_Test(int interval);
 
 #endif

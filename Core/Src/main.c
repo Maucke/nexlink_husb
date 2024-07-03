@@ -243,6 +243,9 @@ int main(void)
 		EasyUIEvent(5);
 		EventJump();
 		MPU_CRL(10);
+		extern bool mpu_debug_en;
+		if(mpu_debug_en)
+			MPU_Test(1000);
 //		BMP280_Test(1000);
 //		RX8900_Test(1000);
   }
@@ -308,16 +311,24 @@ void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 //		}
 	}
 }
-#define FLASH_ADDRESS 0x08000000 
-typedef void (*pFunction)(void);
-pFunction                     JumpAddress;
+#define BOOTLOADER_ADDRESS 0x08000000  // BootLoader在Flash中的起始地址
 
-void JumpToApplication()
+typedef void (*pFunction)(void);
+pFunction JumpAddress;
+
+void JumpToBootloader (void) //异常开始
 {
-  JumpAddress = *(__IO pFunction*)(FLASH_ADDRESS + 4);
-  __set_MSP(*(__IO uint32_t*) FLASH_ADDRESS);
-  HAL_DeInit();
-  JumpAddress();
+    // 关中断
+    __disable_irq();
+
+    // 设置向量表基地址为BootLoader的地址
+    SCB->VTOR = BOOTLOADER_ADDRESS;
+
+    // 取得BootLoader地址的函数指针
+    JumpAddress = (pFunction)*(volatile uint32_t*)(BOOTLOADER_ADDRESS + 4);
+
+    // 跳转到BootLoader
+    JumpAddress();
 }
 /* USER CODE END 4 */
 

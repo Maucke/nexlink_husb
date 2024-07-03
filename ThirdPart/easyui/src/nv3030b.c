@@ -13,14 +13,14 @@ uint16                   NV3030B_penColor     = NV3030B_DEFAULT_PENCOLOR;
 uint16                   NV3030B_backgroundColor      = NV3030B_DEFAULT_BGCOLOR;
 
 __IO nv3030b_dir_enum          nv3030b_display_dir  = NV3030B_DEFAULT_DISPLAY_DIR;
-static nv3030b_font_size_enum    nv3030b_display_font = NV3030B_DEFAULT_DISPLAY_FONT;
+static Font_Type_t    nv3030b_display_font = NV3030B_DEFAULT_DISPLAY_FONT;
 static uint16                    nv3030b_x_max        = LCD_W;
 static uint16                    nv3030b_y_max        = LCD_H;
 static uint8_t NV3030B_colorMode = NORMAL;
 static uint8_t NV3030B_buffer[LCD_H][LCD_W] = {0};
 uint16* localgram;
 
-void NV3030B_SetFont(nv3030b_font_size_enum font)
+void NV3030B_SetFont(Font_Type_t font)
 {
   nv3030b_display_font = font;
 }
@@ -570,6 +570,7 @@ void NV3030B_ShowChar(int16 x, int16 y, const char dat)
   }
 }
 
+
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     NV3030B 显示字符串
 // 参数说明     x               坐标x方向的起点 参数范围 [0, nv3030b_x_max-1]
@@ -596,8 +597,6 @@ void NV3030B_ShowStr(int16 x, int16 y, const char dat[])
       }
       else
       {
-        NV3030B_ShowChar(x, y, dat[j]);
-        x += 6;
 				#if 0
         if(x >= LCD_W - 6)
         {
@@ -605,7 +604,7 @@ void NV3030B_ShowStr(int16 x, int16 y, const char dat[])
           y += 8 + 2;
         }
 				#else
-        if(x >= LCD_W - 6*8)
+        if(x > LCD_W - 6*8)
         {
 					for(int i=0;i<3;i++)
 					{
@@ -615,6 +614,8 @@ void NV3030B_ShowStr(int16 x, int16 y, const char dat[])
 					return;
         }
 				#endif
+        NV3030B_ShowChar(x, y, dat[j]);
+        x += 6;
       }
       break;
     case NV3030B_8X16_FONT:
