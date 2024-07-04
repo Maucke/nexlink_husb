@@ -570,6 +570,47 @@ void NV3030B_ShowChar(int16 x, int16 y, const char dat)
   }
 }
 
+void NV3030B_ShowStrMutiRow(int16 x, int16 y, int16 width, const char dat[])
+{
+  uint16 j = 0;
+  int16 x_start = x;
+//  int16 y_start = y;
+  while(dat[j] != '\0')
+  {
+    switch(nv3030b_display_font)
+    {
+    case NV3030B_6X8_FONT:
+      if(dat[j] == '\n')
+      {
+        x = x_start;
+        y += 8 + 2;
+				while(dat[j] == ' ')
+				{
+					j++;
+				}
+      }
+      else
+      {
+        if(x >= x_start + width - 6)
+        {
+          x = x_start;
+          y += 8 + 2;
+					while(dat[j] == ' ')
+					{
+						j++;
+					}
+        }
+        NV3030B_ShowChar(x, y, dat[j]);
+        x += 6;
+      }
+      break;
+    default:
+      break;
+		}
+    if(y >= LCD_H)return;
+    j++;
+	}
+}
 
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     NV3030B 显示字符串
@@ -584,7 +625,7 @@ void NV3030B_ShowStr(int16 x, int16 y, const char dat[])
 {
   uint16 j = 0;
   int16 x_start = x;
-  int16 y_start = y;
+//  int16 y_start = y;
   while(dat[j] != '\0')
   {
     switch(nv3030b_display_font)
@@ -595,25 +636,20 @@ void NV3030B_ShowStr(int16 x, int16 y, const char dat[])
         x = x_start;
         y += 8 + 2;
       }
-      else
+			else
       {
-				#if 0
-        if(x >= LCD_W - 6)
-        {
-          x = x_start;
-          y += 8 + 2;
-        }
-				#else
         if(x > LCD_W - 6*8)
         {
-					for(int i=0;i<3;i++)
+					if(dat[j] != '\0'&&dat[j+1] != '\0'&&dat[j+2] != '\0')
 					{
-						NV3030B_ShowChar(x, y, '.');
-						x+=6;
+						for(int i=0;i<3;i++)
+						{
+							NV3030B_ShowChar(x, y, '.');
+							x+=6;
+						}
+						return;
 					}
-					return;
         }
-				#endif
         NV3030B_ShowChar(x, y, dat[j]);
         x += 6;
       }

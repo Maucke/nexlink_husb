@@ -111,7 +111,7 @@ uint16_t grambuff_usb[1024];
 
 nex_usb_des des = {
 .brides = {
-	.brightness = 299,
+	.brightness = 300,
 	.damp = 500
 }
 };
@@ -124,7 +124,7 @@ void set_brightness_value(void *obj, int32_t value)
 
 void ready_brightness_value(struct _lv_anim_t *obj)
 {
-	dbmsg("brightness: %d", ((lv_anim_t*)obj)->end_value);
+	dbmsg("brightness: %d/1000", ((lv_anim_t*)obj)->end_value);
 	if(((lv_anim_t*)obj)->end_value == 0)
 	{
 			dbusbmsg("system shutdown");
@@ -227,7 +227,7 @@ int main(void)
 	lv_anim_add(&anim_beep, 0, set_beep_value);
 	lv_anim_path_set_cb(&anim_beep, lv_anim_path_onoff);
 	lv_anim_ready_set_cb(&anim_beep, ready_beep_value);
-  dbmsg("application initialized");
+  dbmsg("application initialized and ready to receive user input, poised to execute operations seamlessly!\nbrightness: %d", des.brides.brightness);
 	lv_anim_start(&anim_backlight, des.brides.brightness, des.brides.damp);
 
   /* USER CODE END 2 */

@@ -29,23 +29,25 @@ EasyUIItem_t itemAbout;
 EasyUIItem_t itemMind, itemCircle, itemSnowflake, itemMeteo, itemPlanet, itemTriangle, itemStarwar, itemBlast, itemGCircle, itemFirework, titleAnimation;
 
 
-typedef struct {
-	nex_brightness_des brides;
-	nex_screen_des scrdes;
-}eeprom_data;
+typedef struct
+{
+  nex_brightness_des brides;
+  nex_screen_des scrdes;
+} eeprom_data;
 
-typedef struct {
-	bool enMind;
-	bool enCircle;
-	bool enSnowflake;
-	bool enMeteo;
-	bool enPlanet;
-	bool enTriangle;
-	bool enStarwar;
-	bool enGCircle; 
-	bool enFirework;
-	bool reserved;
-}motion_status;
+typedef struct
+{
+  bool enMind;
+  bool enCircle;
+  bool enSnowflake;
+  bool enMeteo;
+  bool enPlanet;
+  bool enTriangle;
+  bool enStarwar;
+  bool enGCircle;
+  bool enFirework;
+  bool reserved;
+} motion_status;
 
 motion_status mt;
 
@@ -99,8 +101,8 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
   }
   else if(keyUp.holdTime > 5000)
   {
-    dbmsg("keyUp:holdTime:%d", keyDown.holdTime);                                                   
-	}
+    dbmsg("keyUp:holdTime:%d", keyDown.holdTime);
+  }
   if(keyDown.isPressed)
   {
     dbmsg("keyDown:isPressed");
@@ -155,9 +157,16 @@ char* itemDialogStr[DIALOGITEMSIZE];
 int itemDialogIndex = 0;
 int itemDialogCount = 0;
 
+typedef enum
+{
+  normal = 0,
+  warn,
+  error
+} MsgType_e;
+
 int dbug_printf(const char* pcFormat, ...)
 {
-	uint8_t debug_buf[DEBUG_BUF_SIZE];
+  uint8_t debug_buf[DEBUG_BUF_SIZE];
   va_list args;
   int len = 0;
   memset(debug_buf, 0, sizeof debug_buf);
@@ -165,36 +174,41 @@ int dbug_printf(const char* pcFormat, ...)
 
   len = vsnprintf((char*)debug_buf, sizeof(debug_buf), pcFormat, args);
 
-	if(itemDialogStr[itemDialogIndex] != NULL)
-	{
-		free(itemDialogStr[itemDialogIndex]);
-		itemDialogStr[itemDialogIndex] = NULL;
-	}
+  if(itemDialogStr[itemDialogIndex] != NULL)
+  {
+    free(itemDialogStr[itemDialogIndex]);
+    itemDialogStr[itemDialogIndex] = NULL;
+  }
   itemDialogStr[itemDialogIndex] = (char*)malloc(len + 1);
-	if(itemDialogStr[itemDialogIndex] == NULL)
-	{
-		int lastItemDialogCount = itemDialogCount;
+  if(itemDialogStr[itemDialogIndex] == NULL)
+  {
+    int lastItemDialogCount = itemDialogCount;
     dbug_clear(&pageDialog);
-    dbug_printf("dialog overflow-%d",lastItemDialogCount);
-    dbug_printf("dialog has been clear");//watchout the ring
-		return -1;
-	}
+    dbmsg("dialog overflow-%d", lastItemDialogCount);
+    dbmsg("dialog has been clear");//watchout the ring
+    return -1;
+  }
   memcpy(itemDialogStr[itemDialogIndex], debug_buf, len);
   itemDialogStr[itemDialogIndex][len] = 0;
   if(itemDialogCount < DIALOGITEMSIZE)
   {
-		if(itemDialogCount&1)
-			EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
-		else
-			EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
-			
-    itemDialog[itemDialogIndex].title = itemDialogStr[itemDialogIndex];
+    if(itemDialogCount & 1)
+      EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
+    else
+      EasyUIAddItem(&pageDialog, &itemDialog[itemDialogIndex], "", ITEM_DETAIL);
+
+    itemDialog[itemDialogIndex].msg = itemDialogStr[itemDialogIndex];
+    itemDialog[itemDialogIndex].title = itemDialog[itemDialogIndex].msg + 10; //sizeof [000.000]-
   }
   else
   {
     for(int i = 0; i < DIALOGITEMSIZE - 1; i++)
-      itemDialog[i].title = itemDialog[i + 1].title;
-    itemDialog[DIALOGITEMSIZE - 1].title = itemDialogStr[itemDialogIndex];
+    {
+      itemDialog[i].msg = itemDialog[i + 1].msg;
+      itemDialog[i].title = itemDialog[i].msg + 10;
+    }
+    itemDialog[DIALOGITEMSIZE - 1].msg = itemDialogStr[itemDialogIndex];
+    itemDialog[DIALOGITEMSIZE - 1].title = itemDialog[itemDialogIndex].msg + 10;
   }
 
   itemDialogIndex = (itemDialogIndex + 1) % DIALOGITEMSIZE;
@@ -211,12 +225,12 @@ void dbug_clear(EasyUIPage_t* page)
   itemDialogCount = 0;
   page->itemHead = NULL;
   page->itemTail = NULL;
-	for(int i=0;i<DIALOGITEMSIZE;i++)
-		if(itemDialogStr[itemDialogIndex] != NULL)
-		{
-			free(itemDialogStr[itemDialogIndex]);
-			itemDialogStr[itemDialogIndex] = NULL;
-		}
+  for(int i = 0; i < DIALOGITEMSIZE; i++)
+    if(itemDialogStr[itemDialogIndex] != NULL)
+    {
+      free(itemDialogStr[itemDialogIndex]);
+      itemDialogStr[itemDialogIndex] = NULL;
+    }
 }
 
 void EventJump()
@@ -293,29 +307,29 @@ void EventChangeBrightness(EasyUIItem_t* item)
   opnForward = opnBackward = opnEnter = opnUp = opnDown = false;
 }
 
-void PageAbout(EasyUIItem_t* page)
+void PageAbout(EasyUIPage_t* page)
 {
   char tempstr[128];
   int screen_delta = 10;
 
   EasyUIDisplayStr(10, screen_delta, "MCU: STM32F405RG");
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   EasyUIDisplayStr(10, screen_delta, "MPU: MPU6050");
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   EasyUIDisplayStr(10, screen_delta, "CLOCK: RX8900");
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   EasyUIDisplayStr(10, screen_delta, "SEN: BMP280");
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   EasyUIDisplayStr(10, screen_delta, "Author: DPJ");
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   EasyUIDisplayStr(10, screen_delta, EasyUIVersion);
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   snprintf(tempstr, sizeof tempstr, "Rel. %s", __DATE__);
   EasyUIDisplayStr(10, screen_delta, tempstr);
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
 }
 
-void PageUSBForm(EasyUIItem_t* page)
+void PageUSBForm(EasyUIPage_t* page)
 {
   if(usbinhibit)
   {
@@ -362,7 +376,7 @@ int batteryVoltageToPercentage(float voltage)
 static Filter fltaltitude;
 static Filter fltvoltagex100;
 
-void PageSensor(EasyUIItem_t* page)
+void PageSensor(EasyUIPage_t* page)
 {
   static int levelrun = 0;
   char tempstr[64];
@@ -393,31 +407,31 @@ void PageSensor(EasyUIItem_t* page)
 
   snprintf(tempstr, sizeof tempstr, "BAT: %.1f V", fltvoltagex100.current_value / 100.0f);
   EasyUIDisplayStr(10, screen_delta, tempstr);
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   if(HAL_GPIO_ReadPin(PW_CHARGE_GPIO_Port, PW_CHARGE_Pin) == GPIO_PIN_RESET)
     snprintf(tempstr, sizeof tempstr, "CHARGING");
   else
     snprintf(tempstr, sizeof tempstr, "DISCHARGE");
   EasyUIDisplayStr(10, screen_delta, tempstr);
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   NV3030B_DrawBMP565(165, screen_delta, 36, 36, gImage_Battery[levelrun]);
 
   snprintf(tempstr, sizeof tempstr, "%04d-%02d-%02d, %s", time_user.tm_year + 1900, time_user.tm_mon + 1, time_user.tm_mday, weekdays[time_user.tm_wday % 7]);
   EasyUIDisplayStr(10, screen_delta, tempstr);
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   snprintf(tempstr, sizeof tempstr, "%02d:%02d:%02d", time_user.tm_hour % 100, time_user.tm_min % 100, time_user.tm_sec % 100);
   EasyUIDisplayStr(10, screen_delta, tempstr);
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
 
   snprintf(tempstr, sizeof tempstr, "P: %.1f Pa", pressure);
   EasyUIDisplayStr(10, screen_delta, tempstr);
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   snprintf(tempstr, sizeof tempstr, "T: %.1f C", temperature);
   EasyUIDisplayStr(10, screen_delta, tempstr);
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
   snprintf(tempstr, sizeof tempstr, "Alt: %.1f M", fltaltitude.current_value);
   EasyUIDisplayStr(10, screen_delta, tempstr);
-  screen_delta += ITEM_HEIGHT;
+  screen_delta += page->rowheight;
 }
 extern USBD_HandleTypeDef hUSB;
 extern bool usbavaliable;

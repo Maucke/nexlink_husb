@@ -113,7 +113,7 @@ extern "C" {
 int usb_printf(const char* pcFormat, ...);
 int dbug_printf(const char* pcFormat, ...);
 #define dbusbmsg(fmt, args...) usb_printf("%s[%d]: " fmt "  \r\n", __FUNCTION__, __LINE__, ##args) //__FILE__,
-#define dbmsg(fmt, args...) dbug_printf("[%06d]-"fmt"\n", HAL_GetTick(), ##args) //__FILE__,
+#define dbmsg(fmt, args...) dbug_printf("[%03d.%03d]-"fmt"\n", HAL_GetTick()/1000,HAL_GetTick()%1000, ##args) //__FILE__,
 
 /* Exported types ------------------------------------------------------------*/
 /* for block FIR module */

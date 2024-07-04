@@ -28,9 +28,9 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define KEY_NUM         3
 #define ROTARY          0
 
-#define FONT_WIDTH              12
-#define FONT_HEIGHT             16
-#define ITEM_HEIGHT             20
+//#define FONT_WIDTH              12
+//#define FONT_HEIGHT             16
+//#define ITEM_HEIGHT             20
 #define CHECK_BOX_OFFSET        2
 #define RADIO_BUTTON_OFFSET        3
 #define SCROLL_BAR_WIDTH        4
@@ -50,6 +50,7 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define EasyUIScreenInit(gram)                                  (NV3030B_Init(gram))
 #define EasyUISetFont(font)                                     (NV3030B_SetFont(font))
 #define EasyUIDisplayStr(x, y, str)                             (NV3030B_ShowStr((x) + OFFSET_X, (y) + OFFSET_Y, str))
+#define EasyUIDisplayStrMutiRow(x, y, w, str)                   (NV3030B_ShowStrMutiRow((x) + OFFSET_X, (y) + OFFSET_Y, w, str))
 #define EasyUIDisplayFloat(x, y, dat, num, pointNum)            (NV3030B_ShowFloat((x) + OFFSET_X, (y) + OFFSET_Y, dat, num, pointNum))
 #define EasyUIDrawDot(x, y, color)                              (NV3030B_DrawPoint((x) + OFFSET_X, (y) + OFFSET_Y, color))
 #define EasyUIDrawBox(x, y, width, height, color)               (NV3030B_DrawBox((x) + OFFSET_X, (y) + OFFSET_Y, width, height, color))
@@ -67,7 +68,7 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define EasyUIGetBatVoltage(void)                               (Get_Battery_Value())
 #define EasyUIDelay_ms(time)                                    (HAL_Delay(time))
 
-#define HOLDTIME 120 //s
+#define HOLDTIME 120 //0.5s
 void ClearRemind(void);
 
 typedef     float      paramType;
@@ -101,7 +102,7 @@ typedef enum
 
 typedef struct
 {
-//		uint8_t width;
+		uint8_t width;
 		uint8_t height;
 		Font_Type_t type;
 } Font_t;
@@ -149,7 +150,7 @@ void EasyUIAddPage(EasyUIPage_t* page, Font_Type_t fonttype, EasyUIPage_e func, 
 void EasyUITransitionAnim(void);
 void EasyUIBackgroundBlur(void);
 
-void EasyUIDrawMsgBox(char *msg);
+void EasyUIDrawMsgBox(EasyUIPage_t* page, char *msg);
 float EasyUIGetBatteryVoltage(void);
 
 void EasyUIEventChangeUint(EasyUIPage_t* page, EasyUIItem_t *item);
