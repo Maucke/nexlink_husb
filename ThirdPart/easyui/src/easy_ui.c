@@ -538,8 +538,8 @@ void EasyUIDrawIndicator(EasyUIPage_t* page, uint8_t index, uint8_t timer, uint8
   static uint16_t time = 0;
   static uint8_t lastIndex = 0;
   static uint16_t lengthTarget = 0, yTarget = 0;
+	static float stepbarPos = 0, barPos = 0, barPosTarget = 0;
   uint8_t speed = INDICATOR_MOVE_TIME / timer;
-
   if(status)
     y = 0;
 
@@ -558,8 +558,13 @@ void EasyUIDrawIndicator(EasyUIPage_t* page, uint8_t index, uint8_t timer, uint8
   {
     if(index == itemTmp->id)
     {
-      if(itemTmp->funcType == ITEM_PAGE_DESCRIPTION)
-        lengthTarget = (strlen(itemTmp->title)) * page->font.width + 5;
+			if(page->itemTail->id * page->rowheight > SCREEN_HEIGHT)
+				barPosTarget = index * (SCREEN_HEIGHT - page->rowheight) / page->itemTail->id;
+			else
+				barPosTarget = index * page->itemTail->id * page->rowheight / page->itemTail->id;
+			
+      if(itemTmp->funcType == ITEM_PAGE_DESCRIPTION || itemTmp->funcType == ITEM_DETAIL)
+        lengthTarget = (strlen(itemTmp->title)) * page->font.width + 8;
       else
         lengthTarget = (strlen(itemTmp->title) + 1) * page->font.width + 8;
       yTarget = itemTmp->lineId * page->rowheight;
@@ -579,23 +584,26 @@ void EasyUIDrawIndicator(EasyUIPage_t* page, uint8_t index, uint8_t timer, uint8
   {
     stepLength = ((float) lengthTarget - (float) length) / (float) speed;
     stepY = ((float) yTarget - (float) y) / (float) speed;
+		stepbarPos = ((float) barPosTarget - (float) barPos) / (float) speed;
   }
   if(time >= ITEM_MOVE_TIME)
   {
     length = lengthTarget;
     y = yTarget;
+		barPos = barPosTarget;
   }
   else
   {
     length += stepLength;
     y += stepY;
+    barPos += stepbarPos;
   }
 
   // Draw rounded box and scroll bar
   EasyUISetDrawColor(XOR);
   EasyUIDrawRBox(0, (int16_t) y, (int16_t) length, page->rowheight, NV3030B_penColor, 1);
   EasyUISetDrawColor(NORMAL);
-  EasyUIDrawRBox(SCREEN_WIDTH - SCROLL_BAR_WIDTH, (int16_t) y, SCROLL_BAR_WIDTH, page->rowheight, NV3030B_penColor, 1);
+  EasyUIDrawRBox(SCREEN_WIDTH - SCROLL_BAR_WIDTH, barPos, SCROLL_BAR_WIDTH, page->rowheight, NV3030B_penColor, 1);
   lastIndex = index;
 
   // Time counter

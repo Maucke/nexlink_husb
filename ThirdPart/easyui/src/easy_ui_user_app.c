@@ -185,7 +185,7 @@ int dbug_printf(const char* pcFormat, ...)
     int lastItemDialogCount = itemDialogCount;
     dbug_clear(&pageDialog);
     dbmsg("dialog overflow-%d", lastItemDialogCount);
-    dbmsg("dialog has been clear");//watchout the ring
+    dbmsg("dialog has been clear");//watchout the recursion
     return -1;
   }
   memcpy(itemDialogStr[itemDialogIndex], debug_buf, len);
