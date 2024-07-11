@@ -107,7 +107,7 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
   {
     dbmsg("keyDown:isPressed");
     dbug_clear(&pageDialog);
-    dbug_printf("dialog has been clear");
+    dbmsg("dialog has been clear");
   }
   else if(keyDown.isHold)
   {

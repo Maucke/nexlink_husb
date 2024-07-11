@@ -261,6 +261,9 @@ uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff, nex_usb
 //		dbmsg("grambuff:%p",hnex->grambuff);	
 		hnex->gramdetail = 0;
 		pdev->pClassData = hnex;
+		hnex->des->scrdes.width = LCD_W;
+		hnex->des->scrdes.height = LCD_H;
+		hnex->des->scrdes.blocksize = 960;
 
 		ret = USBD_OK;
 	} else {
@@ -345,7 +348,7 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 		case NEX_SCREEN_SET:
 			hnex->TxState = 0;            
 			hnex->gramdetail = 0;//reset pic
-			memcpy(&hnex->des->scrdes, hnex->ep0_buf, sizeof(hnex->des->scrdes));
+			hnex->des->scrdes.direction = ((nex_screen_des*)hnex->ep0_buf)->direction;
 //			dbmsg("Direction: %d\n", hnex->des->scrdes.direction); // 打印屏幕方向
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
@@ -557,7 +560,7 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 			else
 				NV3030B_SetRegion(0,0,LCD_H-1,LCD_W-1);
 		}
-		NV3030B_DMA_Transfer((uint8_t *)hnex->grambuff + ramindex*1024, 960, DMA_MEMINC_ENABLE); // 启用DMA发送
+		NV3030B_DMA_Transfer((uint8_t *)hnex->grambuff + ramindex*1024, hnex->des->scrdes.blocksize , DMA_MEMINC_ENABLE); // 启用DMA发送
 	}
 	hnex->gramdetail=(hnex->gramdetail+rxlen/2)%(LCD_W*LCD_H);
 	USBD_NEX_LINK_PrepareReceive(pdev);
