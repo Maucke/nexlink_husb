@@ -389,6 +389,9 @@ static uint8_t USBD_NEX_LINK_DFU_Request(USBD_HandleTypeDef *pdev, USBD_SetupReq
 	return USBD_OK;
 }
 
+const char NAME_STR[] = "NexLinker";
+const char VERSION_STR[] = "V1.01";
+
 static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
@@ -420,18 +423,18 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 			memcpy(hnex->ep0_buf, &hnex->des->scrdes, sizeof(hnex->des->scrdes));
 			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(hnex->des->scrdes));
 			break;
-
-//		case GS_USB_BREQ_GET_USER_ID:
-//			if (req->wValue < NUM_CAN_CHANNEL) {
-//				// d32 = flash_get_user_id(req->wValue);
-//				d32 = 0xDEADBEEF;
-//				memcpy(hnex->ep0_buf, &d32, sizeof(d32));
-//				USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(d32));
-//			} else {
-//				USBD_CtlError(pdev, req);
-//			}
-//			break;
-
+		
+		case NEX_NAME_GET:
+//			dbmsg("screen: %d", sizeof(hnex->des->scrdes));
+			memcpy(hnex->ep0_buf, NAME_STR, sizeof(NAME_STR));
+			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(NAME_STR));
+			break;
+		
+		case NEX_VERSION_GET:
+//			dbmsg("screen: %d", sizeof(hnex->des->scrdes));
+			memcpy(hnex->ep0_buf, VERSION_STR, sizeof(VERSION_STR));
+			USBD_CtlSendData(pdev, hnex->ep0_buf, sizeof(VERSION_STR));
+			break;
 
 		default:
 			USBD_CtlError(pdev, req);
@@ -580,7 +583,7 @@ inline uint8_t USBD_NEX_LINK_PrepareReceive(USBD_HandleTypeDef *pdev)
 //	dbmsg("USBD_NEX_LINK_PrepareReceive");	
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
 	ramindex = (ramindex+1)%2;
-	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, (uint8_t*)(hnex->grambuff) + ramindex*1024, 64);
+	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, (uint8_t*)(hnex->grambuff) + ramindex*1024, hnex->des->scrdes.blocksize);
 }
 
 bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev)
