@@ -3,8 +3,8 @@
  * Auto generated Run-Time-Environment Component Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'nexlink_f407_husb' 
- * Target:  'nexlink_f407_husb' 
+ * Project: 'nexlink_f405_husb' 
+ * Target:  'nexlink_f405_husb_app' 
  */
 
 #ifndef RTE_COMPONENTS_H
