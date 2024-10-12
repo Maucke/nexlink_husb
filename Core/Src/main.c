@@ -106,8 +106,8 @@ int usb_printf(const char* pcFormat, ...)
   return len;
 }
 
-uint16_t grambuff[1024];
-uint16_t grambuff_usb[1024];
+uint16_t grambuff[USB_BLOCK_SIZE];
+uint16_t grambuff_usb[USB_BLOCK_SIZE];
 
 nex_usb_des des = {
 .brides = {

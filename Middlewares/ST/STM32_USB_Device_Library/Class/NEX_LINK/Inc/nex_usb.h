@@ -58,6 +58,10 @@ typedef struct {
 	uint16_t blocksize;
 	uint8_t direction:2;
 	uint8_t reserved:6;
+	uint16_t startx;
+	uint16_t starty;
+	uint16_t picw;
+	uint16_t pich;
 }nex_screen_des;
 
 typedef struct {

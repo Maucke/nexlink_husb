@@ -39,6 +39,7 @@ THE SOFTWARE.
 #include "tim.h"
 #include "lv_anim_light.h"
 #include "rx8900.h"
+#include "usart.h"
 typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
 
@@ -261,9 +262,11 @@ uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff, nex_usb
 //		dbmsg("grambuff:%p",hnex->grambuff);	
 		hnex->gramdetail = 0;
 		pdev->pClassData = hnex;
+		hnex->des->scrdes.startx = 0;
+		hnex->des->scrdes.starty = 0;
 		hnex->des->scrdes.width = LCD_W;
 		hnex->des->scrdes.height = LCD_H;
-		hnex->des->scrdes.blocksize = 960;
+		hnex->des->scrdes.blocksize = USB_BLOCK_SIZE;
 
 		ret = USBD_OK;
 	} else {
@@ -348,7 +351,13 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 		case NEX_SCREEN_SET:
 			hnex->TxState = 0;            
 			hnex->gramdetail = 0;//reset pic
+//			hnex->des->scrdes.width = ((nex_screen_des*)hnex->ep0_buf)->width;
+//			hnex->des->scrdes.height = ((nex_screen_des*)hnex->ep0_buf)->height;
 			hnex->des->scrdes.direction = ((nex_screen_des*)hnex->ep0_buf)->direction;
+			hnex->des->scrdes.startx = ((nex_screen_des*)hnex->ep0_buf)->startx;
+			hnex->des->scrdes.starty = ((nex_screen_des*)hnex->ep0_buf)->starty;
+			hnex->des->scrdes.picw = ((nex_screen_des*)hnex->ep0_buf)->picw;
+			hnex->des->scrdes.pich = ((nex_screen_des*)hnex->ep0_buf)->pich;
 //			dbmsg("Direction: %d\n", hnex->des->scrdes.direction); // 打印屏幕方向
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
@@ -542,10 +551,10 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
 
 	uint32_t rxlen = USBD_LL_GetRxDataSize(pdev, epnum);
-	rxlen = 960;
 //	dbmsg("%d,%02X,%02X,%02X,%02X",rxlen,(hnex->grambuff + hnex->gramdetail)[0],(hnex->grambuff + hnex->gramdetail)[1],(hnex->grambuff + hnex->gramdetail)[62],(hnex->grambuff + hnex->gramdetail)[63]);
-
-//	dbmsg("hnex->gramdetail:%d",hnex->gramdetail);
+//	HAL_UART_Transmit(&huart1,(uint8_t *)&rxlen,2,0xffff);
+//	HAL_UART_Transmit(&huart1,(uint8_t *)hnex->grambuff + ramindex*(USB_BLOCK_SIZE),rxlen,0xffff);
+//	dbusbmsg("rxlen:%d",rxlen);
 	extern __IO bool usbinhibit;
 	if(!usbinhibit)
 	{
@@ -558,14 +567,11 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 //				dbmsg("set dir: %d, last: %d", hnex->des->scrdes.direction, nv3030b_display_dir);
 				NV3030B_SetRotation((nv3030b_dir_enum)hnex->des->scrdes.direction);
 			}
-			if(nv3030b_display_dir==0||nv3030b_display_dir==1)
-				NV3030B_SetRegion(0,0,LCD_W-1,LCD_H-1);
-			else
-				NV3030B_SetRegion(0,0,LCD_H-1,LCD_W-1);
+				NV3030B_SetRegion(hnex->des->scrdes.startx,hnex->des->scrdes.starty,hnex->des->scrdes.startx+hnex->des->scrdes.picw-1,hnex->des->scrdes.starty+hnex->des->scrdes.pich-1);
 		}
-		NV3030B_DMA_Transfer((uint8_t *)hnex->grambuff + ramindex*1024, hnex->des->scrdes.blocksize , DMA_MEMINC_ENABLE); // 启用DMA发送
+		NV3030B_DMA_Transfer((uint8_t *)hnex->grambuff + ramindex*(USB_BLOCK_SIZE), rxlen , DMA_MEMINC_ENABLE); // 启用DMA发送
 	}
-	hnex->gramdetail=(hnex->gramdetail+rxlen/2)%(LCD_W*LCD_H);
+	hnex->gramdetail=(hnex->gramdetail+rxlen/2)%(hnex->des->scrdes.picw*hnex->des->scrdes.pich);
 	USBD_NEX_LINK_PrepareReceive(pdev);
 		
 	return retval;
@@ -583,7 +589,7 @@ inline uint8_t USBD_NEX_LINK_PrepareReceive(USBD_HandleTypeDef *pdev)
 //	dbmsg("USBD_NEX_LINK_PrepareReceive");	
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
 	ramindex = (ramindex+1)%2;
-	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, (uint8_t*)(hnex->grambuff) + ramindex*1024, hnex->des->scrdes.blocksize);
+	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, (uint8_t*)(hnex->grambuff) + ramindex*(USB_BLOCK_SIZE), USB_BLOCK_SIZE);
 }
 
 bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev)

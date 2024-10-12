@@ -22,7 +22,7 @@ uint8_t opnForward, opnBackward;
 uint8_t opnEnter, opnExit, opnUp, opnDown;
 __IO bool menuisvisible = true;
 
-char* EasyUIVersion = "Ver. 1.0.0";
+char* EasyUIVersion = "Ver. 1.0.1";
 bool functionIsRunning = false, listLoop = true, errorOccurred = false, batteryMonitor = true;
 
 static lv_anim_t anim_remind;

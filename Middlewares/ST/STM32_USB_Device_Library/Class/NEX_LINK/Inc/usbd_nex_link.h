@@ -41,6 +41,8 @@ THE SOFTWARE.
 #define DFU_INTERFACE_NUM           1
 #define DFU_INTERFACE_STR_INDEX  0xE0
 
+#define USB_BLOCK_SIZE 1024
+
 extern USBD_ClassTypeDef USBD_NEX_LINK;
 
 uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff, nex_usb_des* des);
