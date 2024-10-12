@@ -341,6 +341,8 @@ void PageUSBForm(EasyUIPage_t* page)
   if(opnExit)
   {
     usbinhibit = true;
+		
+		NV3030B_SetRotation(0);
   }
 }
 
