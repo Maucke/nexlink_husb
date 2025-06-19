@@ -44,7 +44,6 @@ typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
 
 	__IO uint32_t TxState;
-	bool isconnect;
 
 	USBD_SetupReqTypedef last_setup_request;
 
@@ -287,7 +286,6 @@ static uint8_t USBD_NEX_LINK_Start(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 		USBD_LL_OpenEP(pdev, GSUSB_ENDPOINT_OUT, USBD_EP_TYPE_BULK, CAN_DATA_MAX_PACKET_SIZE);
 //		hnex->from_host_buf = queue_pop_front(hnex->q_frame_pool);
 		hnex->gramdetail = 0;
-		hnex->isconnect = false;
 		USBD_NEX_LINK_PrepareReceive(pdev);
 		ret = USBD_OK;
 	} else {
@@ -316,8 +314,6 @@ static uint8_t USBD_NEX_LINK_SOF(struct _USBD_HandleTypeDef *pdev)
 	return USBD_OK;
 }
 
-bool usbavaliable = false;
-
 static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	struct tm *tm_local;
 	char time_str[32];
@@ -328,7 +324,6 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	switch (req->bRequest) {
 
 		case NEX_TIMESTAMP_SET:
-			usbavaliable = true;
 			memcpy(&hnex->des->timestamp_s, hnex->ep0_buf, sizeof(hnex->des->timestamp_s));
 			tm_local = localtime((const time_t *)&hnex->des->timestamp_s); // 转换时间戳
 	 
@@ -348,8 +343,7 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			lv_anim_start(&anim_backlight, hnex->des->brides.brightness, hnex->des->brides.damp);
 			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
-		case NEX_SCREEN_SET:
-			hnex->TxState = 0;            
+		case NEX_SCREEN_SET:        
 			hnex->gramdetail = 0;//reset pic
 //			hnex->des->scrdes.width = ((nex_screen_des*)hnex->ep0_buf)->width;
 //			hnex->des->scrdes.height = ((nex_screen_des*)hnex->ep0_buf)->height;
@@ -406,7 +400,6 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
 
 	dbmsg("%s",__FUNCTION__);
-	hnex->isconnect = true;
 	switch (req->bRequest) {
 		
 		case NEX_SCREEN_SET:
@@ -455,6 +448,8 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 static uint8_t USBD_NEX_LINK_Vendor_Request(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
 	dbmsg("%s",__FUNCTION__);
+	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
+	hnex->TxState = 0;     
 	uint8_t req_rcpt = req->bmRequest & 0x1F;
 	uint8_t req_type = (req->bmRequest >> 5) & 0x03;
 
@@ -601,7 +596,7 @@ bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev)
 uint8_t USBD_NEX_LINK_Transmit(USBD_HandleTypeDef *pdev, uint8_t *buf, uint16_t len)
 {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	if (hnex->TxState == 0 && hnex->isconnect) 
+	if (hnex->TxState == 0) 
 		{
 		hnex->TxState = 1;
 		USBD_LL_Transmit(pdev, GSUSB_ENDPOINT_IN, buf, len);
@@ -611,50 +606,6 @@ uint8_t USBD_NEX_LINK_Transmit(USBD_HandleTypeDef *pdev, uint8_t *buf, uint16_t 
 		return USBD_BUSY;
 	}
 }
-
-//uint8_t USBD_NEX_LINK_GetProtocolVersion(USBD_HandleTypeDef *pdev)
-//{
-//	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-//	if (hnex->timestamps_enabled) {
-//		return 2;
-//	} else {
-//		return 1;
-//	}
-//}
-
-//uint8_t USBD_NEX_LINK_GetPadPacketsToMaxPacketSize(USBD_HandleTypeDef *pdev)
-//{
-//	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-//	return hnex->pad_pkts_to_max_pkt_size;
-//}
-
-//uint8_t USBD_NEX_LINK_SendFrame(USBD_HandleTypeDef *pdev, struct nex_host_frame *frame)
-//{
-//	uint8_t buf[CAN_DATA_MAX_PACKET_SIZE],*send_addr;
-
-//	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-//	size_t len = sizeof(struct nex_host_frame);
-
-//	if (!hnex->timestamps_enabled)
-//		len -= 4;
-
-//	send_addr = (uint8_t *)frame;
-
-//	if(hnex->pad_pkts_to_max_pkt_size){
-//		// When talking to WinUSB it seems to help a lot if the
-//		// size of packet you send equals the max packet size.
-//		// In this mode, fill packets out to max packet size and
-//		// then send.
-//		memcpy(buf, frame, len);
-
-//		// zero rest of buffer
-//		memset(buf + len, 0, sizeof(buf) - len);
-//		send_addr = buf;
-//		len = sizeof(buf);
-//	}
-
-//	return USBD_NEX_LINK_Transmit(pdev, send_addr, len);
-//}
 
 uint8_t *USBD_NEX_LINK_GetStrDesc(USBD_HandleTypeDef *pdev, uint8_t index, uint16_t *length)
 {

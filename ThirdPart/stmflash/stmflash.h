@@ -3,15 +3,15 @@
 #include "stm32f4xx_hal.h"  
 #include "main.h"  
 //////////////////////////////////////////////////////////////////////////////////	 
-//±¾³ÌÐòÖ»¹©Ñ§Ï°Ê¹ÓÃ£¬Î´¾­×÷ÕßÐí¿É£¬²»µÃÓÃÓÚÆäËüÈÎºÎÓÃÍ¾
-//ALIENTEK STM32F429¿ª·¢°å
-//STM32ÄÚ²¿FLASH¶ÁÐ´ Çý¶¯´úÂë	   
-//ÕýµãÔ­×Ó@ALIENTEK
-//¼¼ÊõÂÛÌ³:www.openedv.com
-//´´½¨ÈÕÆÚ:2016/1/16
-//°æ±¾£ºV1.0
-//°æÈ¨ËùÓÐ£¬µÁ°æ±Ø¾¿¡£
-//Copyright(C) ¹ãÖÝÊÐÐÇÒíµç×Ó¿Æ¼¼ÓÐÏÞ¹«Ë¾ 2014-2024
+//æœ¬ç¨‹åºåªä¾›å­¦ä¹ ä½¿ç”¨ï¼Œæœªç»ä½œè€…è®¸å¯ï¼Œä¸å¾—ç”¨äºŽå…¶å®ƒä»»ä½•ç”¨é€”
+//ALIENTEK STM32F429å¼€å‘æ¿
+//STM32å†…éƒ¨FLASHè¯»å†™ é©±åŠ¨ä»£ç 	   
+//æ­£ç‚¹åŽŸå­@ALIENTEK
+//æŠ€æœ¯è®ºå›:www.openedv.com
+//åˆ›å»ºæ—¥æœŸ:2016/1/16
+//ç‰ˆæœ¬ï¼šV1.0
+//ç‰ˆæƒæ‰€æœ‰ï¼Œç›—ç‰ˆå¿…ç©¶ã€‚
+//Copyright(C) å¹¿å·žå¸‚æ˜Ÿç¿¼ç”µå­ç§‘æŠ€æœ‰é™å…¬å¸ 2014-2024
 //All rights reserved									  
 ////////////////////////////////////////////////////////////////////////////////// 	
 
@@ -49,29 +49,29 @@ typedef __I uint16_t vuc16;  /*!< Read Only */
 typedef __I uint8_t vuc8;   /*!< Read Only */
 
 #define FLASH_SAVE_ADDR  ADDR_FLASH_SECTOR_11 
-//FLASHÆðÊ¼µØÖ·
-#define STM32_FLASH_BASE 0x08000000 	//STM32 FLASHµÄÆðÊ¼µØÖ·
-#define FLASH_WAITETIME  50000          //FLASHµÈ´ý³¬Ê±Ê±¼ä
+//FLASHèµ·å§‹åœ°å€
+#define STM32_FLASH_BASE 0x08000000 	//STM32 FLASHçš„èµ·å§‹åœ°å€
+#define FLASH_WAITETIME  50000          //FLASHç­‰å¾…è¶…æ—¶æ—¶é—´
 
-//FLASH ÉÈÇøµÄÆðÊ¼µØÖ·
-#define ADDR_FLASH_SECTOR_0     ((u32)0x08000000) 	//ÉÈÇø0ÆðÊ¼µØÖ·, 16 Kbytes  
-#define ADDR_FLASH_SECTOR_1     ((u32)0x08004000) 	//ÉÈÇø1ÆðÊ¼µØÖ·, 16 Kbytes  
-#define ADDR_FLASH_SECTOR_2     ((u32)0x08008000) 	//ÉÈÇø2ÆðÊ¼µØÖ·, 16 Kbytes  
-#define ADDR_FLASH_SECTOR_3     ((u32)0x0800C000) 	//ÉÈÇø3ÆðÊ¼µØÖ·, 16 Kbytes  
-#define ADDR_FLASH_SECTOR_4     ((u32)0x08010000) 	//ÉÈÇø4ÆðÊ¼µØÖ·, 64 Kbytes  
-#define ADDR_FLASH_SECTOR_5     ((u32)0x08020000) 	//ÉÈÇø5ÆðÊ¼µØÖ·, 128 Kbytes  
-#define ADDR_FLASH_SECTOR_6     ((u32)0x08040000) 	//ÉÈÇø6ÆðÊ¼µØÖ·, 128 Kbytes  
-#define ADDR_FLASH_SECTOR_7     ((u32)0x08060000) 	//ÉÈÇø7ÆðÊ¼µØÖ·, 128 Kbytes  
-#define ADDR_FLASH_SECTOR_8     ((u32)0x08080000) 	//ÉÈÇø8ÆðÊ¼µØÖ·, 128 Kbytes  
-#define ADDR_FLASH_SECTOR_9     ((u32)0x080A0000) 	//ÉÈÇø9ÆðÊ¼µØÖ·, 128 Kbytes  
-#define ADDR_FLASH_SECTOR_10    ((u32)0x080C0000) 	//ÉÈÇø10ÆðÊ¼µØÖ·,128 Kbytes  
-#define ADDR_FLASH_SECTOR_11    ((u32)0x080E0000) 	//ÉÈÇø11ÆðÊ¼µØÖ·,128 Kbytes 
+//FLASH æ‰‡åŒºçš„èµ·å§‹åœ°å€
+#define ADDR_FLASH_SECTOR_0     ((u32)0x08000000) 	//æ‰‡åŒº0èµ·å§‹åœ°å€, 16 Kbytes  
+#define ADDR_FLASH_SECTOR_1     ((u32)0x08004000) 	//æ‰‡åŒº1èµ·å§‹åœ°å€, 16 Kbytes  
+#define ADDR_FLASH_SECTOR_2     ((u32)0x08008000) 	//æ‰‡åŒº2èµ·å§‹åœ°å€, 16 Kbytes  
+#define ADDR_FLASH_SECTOR_3     ((u32)0x0800C000) 	//æ‰‡åŒº3èµ·å§‹åœ°å€, 16 Kbytes  
+#define ADDR_FLASH_SECTOR_4     ((u32)0x08010000) 	//æ‰‡åŒº4èµ·å§‹åœ°å€, 64 Kbytes  
+#define ADDR_FLASH_SECTOR_5     ((u32)0x08020000) 	//æ‰‡åŒº5èµ·å§‹åœ°å€, 128 Kbytes  
+#define ADDR_FLASH_SECTOR_6     ((u32)0x08040000) 	//æ‰‡åŒº6èµ·å§‹åœ°å€, 128 Kbytes  
+#define ADDR_FLASH_SECTOR_7     ((u32)0x08060000) 	//æ‰‡åŒº7èµ·å§‹åœ°å€, 128 Kbytes  
+#define ADDR_FLASH_SECTOR_8     ((u32)0x08080000) 	//æ‰‡åŒº8èµ·å§‹åœ°å€, 128 Kbytes  
+#define ADDR_FLASH_SECTOR_9     ((u32)0x080A0000) 	//æ‰‡åŒº9èµ·å§‹åœ°å€, 128 Kbytes  
+#define ADDR_FLASH_SECTOR_10    ((u32)0x080C0000) 	//æ‰‡åŒº10èµ·å§‹åœ°å€,128 Kbytes  
+#define ADDR_FLASH_SECTOR_11    ((u32)0x080E0000) 	//æ‰‡åŒº11èµ·å§‹åœ°å€,128 Kbytes 
 
  
-u32 STMFLASH_ReadWord(u32 faddr);		  	//¶Á³ö×Ö  
-void STMFLASH_Write(u32 WriteAddr,u32 *pBuffer,u32 NumToWrite);		//´ÓÖ¸¶¨µØÖ·¿ªÊ¼Ð´ÈëÖ¸¶¨³¤¶ÈµÄÊý¾Ý
-void STMFLASH_Read(u32 ReadAddr,u32 *pBuffer,u32 NumToRead);   		//´ÓÖ¸¶¨µØÖ·¿ªÊ¼¶Á³öÖ¸¶¨³¤¶ÈµÄÊý¾Ý
-//²âÊÔÐ´Èë
+u32 STMFLASH_ReadWord(u32 faddr);		  	//è¯»å‡ºå­—  
+void STMFLASH_Write(u32 WriteAddr,u32 *pBuffer,u32 NumToWrite);		//ä»ŽæŒ‡å®šåœ°å€å¼€å§‹å†™å…¥æŒ‡å®šé•¿åº¦çš„æ•°æ®
+void STMFLASH_Read(u32 ReadAddr,u32 *pBuffer,u32 NumToRead);   		//ä»ŽæŒ‡å®šåœ°å€å¼€å§‹è¯»å‡ºæŒ‡å®šé•¿åº¦çš„æ•°æ®
+//æµ‹è¯•å†™å…¥
 void Test_Write(u32 WriteAddr,u32 WriteData);	
 #endif
 

@@ -128,19 +128,19 @@ uint32_t Get_ADC_Value(ADC_HandleTypeDef* adcHandle)
 {
   uint32_t adc_value = 0;
   
-  // Æô¶¯ADC×ª»»
+  // ï¿½ï¿½ï¿½ï¿½ADC×ªï¿½ï¿½
   if (HAL_ADC_Start(adcHandle) != HAL_OK)
   {
     Error_Handler();
   }
   
-  // µÈ´ý×ª»»Íê³É
+  // ï¿½È´ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½
   if (HAL_ADC_PollForConversion(adcHandle, 100) != HAL_OK)
   {
     Error_Handler();
   }
   
-  // »ñÈ¡ADCÖµ
+  // ï¿½ï¿½È¡ADCÖµ
   adc_value = HAL_ADC_GetValue(adcHandle);
   
   return adc_value;
@@ -155,10 +155,10 @@ int BatteryVoltage_To_Level(float voltage) {
     float minVoltage = 3.0f;
     float maxVoltage = 4.2f;
     
-    // ¼ÆËãµçÑ¹ÔÚ·¶Î§ÄÚµÄ°Ù·Ö±È
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¹ï¿½Ú·ï¿½Î§ï¿½ÚµÄ°Ù·Ö±ï¿½
     float percentage = (voltage - minVoltage) / (maxVoltage - minVoltage) * 100.0f;
     
-    // ½«°Ù·Ö±ÈÓ³Éäµ½-1µ½4µÄ¼¶±ð
+    // ï¿½ï¿½ï¿½Ù·Ö±ï¿½Ó³ï¿½äµ½-1ï¿½ï¿½4ï¿½Ä¼ï¿½ï¿½ï¿½
     if (percentage < 20.0f) {
         return -1;
     } else if (percentage < 40.0f) {
@@ -167,7 +167,7 @@ int BatteryVoltage_To_Level(float voltage) {
         return 1;
     } else if (percentage < 75.0f) {
         return 2;
-    } else if (percentage <= 90.0f) { // ¿¼ÂÇµ½Ð¡Êý¾«¶È¿ÉÄÜÐÔ£¬ÕâÀïÔö¼ÓÒ»¸öµÈÓÚµÄÇé¿ö
+    } else if (percentage <= 90.0f) { // ï¿½ï¿½ï¿½Çµï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½È¿ï¿½ï¿½ï¿½ï¿½Ô£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½
         return 3;
     } else {
         return 4; 

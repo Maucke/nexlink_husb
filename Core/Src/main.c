@@ -22,11 +22,12 @@
 #include "crc.h"
 #include "dma.h"
 #include "i2s.h"
+#include "iwdg.h"
 #include "rng.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
-#include "wwdg.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -90,7 +91,6 @@ void SystemClock_Config(void);
 //}
 
 uint8_t debug_buf[DEBUG_BUF_SIZE] = {0};
-extern bool usbavaliable;
 int usb_printf(const char* pcFormat, ...)
 {
   va_list args;
@@ -99,8 +99,7 @@ int usb_printf(const char* pcFormat, ...)
   va_start(args, pcFormat);
 
   len = vsnprintf((char*)debug_buf, sizeof(debug_buf), pcFormat, args);
-	if(usbavaliable)
-		USBD_NEX_LINK_Transmit(&hUSB, debug_buf, len);
+	USBD_NEX_LINK_Transmit(&hUSB, debug_buf, len);
   va_end(args);
 
   return len;
@@ -159,6 +158,7 @@ void ready_beep_value(struct _lv_anim_t *obj)
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
     __enable_irq();
   /* USER CODE END 1 */
@@ -181,8 +181,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
   MX_DMA_Init();
+  MX_USART1_UART_Init();
   MX_SPI1_Init();
   MX_TIM13_Init();
   MX_CRC_Init();
@@ -219,6 +219,7 @@ int main(void)
   dbmsg("application initialized and ready to receive user input, poised to execute operations seamlessly!\nbrightness: %d", des.brides.brightness);
 	lv_anim_start(&anim_backlight, des.brides.brightness, des.brides.damp);
 
+  MX_IWDG_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -235,6 +236,7 @@ int main(void)
 		extern bool mpu_debug_en;
 		if(mpu_debug_en)
 			MPU_Test(1000);
+		HAL_IWDG_Refresh(&hiwdg);
 //		BMP280_Test(1000);
 //		RX8900_Test(1000);
   }
@@ -258,8 +260,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
@@ -300,23 +303,23 @@ void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 //		}
 	}
 }
-#define BOOTLOADER_ADDRESS 0x08000000  // BootLoaderÔÚFlashÖÐµÄÆðÊ¼µØÖ·
+#define BOOTLOADER_ADDRESS 0x08000000  // BootLoaderï¿½ï¿½Flashï¿½Ðµï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ö·
 
 typedef void (*pFunction)(void);
 pFunction JumpAddress;
 
-void JumpToBootloader (void) //Òì³£¿ªÊ¼
+void JumpToBootloader (void) //ï¿½ì³£ï¿½ï¿½Ê¼
 {
-    // ¹ØÖÐ¶Ï
+    // ï¿½ï¿½ï¿½Ð¶ï¿½
     __disable_irq();
 
-    // ÉèÖÃÏòÁ¿±í»ùµØÖ·ÎªBootLoaderµÄµØÖ·
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ÎªBootLoaderï¿½Äµï¿½Ö·
     SCB->VTOR = BOOTLOADER_ADDRESS;
 
-    // È¡µÃBootLoaderµØÖ·µÄº¯ÊýÖ¸Õë
+    // È¡ï¿½ï¿½BootLoaderï¿½ï¿½Ö·ï¿½Äºï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
     JumpAddress = (pFunction)*(volatile uint32_t*)(BOOTLOADER_ADDRESS + 4);
 
-    // Ìø×ªµ½BootLoader
+    // ï¿½ï¿½×ªï¿½ï¿½BootLoader
     JumpAddress();
 }
 /* USER CODE END 4 */
@@ -334,7 +337,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 0 */
 
   /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM6) {
+  if (htim->Instance == TIM6)
+  {
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */

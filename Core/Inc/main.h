@@ -186,6 +186,7 @@ void set_brightness_value(void *obj, int32_t value);
 #define BUS_SCL_GPIO_Port GPIOB
 #define BUS_SDA_Pin GPIO_PIN_9
 #define BUS_SDA_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
