@@ -12,7 +12,7 @@
 uint16                   NV3030B_penColor     = NV3030B_DEFAULT_PENCOLOR;
 uint16                   NV3030B_backgroundColor      = NV3030B_DEFAULT_BGCOLOR;
 
-__IO nv3030b_dir_enum          nv3030b_display_dir  = NV3030B_DEFAULT_DISPLAY_DIR;
+nv3030b_dir_enum          nv3030b_display_dir  = NV3030B_INVALID;
 static Font_Type_t    nv3030b_display_font = NV3030B_DEFAULT_DISPLAY_FONT;
 static uint16                    nv3030b_x_max        = LCD_W;
 static uint16                    nv3030b_y_max        = LCD_H;
@@ -134,6 +134,7 @@ void NV3030B_SetDrawColor(NV3030B_ColorMode_e mode)
 
 void NV3030B_SetRotation(nv3030b_dir_enum dir)
 {
+	if(nv3030b_display_dir == dir) return;
   nv3030b_display_dir = dir;
 #if ST7789 == 0
   nv3030b_write_index(0x36);
@@ -1581,7 +1582,7 @@ void NV3030B_Init(uint16* gram)
   nv3030b_write_index(0x35);
   spi_write_8bit(0x00);
 
-  NV3030B_SetRotation(nv3030b_display_dir);
+  NV3030B_SetRotation(NV3030B_PORTAIT);
 
   nv3030b_write_index(0x21);
 

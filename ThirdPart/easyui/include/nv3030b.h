@@ -72,6 +72,7 @@ typedef enum
 
 typedef enum
 {
+    NV3030B_INVALID                      = -1,     
     NV3030B_PORTAIT                      = 0,                                    
     NV3030B_PORTAIT_180                  = 1,                                    
     NV3030B_CROSSWISE                    = 2,                                  

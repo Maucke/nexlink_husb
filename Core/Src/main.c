@@ -105,13 +105,16 @@ int usb_printf(const char* pcFormat, ...)
   return len;
 }
 
-uint16_t grambuff[USB_BLOCK_SIZE];
-uint16_t grambuff_usb[USB_BLOCK_SIZE];
+uint16_t grambuff[NEX_DATA_MAX_PACKET_SIZE];
 
 nex_usb_des des = {
 .brides = {
 	.brightness = 300,
 	.damp = 500
+},
+.scrdes = {
+	.width = LCD_W,
+	.height = LCD_H
 }
 };
 lv_anim_t anim_backlight;
@@ -149,7 +152,14 @@ void ready_beep_value(struct _lv_anim_t *obj)
 			lv_anim_start(&anim_beep, 0, 100);
 	}
 }
-
+uint8_t ram_buffer[2][NEX_DATA_MAX_PACKET_SIZE];
+void MX_USB_DEVICE_Init()
+{
+  USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
+  USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
+  USBD_NEX_LINK_Init(&hUSB, ram_buffer[0], ram_buffer[1], &des);
+  USBD_Start(&hUSB);
+}
 /* USER CODE END 0 */
 
 /**
@@ -197,10 +207,7 @@ int main(void)
   dbmsg("system initialized");
 
 	set_brightness_value(NULL, 0);
-  USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
-  USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
-  USBD_NEX_LINK_Init(&hUSB, grambuff_usb, &des);
-  USBD_Start(&hUSB);
+	MX_USB_DEVICE_Init();
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);
 	HAL_TIM_Base_Start_IT(&htim3);

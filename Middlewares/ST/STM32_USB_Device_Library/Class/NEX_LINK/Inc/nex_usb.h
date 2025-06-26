@@ -40,7 +40,7 @@ enum nex_usb_breq {
 	NEX_TIMESTAMP_GET,
 	NEX_BRIGHTNESS_SET,
 	NEX_BRIGHTNESS_GET,
-	NEX_SCREEN_SET,
+	NEX_PICTURE_SET,
 	NEX_SCREEN_GET,
 	NEX_NAME_GET,
 	NEX_VERSION_GET,
@@ -55,6 +55,9 @@ typedef struct {
 typedef struct {
 	uint16_t width;
 	uint16_t height;
+}nex_screen_des;
+
+typedef struct {
 	uint16_t blocksize;
 	uint8_t direction:2;
 	uint8_t reserved:6;
@@ -62,10 +65,11 @@ typedef struct {
 	uint16_t starty;
 	uint16_t picw;
 	uint16_t pich;
-}nex_screen_des;
+}nex_picture_des;
 
 typedef struct {
 	uint64_t timestamp_s;
 	nex_brightness_des brides;
 	nex_screen_des scrdes;
+	nex_picture_des picdes;
 }nex_usb_des;

@@ -41,17 +41,16 @@ THE SOFTWARE.
 #include "rx8900.h"
 #include "usart.h"
 typedef struct {
-	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
-
-	__IO uint32_t TxState;
+	__IO uint32_t txState; 
+	__IO bool ramindex;
+	uint8_t ep0_buf[NEX_CMD_PACKET_SIZE];
 
 	USBD_SetupReqTypedef last_setup_request;
-
-	uint16_t* grambuff;
-	long gramdetail;
+	
+	uint8_t *ram_buffer[2];
+	uint8_t *rx_buffer;
 	
 	nex_usb_des* des;
-	
 	bool dfu_detach_requested;
 	
 } USBD_NEX_LINK_HandleTypeDef __attribute__ ((aligned (4)));
@@ -66,7 +65,7 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum);
 static uint8_t *USBD_NEX_LINK_GetStrDesc(USBD_HandleTypeDef *pdev, uint8_t index, uint16_t *length);
 static uint8_t USBD_NEX_LINK_SOF(struct _USBD_HandleTypeDef *pdev);
 
-/* CAN interface class callbacks structure */
+/* NEX interface class callbacks structure */
 USBD_ClassTypeDef USBD_NEX_LINK = {
 	USBD_NEX_LINK_Start,
 	USBD_NEX_LINK_DeInit,
@@ -86,13 +85,13 @@ USBD_ClassTypeDef USBD_NEX_LINK = {
 };
 
 /* Configuration Descriptor */
-__ALIGN_BEGIN uint8_t USBD_NEX_LINK_CfgDesc[USB_CAN_CONFIG_DESC_SIZ] __ALIGN_END =
+__ALIGN_BEGIN uint8_t USBD_NEX_LINK_CfgDesc[USB_NEX_CONFIG_DESC_SIZ] __ALIGN_END =
 {
 	/*---------------------------------------------------------------------------*/
 	/* Configuration Descriptor */
 	0x09,                             /* bLength */
 	USB_DESC_TYPE_CONFIGURATION,      /* bDescriptorType */
-	USB_CAN_CONFIG_DESC_SIZ,          /* wTotalLength */
+	USB_NEX_CONFIG_DESC_SIZ,          /* wTotalLength */
 	0x00,
 	0x02,                             /* bNumInterfaces */
 	0x01,                             /* bConfigurationValue */
@@ -120,8 +119,8 @@ __ALIGN_BEGIN uint8_t USBD_NEX_LINK_CfgDesc[USB_CAN_CONFIG_DESC_SIZ] __ALIGN_END
 	USB_DESC_TYPE_ENDPOINT,           /* bDescriptorType */
 	GSUSB_ENDPOINT_IN,                /* bEndpointAddress */
 	0x02,                             /* bmAttributes: bulk */
-	LOBYTE(CAN_DATA_MAX_PACKET_SIZE), /* wMaxPacketSize */
-	HIBYTE(CAN_DATA_MAX_PACKET_SIZE),
+	LOBYTE(NEX_DATA_MAX_PACKET_SIZE), /* wMaxPacketSize */
+	HIBYTE(NEX_DATA_MAX_PACKET_SIZE),
 	0x00,                             /* bInterval: */
 	/*---------------------------------------------------------------------------*/
 
@@ -131,8 +130,8 @@ __ALIGN_BEGIN uint8_t USBD_NEX_LINK_CfgDesc[USB_CAN_CONFIG_DESC_SIZ] __ALIGN_END
 	USB_DESC_TYPE_ENDPOINT,           /* bDescriptorType */
 	GSUSB_ENDPOINT_OUT,               /* bEndpointAddress */
 	0x02,                             /* bmAttributes: bulk */
-	LOBYTE(CAN_DATA_MAX_PACKET_SIZE), /* wMaxPacketSize */
-	HIBYTE(CAN_DATA_MAX_PACKET_SIZE),
+	LOBYTE(NEX_DATA_MAX_PACKET_SIZE), /* wMaxPacketSize */
+	HIBYTE(NEX_DATA_MAX_PACKET_SIZE),
 	0x00,                             /* bInterval: */
 	/*---------------------------------------------------------------------------*/
 
@@ -246,26 +245,18 @@ static __ALIGN_BEGIN uint8_t USBD_MS_EXT_PROP_FEATURE_DESC[] __ALIGN_END = {
 	0x00, 0x00, 0x00, 0x00
 };
 
-uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint16_t *grambuff, nex_usb_des* des)
+uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint8_t *buffer_a, uint8_t *buffer_b, nex_usb_des *des)
 {
 	uint8_t ret = USBD_FAIL;
 	USBD_NEX_LINK_HandleTypeDef *hnex = calloc(1, sizeof(USBD_NEX_LINK_HandleTypeDef));
 
 	dbmsg("%s",__FUNCTION__);
 	if(hnex != 0) {
-//		hnex->q_frame_pool = q_frame_pool;
-//		hnex->q_from_host = q_from_host;
-		hnex->grambuff = grambuff;
+		hnex->ram_buffer[0] = buffer_a;
+		hnex->ram_buffer[1] = buffer_b;
+		hnex->rx_buffer = hnex->ram_buffer[0];
 		hnex->des = des;
-		
-//		dbmsg("grambuff:%p",hnex->grambuff);	
-		hnex->gramdetail = 0;
 		pdev->pClassData = hnex;
-		hnex->des->scrdes.startx = 0;
-		hnex->des->scrdes.starty = 0;
-		hnex->des->scrdes.width = LCD_W;
-		hnex->des->scrdes.height = LCD_H;
-		hnex->des->scrdes.blocksize = USB_BLOCK_SIZE;
 
 		ret = USBD_OK;
 	} else {
@@ -281,11 +272,9 @@ static uint8_t USBD_NEX_LINK_Start(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 	uint8_t ret = USBD_FAIL;
 	dbmsg("%s",__FUNCTION__);
 	if (pdev->pClassData) {
-		USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
-		USBD_LL_OpenEP(pdev, GSUSB_ENDPOINT_IN, USBD_EP_TYPE_BULK, CAN_DATA_MAX_PACKET_SIZE);
-		USBD_LL_OpenEP(pdev, GSUSB_ENDPOINT_OUT, USBD_EP_TYPE_BULK, CAN_DATA_MAX_PACKET_SIZE);
-//		hnex->from_host_buf = queue_pop_front(hnex->q_frame_pool);
-		hnex->gramdetail = 0;
+		USBD_LL_OpenEP(pdev, GSUSB_ENDPOINT_IN, USBD_EP_TYPE_BULK, NEX_DATA_MAX_PACKET_SIZE);
+		USBD_LL_OpenEP(pdev, GSUSB_ENDPOINT_OUT, USBD_EP_TYPE_BULK, NEX_DATA_MAX_PACKET_SIZE);
+		
 		USBD_NEX_LINK_PrepareReceive(pdev);
 		ret = USBD_OK;
 	} else {
@@ -314,6 +303,8 @@ static uint8_t USBD_NEX_LINK_SOF(struct _USBD_HandleTypeDef *pdev)
 	return USBD_OK;
 }
 
+
+extern __IO bool usbinhibit;
 static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 	struct tm *tm_local;
 	char time_str[32];
@@ -334,30 +325,23 @@ static uint8_t USBD_NEX_LINK_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 			} else {
 //					dbmsg("Failed to format time\n");
 			}
-			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 		case NEX_BRIGHTNESS_SET:
 			memcpy(&hnex->des->brides, hnex->ep0_buf, sizeof(hnex->des->brides));
 //			dbmsg("Brightness: %d\n", hnex->des->brides.brightness); // 打印亮度
 			extern lv_anim_t anim_backlight;
 			lv_anim_start(&anim_backlight, hnex->des->brides.brightness, hnex->des->brides.damp);
-			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
-		case NEX_SCREEN_SET:        
-			hnex->gramdetail = 0;//reset pic
-//			hnex->des->scrdes.width = ((nex_screen_des*)hnex->ep0_buf)->width;
-//			hnex->des->scrdes.height = ((nex_screen_des*)hnex->ep0_buf)->height;
-			hnex->des->scrdes.direction = ((nex_screen_des*)hnex->ep0_buf)->direction;
-			hnex->des->scrdes.startx = ((nex_screen_des*)hnex->ep0_buf)->startx;
-			hnex->des->scrdes.starty = ((nex_screen_des*)hnex->ep0_buf)->starty;
-			hnex->des->scrdes.picw = ((nex_screen_des*)hnex->ep0_buf)->picw;
-			hnex->des->scrdes.pich = ((nex_screen_des*)hnex->ep0_buf)->pich;
-//			dbmsg("Direction: %d\n", hnex->des->scrdes.direction); // 打印屏幕方向
-			USBD_NEX_LINK_PrepareReceive(pdev);
+		case NEX_PICTURE_SET:        
+			memcpy(&hnex->des->picdes, hnex->ep0_buf, sizeof(hnex->des->picdes));
+	if(!usbinhibit)
+	{
+			NV3030B_SetRotation((nv3030b_dir_enum)hnex->des->picdes.direction);
+			NV3030B_SetRegion(hnex->des->picdes.startx,hnex->des->picdes.starty,hnex->des->picdes.startx+hnex->des->picdes.picw-1,hnex->des->picdes.starty+hnex->des->picdes.pich-1);
+	}		HAL_GPIO_TogglePin(SYSLED_GPIO_Port, SYSLED_Pin);
 			break;
 
 		default:
-			USBD_NEX_LINK_PrepareReceive(pdev);
 			break;
 	}
 
@@ -402,7 +386,7 @@ static uint8_t USBD_NEX_LINK_Config_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 	dbmsg("%s",__FUNCTION__);
 	switch (req->bRequest) {
 		
-		case NEX_SCREEN_SET:
+		case NEX_PICTURE_SET:
 		case NEX_BRIGHTNESS_SET:
 		case NEX_TIMESTAMP_SET:
 			hnex->last_setup_request = *req;
@@ -449,7 +433,7 @@ static uint8_t USBD_NEX_LINK_Vendor_Request(USBD_HandleTypeDef *pdev, USBD_Setup
 {
 	dbmsg("%s",__FUNCTION__);
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*) pdev->pClassData;
-	hnex->TxState = 0;     
+	hnex->txState = 0;     
 	uint8_t req_rcpt = req->bmRequest & 0x1F;
 	uint8_t req_type = (req->bmRequest >> 5) & 0x03;
 
@@ -529,15 +513,13 @@ static uint8_t USBD_NEX_LINK_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypede
 	return USBD_OK;
 }
 
-uint8_t refrash_screen(void);
 static uint8_t USBD_NEX_LINK_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	(void) epnum;
 
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	hnex->TxState = 0;
+	hnex->txState = 0;
 	return USBD_OK;
 }
-static __IO bool ramindex = 0;
 
 static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 
@@ -546,27 +528,8 @@ static uint8_t USBD_NEX_LINK_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
 
 	uint32_t rxlen = USBD_LL_GetRxDataSize(pdev, epnum);
-//	dbmsg("%d,%02X,%02X,%02X,%02X",rxlen,(hnex->grambuff + hnex->gramdetail)[0],(hnex->grambuff + hnex->gramdetail)[1],(hnex->grambuff + hnex->gramdetail)[62],(hnex->grambuff + hnex->gramdetail)[63]);
-//	HAL_UART_Transmit(&huart1,(uint8_t *)&rxlen,2,0xffff);
-//	HAL_UART_Transmit(&huart1,(uint8_t *)hnex->grambuff + ramindex*(USB_BLOCK_SIZE),rxlen,0xffff);
-//	dbusbmsg("rxlen:%d",rxlen);
-	extern __IO bool usbinhibit;
 	if(!usbinhibit)
-	{
-		if(hnex->gramdetail==0)
-		{
-			HAL_GPIO_TogglePin(SYSLED_GPIO_Port, SYSLED_Pin);
-			extern __IO nv3030b_dir_enum nv3030b_display_dir;
-			if(nv3030b_display_dir != hnex->des->scrdes.direction)
-			{
-//				dbmsg("set dir: %d, last: %d", hnex->des->scrdes.direction, nv3030b_display_dir);
-				NV3030B_SetRotation((nv3030b_dir_enum)hnex->des->scrdes.direction);
-			}
-				NV3030B_SetRegion(hnex->des->scrdes.startx,hnex->des->scrdes.starty,hnex->des->scrdes.startx+hnex->des->scrdes.picw-1,hnex->des->scrdes.starty+hnex->des->scrdes.pich-1);
-		}
-		NV3030B_DMA_Transfer((uint8_t *)hnex->grambuff + ramindex*(USB_BLOCK_SIZE), rxlen , DMA_MEMINC_ENABLE); // 启用DMA发送
-	}
-	hnex->gramdetail=(hnex->gramdetail+rxlen/2)%(hnex->des->scrdes.picw*hnex->des->scrdes.pich);
+		NV3030B_DMA_Transfer(hnex->rx_buffer, rxlen , DMA_MEMINC_ENABLE); // 启用DMA发送
 	USBD_NEX_LINK_PrepareReceive(pdev);
 		
 	return retval;
@@ -583,22 +546,23 @@ inline uint8_t USBD_NEX_LINK_PrepareReceive(USBD_HandleTypeDef *pdev)
 {
 //	dbmsg("USBD_NEX_LINK_PrepareReceive");	
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	ramindex = (ramindex+1)%2;
-	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, (uint8_t*)(hnex->grambuff) + ramindex*(USB_BLOCK_SIZE), USB_BLOCK_SIZE);
+	hnex->ramindex = (hnex->ramindex + 1) % 2;
+	hnex->rx_buffer = hnex->ram_buffer[hnex->ramindex];
+	return USBD_LL_PrepareReceive(pdev, GSUSB_ENDPOINT_OUT, hnex->rx_buffer, NEX_DATA_MAX_PACKET_SIZE);
 }
 
 bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev)
 {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	return hnex->TxState == 0;
+	return hnex->txState == 0;
 }
 
 uint8_t USBD_NEX_LINK_Transmit(USBD_HandleTypeDef *pdev, uint8_t *buf, uint16_t len)
 {
 	USBD_NEX_LINK_HandleTypeDef *hnex = (USBD_NEX_LINK_HandleTypeDef*)pdev->pClassData;
-	if (hnex->TxState == 0) 
+	if (hnex->txState == 0) 
 		{
-		hnex->TxState = 1;
+		hnex->txState = 1;
 		USBD_LL_Transmit(pdev, GSUSB_ENDPOINT_IN, buf, len);
 		return USBD_OK;
 	} 
