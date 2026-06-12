@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "main.h"
+#include "iwdg.h"
 #include "nv3030b.h"
 #include "easy_ui_user_app.h"
 extern __IO bool usb_stream_active;
@@ -211,6 +212,8 @@ static void handle_frame_data(nl_packet_t *pkt)
         send_resp_err(pkt->cmd, pkt->seq, NL_ERR_INVALID_PARAM);
         return;
     }
+		while(hspi1.State != HAL_SPI_STATE_READY)
+			; 
     memcpy(frame_chunk_buf, pkt->payload, chunk_len);
 
     NV3030B_DMA_Transfer(frame_chunk_buf, chunk_len, DMA_MEMINC_ENABLE);
@@ -265,11 +268,15 @@ static void handle_frame_end(nl_packet_t *pkt)
 
 static uint8_t uploadframeflag = 0;
 
+/* Deferred response for CmdFrameGet - response sent from main loop to avoid ISR deadlock */
+static uint16_t g_get_cmd;
+static uint16_t g_get_seq;
+
 static void handle_frame_get(nl_packet_t *pkt)
 {
     uploadframeflag = pkt->payload[0];
-
-    send_resp_ok(pkt->cmd, pkt->seq, NULL, 0);
+    g_get_cmd = pkt->cmd;
+    g_get_seq = pkt->seq;
 }
 
 void upload_frame_upload(void)
@@ -279,6 +286,13 @@ void upload_frame_upload(void)
     uint16_t width = LCD_W;
     uint16_t height = LCD_H;
     uint8_t bpp = Rgb332;
+
+    /* Send deferred CmdFrameGet response (must be in main context, not ISR) */
+    if (g_get_cmd)
+    {
+        send_resp_ok(g_get_cmd, g_get_seq, NULL, 0);
+        g_get_cmd = 0;
+    }
 
     if (uploadframeflag == 0)
         return;
