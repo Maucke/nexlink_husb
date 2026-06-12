@@ -1,5 +1,4 @@
 /*
-
 The MIT License (MIT)
 
 Copyright (c) 2016 Hubert Denkmair
@@ -31,45 +30,29 @@ THE SOFTWARE.
 #define u32 uint32_t
 #define u8 uint8_t
 
-#define GSUSB_ENDPOINT_IN          0x81
-#define GSUSB_ENDPOINT_OUT         0x02
-
-enum nex_usb_breq {
-	NEX_BREQ_HOST_FORMAT = 0,
-	NEX_TIMESTAMP_SET,
-	NEX_TIMESTAMP_GET,
-	NEX_BRIGHTNESS_SET,
-	NEX_BRIGHTNESS_GET,
-	NEX_PICTURE_SET,
-	NEX_SCREEN_GET,
-	NEX_NAME_GET,
-	NEX_VERSION_GET,
-	NEX_COMMAND_LEN,
-};
+typedef struct {
+    uint16_t brightness;
+    uint16_t damp;
+} nex_brightness_des;
 
 typedef struct {
-	uint16_t brightness;
-	uint16_t damp;
-}nex_brightness_des;
+    uint16_t width;
+    uint16_t height;
+} nex_screen_des;
 
 typedef struct {
-	uint16_t width;
-	uint16_t height;
-}nex_screen_des;
+    uint16_t blocksize;
+    uint8_t direction:2;
+    uint8_t reserved:6;
+    uint16_t startx;
+    uint16_t starty;
+    uint16_t picw;
+    uint16_t pich;
+} nex_picture_des;
 
 typedef struct {
-	uint16_t blocksize;
-	uint8_t direction:2;
-	uint8_t reserved:6;
-	uint16_t startx;
-	uint16_t starty;
-	uint16_t picw;
-	uint16_t pich;
-}nex_picture_des;
-
-typedef struct {
-	uint64_t timestamp_s;
-	nex_brightness_des brides;
-	nex_screen_des scrdes;
-	nex_picture_des picdes;
-}nex_usb_des;
+    uint64_t timestamp_s;
+    nex_brightness_des brides;
+    nex_screen_des scrdes;
+    nex_picture_des picdes;
+} nex_usb_des;

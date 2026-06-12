@@ -1023,6 +1023,52 @@
               <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\usbd_nex_link.c</FilePath>
             </File>
             <File>
+              <FileName>nexlink_app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_app.c</FilePath>
+            </File>
+            
+            <File>
+              <FileName>nexlink_tx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_tx.c</FilePath>
+            </File>
+            <File>
+              <FileName>nexlink_usb_if.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_usb_if.c</FilePath>
+            </File>
+            
+            <File>
+              <FileName>nexlink_rampool.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_rampool.c</FilePath>
+            </File>
+
+            <File>
+              <FileName>nexlink_app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_app.c</FilePath>
+            </File>
+            
+            <File>
+              <FileName>nexlink_tx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_tx.c</FilePath>
+            </File>
+            <File>
+              <FileName>nexlink_usb_if.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_usb_if.c</FilePath>
+            </File>
+            
+            <File>
+              <FileName>nexlink_rampool.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_rampool.c</FilePath>
+            </File>
+
+            <File>
               <FileName>usbd_desc.c</FileName>
               <FileType>1</FileType>
               <FilePath>../USB_DEVICE/App/usbd_desc.c</FilePath>

@@ -28,26 +28,32 @@ THE SOFTWARE.
 
 #include <stdbool.h>
 #include <usbd_def.h>
-#include <nex_usb.h>
-#include "queue.h"
+#include "usbd_desc.h"
+#include "usbd_ctlreq.h"
+#include "usbd_ioreq.h"
+#include "nex_usb.h"
 
 /* Define these here so they can be referenced in other files */
 
-#define NEX_DATA_MAX_PACKET_SIZE   1024  /* Endpoint IN & OUT Packet size */
-#define NEX_CMD_PACKET_SIZE        64  /* Control Endpoint Packet size */
-#define USB_NEX_CONFIG_DESC_SIZ    50
-#define NUM_NEX_CHANNEL             1
+#define GSUSB_ENDPOINT_IN          0x81
+#define GSUSB_ENDPOINT_OUT         0x01
+
+#ifdef FUSB
+#define USB_DATA_MAX_PACKET_SIZE   64  /* Endpoint IN & OUT Packet size */
+#else
+#define USB_DATA_MAX_PACKET_SIZE   (512*2)  /* Endpoint IN & OUT Packet size */
+#endif
+#define USB_CMD_PACKET_SIZE        64  /* Control Endpoint Packet size */
+#define USB_CONFIG_DESC_SIZ    (32)
+#define NUM_USB_CHANNEL             1
 #define USBD_NEX_LINK_VENDOR_CODE  0x20
-#define DFU_INTERFACE_NUM           1
-#define DFU_INTERFACE_STR_INDEX  0xE0
 
 extern USBD_ClassTypeDef USBD_NEX_LINK;
 
-uint8_t USBD_NEX_LINK_Init(USBD_HandleTypeDef *pdev, uint8_t *buffer_a, uint8_t *buffer_b, nex_usb_des *des);
 uint8_t USBD_NEX_LINK_PrepareReceive(USBD_HandleTypeDef *pdev);
-bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev);
 bool USBD_NEX_LINK_CustomDeviceRequest(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req);
 bool USBD_NEX_LINK_CustomInterfaceRequest(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req);
-
-bool USBD_NEX_LINK_DfuDetachRequested(USBD_HandleTypeDef *pdev);
+bool USBD_NEX_LINK_TxReady(USBD_HandleTypeDef *pdev);
 uint8_t USBD_NEX_LINK_Transmit(USBD_HandleTypeDef *pdev, uint8_t *buf, uint16_t len);
+//uint8_t USBD_NEX_LINK_GetProtocolVersion(USBD_HandleTypeDef *pdev);
+//uint8_t USBD_NEX_LINK_GetPadPacketsToMaxPacketSize(USBD_HandleTypeDef *pdev);

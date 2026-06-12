@@ -133,8 +133,9 @@ void NV3030B_ShowGrayImage(uint16_t x, uint16_t y, const uint8_t *image, uint16_
 void NV3030B_Triangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
 void NV3030B_FillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
 void NV3030B_SetColor (const uint16 pen, const uint16 bgcolor);
-void NV3030B_Init (uint16 *gram);
+void NV3030B_Init (void);
 void NV3030B_FastHLine(int16_t x, int16_t y, int16_t length, uint16_t color);
+uint8_t* NV3030B_GetBuffer(void);
 
 #ifdef __cplusplus
 }

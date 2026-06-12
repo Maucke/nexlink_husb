@@ -37,9 +37,10 @@
 #include "usbd_desc.h"
 #include "usbd_core.h"
 #include "usbd_nex_link.h"
-#include "nex_usb.h"
+#include "nexlink_tx.h"
+#include "nexlink_app.h"
+#include "nexlink_usb_if.h"
 #include "stdio.h"
-#include "queue.h"
 #include "nv3030b.h"
 #include "lv_anim_light.h"
 #include "easy_ui.h"
@@ -49,7 +50,6 @@
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
 #include "bmp280.h"
-#include "fftaffect.h"
 #include "rx8900.h"
 //#include "arm_math.h"
 //#include "chipmunkdemo.h"
@@ -62,6 +62,15 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+/* Custom NEX_LINK protocol commands for husb hardware */
+#define CMD_HUSB_TIMESTAMP_SET   (CMD_USER_BASE + 1)
+#define CMD_HUSB_TIMESTAMP_GET   (CMD_USER_BASE + 2)
+#define CMD_HUSB_BRIGHTNESS_SET  (CMD_USER_BASE + 3)
+#define CMD_HUSB_BRIGHTNESS_GET  (CMD_USER_BASE + 4)
+#define CMD_HUSB_PICTURE_SET     (CMD_USER_BASE + 5)
+#define CMD_HUSB_SCREEN_GET      (CMD_USER_BASE + 6)
+#define CMD_HUSB_NAME_GET        (CMD_USER_BASE + 7)
+#define CMD_HUSB_VERSION_GET     (CMD_USER_BASE + 8)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -73,6 +82,7 @@
 
 /* USER CODE BEGIN PV */
 USBD_HandleTypeDef hUSB;
+volatile bool battery_check_pending;
 
 /* USER CODE END PV */
 
@@ -99,13 +109,11 @@ int usb_printf(const char* pcFormat, ...)
   va_start(args, pcFormat);
 
   len = vsnprintf((char*)debug_buf, sizeof(debug_buf), pcFormat, args);
-	USBD_NEX_LINK_Transmit(&hUSB, debug_buf, len);
+  send_event(EVT_LOG, debug_buf, (uint16_t)len);
   va_end(args);
 
   return len;
 }
-
-uint16_t grambuff[NEX_DATA_MAX_PACKET_SIZE];
 
 nex_usb_des des = {
 .brides = {
@@ -152,12 +160,90 @@ void ready_beep_value(struct _lv_anim_t *obj)
 			lv_anim_start(&anim_beep, 0, 100);
 	}
 }
-uint8_t ram_buffer[2][NEX_DATA_MAX_PACKET_SIZE];
+
+const char HUSB_NAME_STR[] = "NexLinker";
+const char HUSB_VERSION_STR[] = "V1.01";
+
+/* Handle custom commands from the PC host over the NEX_LINK protocol */
+void external_handle_cmd(nl_packet_t *pkt)
+{
+    switch (pkt->cmd)
+    {
+    case CMD_HUSB_TIMESTAMP_SET:
+    {
+        if (pkt->length >= sizeof(uint64_t))
+        {
+            uint64_t timestamp_s;
+            memcpy(&timestamp_s, pkt->payload, sizeof(uint64_t));
+            struct tm *tm_local = localtime((const time_t *)&timestamp_s);
+            if (tm_local)
+            {
+                RX8900_SetTime(tm_local);
+            }
+        }
+        send_resp_ok(pkt->cmd, pkt->seq, NULL, 0);
+        break;
+    }
+    case CMD_HUSB_TIMESTAMP_GET:
+    {
+        send_resp_ok(pkt->cmd, pkt->seq, &des.timestamp_s, sizeof(des.timestamp_s));
+        break;
+    }
+    case CMD_HUSB_BRIGHTNESS_SET:
+    {
+        if (pkt->length >= sizeof(nex_brightness_des))
+        {
+            memcpy(&des.brides, pkt->payload, sizeof(nex_brightness_des));
+            lv_anim_start(&anim_backlight, des.brides.brightness, des.brides.damp);
+        }
+        send_resp_ok(pkt->cmd, pkt->seq, NULL, 0);
+        break;
+    }
+    case CMD_HUSB_BRIGHTNESS_GET:
+    {
+        send_resp_ok(pkt->cmd, pkt->seq, &des.brides, sizeof(des.brides));
+        break;
+    }
+    case CMD_HUSB_PICTURE_SET:
+    {
+        if (pkt->length >= sizeof(nex_picture_des))
+        {
+            nex_picture_des picdes;
+            memcpy(&picdes, pkt->payload, sizeof(nex_picture_des));
+            NV3030B_SetRotation((nv3030b_dir_enum)picdes.direction);
+            NV3030B_SetRegion(picdes.startx, picdes.starty,
+                              picdes.startx + picdes.picw - 1,
+                              picdes.starty + picdes.pich - 1);
+            HAL_GPIO_TogglePin(SYSLED_GPIO_Port, SYSLED_Pin);
+        }
+        send_resp_ok(pkt->cmd, pkt->seq, NULL, 0);
+        break;
+    }
+    case CMD_HUSB_SCREEN_GET:
+    {
+        send_resp_ok(pkt->cmd, pkt->seq, &des.scrdes, sizeof(des.scrdes));
+        break;
+    }
+    case CMD_HUSB_NAME_GET:
+    {
+        send_resp_ok(pkt->cmd, pkt->seq, HUSB_NAME_STR, sizeof(HUSB_NAME_STR));
+        break;
+    }
+    case CMD_HUSB_VERSION_GET:
+    {
+        send_resp_ok(pkt->cmd, pkt->seq, HUSB_VERSION_STR, sizeof(HUSB_VERSION_STR));
+        break;
+    }
+    default:
+        send_resp_err(pkt->cmd, pkt->seq, NL_ERR_UNSUPPORTED);
+        break;
+    }
+}
+
 void MX_USB_DEVICE_Init()
 {
   USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
   USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
-  USBD_NEX_LINK_Init(&hUSB, ram_buffer[0], ram_buffer[1], &des);
   USBD_Start(&hUSB);
 }
 /* USER CODE END 0 */
@@ -219,7 +305,7 @@ int main(void)
 	BMP280_Init();
 	lv_anim_add(&anim_backlight, 0, set_brightness_value);
 	lv_anim_ready_set_cb(&anim_backlight, ready_brightness_value);
-	
+
 	lv_anim_add(&anim_beep, 0, set_beep_value);
 	lv_anim_path_set_cb(&anim_beep, lv_anim_path_onoff);
 	lv_anim_ready_set_cb(&anim_beep, ready_beep_value);
@@ -227,6 +313,8 @@ int main(void)
 	lv_anim_start(&anim_backlight, des.brides.brightness, des.brides.damp);
 
   MX_IWDG_Init();
+
+	HAL_Delay(200);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -236,14 +324,27 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+		/* Process NEX_LINK RX data from USB */
+
+
+		EventJump();
 		lv_anim_run();
 		EasyUIEvent(5);
-		EventJump();
+		extern __IO bool usb_stream_active;
+		if (!usb_stream_active)
+			upload_frame_upload();
 		MPU_CRL(10);
 		extern bool mpu_debug_en;
 		if(mpu_debug_en)
 			MPU_Test(1000);
 		HAL_IWDG_Refresh(&hiwdg);
+
+		/* Battery check (triggered from TIM14 interrupt) */
+		if (battery_check_pending)
+		{
+			battery_check_pending = false;
+			lowBatteryAction();
+		}
 //		BMP280_Test(1000);
 //		RX8900_Test(1000);
   }
@@ -303,30 +404,30 @@ void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 //		for (int i = 0;i < 256; i++)
 //		{
 // 			fft_input_buffer[i] =(adc_buffer[0+i*4]<<8)+(adc_buffer[1+i*4]>>8);
-//			
+//
 //			if(fft_input_buffer[i] & 0x800000){//negative
 //					fft_input_buffer[i]|=0xff000000;
 //			}
 //		}
 	}
 }
-#define BOOTLOADER_ADDRESS 0x08000000  // BootLoader��Flash�е���ʼ��ַ
+#define BOOTLOADER_ADDRESS 0x08000000  // BootLoader在Flash中的起始地址
 
 typedef void (*pFunction)(void);
 pFunction JumpAddress;
 
-void JumpToBootloader (void) //�쳣��ʼ
+void JumpToBootloader (void) //异常开始
 {
-    // ���ж�
+    // 关中断
     __disable_irq();
 
-    // �������������ַΪBootLoader�ĵ�ַ
+    // 设置中断向量表地址为BootLoader的地址
     SCB->VTOR = BOOTLOADER_ADDRESS;
 
-    // ȡ��BootLoader��ַ�ĺ���ָ��
+    // 取得BootLoader地址的函数指针
     JumpAddress = (pFunction)*(volatile uint32_t*)(BOOTLOADER_ADDRESS + 4);
 
-    // ��ת��BootLoader
+    // 跳转到BootLoader
     JumpAddress();
 }
 /* USER CODE END 4 */
@@ -359,7 +460,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 	if (htim->Instance == htim14.Instance)
 	{
-		lowBatteryAction();
+		extern volatile bool battery_check_pending;
+		battery_check_pending = true;
 	}
   /* USER CODE END Callback 1 */
 }

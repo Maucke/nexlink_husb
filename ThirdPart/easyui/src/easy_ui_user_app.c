@@ -16,11 +16,13 @@
 #include "beep.h"
 #include "bmp280.h"
 #include <time.h>
+extern uint8_t pageIndex[];
+extern uint8_t layer;
+
 // Pages
-EasyUIPage_t pageMain, pageUSBForm, pageDialog, pageSensor, pageAnimation, pageSetting, pageAbout;
+EasyUIPage_t pageMain, pageDialog, pageSensor, pageAnimation, pageSetting, pageAbout;
 
 // Items
-EasyUIItem_t itemUSBForm;
 EasyUIItem_t itemDebug;
 EasyUIItem_t itemSensor;
 EasyUIItem_t itemAnimation;
@@ -54,8 +56,7 @@ motion_status mt;
 extern lv_anim_t anim_backlight;
 extern nex_usb_des des;
 float setting_brightness;
-__IO bool usbinhibit = true;
-__IO bool jump2winform = false;
+__IO bool usb_stream_active = false;
 
 EasyKey_t keyUp, keyDown;
 extern __IO bool menuisvisible;
@@ -76,6 +77,15 @@ void dbug_clear(EasyUIPage_t* page);
 void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
 {
   extern bool mpu_left, mpu_right, mpu_ok, mpu_quit;
+
+  /* If USB streaming, any key press returns to main page */
+  if (usb_stream_active && (keyUp.isPressed || keyUp.isHold || keyDown.isPressed || keyDown.isHold))
+  {
+    usb_stream_active = false;
+    pageIndex[layer] = 0;
+    return;
+  }
+
   if(keyUp.isPressed)
   {
     dbmsg("keyUp:isPressed");
@@ -96,8 +106,6 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
     dbmsg("keyUp:isHold");
     lv_anim_start(&anim_beep, 2000, 500);
     dbusbmsg("keyUp:holdTime:%d", keyUp.holdTime);
-    if(menuisvisible)
-      jump2winform = true;
   }
   else if(keyUp.holdTime > 5000)
   {
@@ -235,11 +243,6 @@ void dbug_clear(EasyUIPage_t* page)
 
 void EventJump()
 {
-  if(jump2winform)
-  {
-    jump2winform = false;
-    EasyUIItemOperationResponse(&pageUSBForm, &itemUSBForm, &itemUSBForm.id);
-  }
 }
 
 void EventMotion()
@@ -329,23 +332,6 @@ void PageAbout(EasyUIPage_t* page)
   screen_delta += page->rowheight;
 }
 
-void PageUSBForm(EasyUIPage_t* page)
-{
-  if(usbinhibit)
-  {
-    EasyUITransitionAnim();
-    EasyUIClearBuffer();
-    EasyUISendBuffer();
-    usbinhibit = false;
-  }
-  if(opnExit)
-  {
-    usbinhibit = true;
-		
-		NV3030B_SetRotation(NV3030B_PORTAIT);
-  }
-}
-
 void lowBatteryAction()
 {
   float battery = Get_Battery_Value();
@@ -358,18 +344,18 @@ int batteryVoltageToPercentage(float voltage)
   float minVoltage = 3.0f;
   float maxVoltage = 4.2f;
 
-  // ¼ÆËãµçÑ¹ÔÚ·¶Î§ÄÚµÄ°Ù·Ö±È
+  // ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¹ï¿½Ú·ï¿½Î§ï¿½ÚµÄ°Ù·Ö±ï¿½
   if(voltage < minVoltage)
   {
-    return 0; // Èç¹ûµçÑ¹µÍÓÚ×îÐ¡Öµ£¬·µ»Ø0%
+    return 0; // ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0%
   }
   else if(voltage > maxVoltage)
   {
-    return 100; // Èç¹ûµçÑ¹¸ßÓÚ×î´óÖµ£¬·µ»Ø100%
+    return 100; // ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½100%
   }
   else
   {
-    // ÔÚ×îÐ¡ÖµºÍ×î´óÖµÖ®¼ä½øÐÐÏßÐÔ²åÖµ¼ÆËã
+    // ï¿½ï¿½ï¿½ï¿½Ð¡Öµï¿½ï¿½ï¿½ï¿½ï¿½ÖµÖ®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô²ï¿½Öµï¿½ï¿½ï¿½ï¿½
     float percentage = (voltage - minVoltage) / (maxVoltage - minVoltage) * 100.0f;
     return (int)percentage;
   }
@@ -450,13 +436,11 @@ void MenuInit()
   mt.enStarwar = true;
   EasyUIAddPage(&pageMain, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_LIST);
   EasyUIAddPage(&pageSetting, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_LIST);
-  EasyUIAddPage(&pageUSBForm, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_CUSTOM, PageUSBForm);
   EasyUIAddPage(&pageDialog, NV3030B_6X8_FONT, PAGE_LIST);
   EasyUIAddPage(&pageSensor, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_CUSTOM, PageSensor);
   EasyUIAddPage(&pageAnimation, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_LIST);
   EasyUIAddPage(&pageAbout, NV3030B_DEFAULT_DISPLAY_FONT, PAGE_CUSTOM, PageAbout);
 
-  EasyUIAddItem(&pageMain, &itemUSBForm, "USBForm", ITEM_JUMP_PAGE, pageUSBForm.id);
   EasyUIAddItem(&pageMain, &itemDebug, "Debug", ITEM_JUMP_PAGE, pageDialog.id);
   EasyUIAddItem(&pageMain, &itemSensor, "Sensor", ITEM_JUMP_PAGE, pageSensor.id);
   EasyUIAddItem(&pageMain, &itemAnimation, "Animation", ITEM_JUMP_PAGE, pageAnimation.id);

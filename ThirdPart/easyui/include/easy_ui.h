@@ -47,7 +47,7 @@ extern uint8_t opnEnter, opnExit, opnUp, opnDown;
 #define OFFSET_Y 40
 #define SCREEN_WIDTH            (LCD_W - OFFSET_X*2)
 #define SCREEN_HEIGHT           (LCD_H - OFFSET_Y*2)
-#define EasyUIScreenInit(gram)                                  (NV3030B_Init(gram))
+#define EasyUIScreenInit()                                  (NV3030B_Init())
 #define EasyUISetFont(font)                                     (NV3030B_SetFont(font))
 #define EasyUIDisplayStr(x, y, str)                             (NV3030B_ShowStr((x) + OFFSET_X, (y) + OFFSET_Y, str))
 #define EasyUIDisplayStrMutiRow(x, y, w, str)                   (NV3030B_ShowStrMutiRow((x) + OFFSET_X, (y) + OFFSET_Y, w, str))
@@ -74,8 +74,8 @@ void ClearRemind(void);
 typedef     float      paramType;
 
 typedef struct {
-    float current_value;  // 当前值
-    float target_value;   // 目标值
+    float current_value;  // 锟斤拷前值
+    float target_value;   // 目锟斤拷值
 } Filter;
 
 void update_filter(Filter *filter);

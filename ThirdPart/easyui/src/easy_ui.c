@@ -1197,8 +1197,7 @@ void ready_remind_value(struct _lv_anim_t* obj)
  */
 void EasyUIInit(uint8_t mode)
 {
-  extern uint16_t grambuff[];
-  EasyUIScreenInit(grambuff);
+  EasyUIScreenInit();
 
   // Power-off storage
 //    if (flash_check(flashSecIndex, flashPageIndex))
@@ -1232,8 +1231,6 @@ void EasyUIInit(uint8_t mode)
   lv_anim_add(&anim_remind, remindsec * LCD_W / HOLDTIME, set_remind_value);
   lv_anim_ready_set_cb(&anim_remind, ready_remind_value);
 }
-
-extern __IO bool usbinhibit;
 
 // �����˲��������ݱ仯�ķ���ѡ�񲽽���С
 void update_filter(Filter* filter)
@@ -1394,6 +1391,10 @@ void EasyUIEvent(uint8_t timer)
 
   static uint8_t index = 0, itemSum = 0;
 
+  extern __IO bool usb_stream_active;
+  if (usb_stream_active)
+    return;
+
   EasyUIModifyColor();
   EasyUISetDrawColor(NORMAL);
 
@@ -1437,7 +1438,6 @@ void EasyUIEvent(uint8_t timer)
     return;
   }
 
-  if(usbinhibit)
   {
     EasyUIClearBuffer();
     EventMotion();
@@ -1466,8 +1466,8 @@ void EasyUIEvent(uint8_t timer)
       EasyUITransitionAnim();
       EasyUIDrawIndicator(page, index, timer, 1);
     }
-    if(usbinhibit)
-      EasyUISendBuffer();
+      
+		EasyUISendBuffer();
     return;
   }
 

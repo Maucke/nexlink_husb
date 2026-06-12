@@ -311,7 +311,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>4</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -1230,6 +1230,21 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>nexlink_app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_app.c</FilePath>
+            </File>
+            <File>
+              <FileName>nexlink_tx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_tx.c</FilePath>
+            </File>
+            <File>
+              <FileName>nexlink_usb_if.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_usb_if.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1889,7 +1904,7 @@
             <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>1</RunUserProg2>
             <UserProg1Name>fromelf --bin -o "$L@L.bin" "#L"</UserProg1Name>
-            <UserProg2Name>addheader v2.01.bat</UserProg2Name>
+            <UserProg2Name>addheader.bat "$P" "@L" "$L@L.bin"</UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopA1X>0</nStopA1X>
@@ -2576,6 +2591,21 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>nexlink_app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_app.c</FilePath>
+            </File>
+            <File>
+              <FileName>nexlink_tx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_tx.c</FilePath>
+            </File>
+            <File>
+              <FileName>nexlink_usb_if.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\ST\STM32_USB_Device_Library\Class\NEX_LINK\Src\nexlink_usb_if.c</FilePath>
             </File>
           </Files>
         </Group>

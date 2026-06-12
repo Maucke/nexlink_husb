@@ -18,7 +18,7 @@ static uint16                    nv3030b_x_max        = LCD_W;
 static uint16                    nv3030b_y_max        = LCD_H;
 static uint8_t NV3030B_colorMode = NORMAL;
 static uint8_t NV3030B_buffer[LCD_H][LCD_W] = {0};
-uint16* localgram;
+static uint16_t grambuff[1024];
 
 void NV3030B_SetFont(Font_Type_t font)
 {
@@ -186,8 +186,8 @@ void NV3030B_SendBuffer()
   {
     ramindex = (ramindex + 1) % 2;
     for(int j = 0; j < 480; j++)
-      localgram[j + ramindex * 480] = color8to16(re_buffer[i * 480 + j]);
-    NV3030B_DMA_Transfer((uint8_t*)(localgram + ramindex * 480), 480 * 2, DMA_MEMINC_ENABLE);
+      grambuff[j + ramindex * 480] = color8to16(re_buffer[i * 480 + j]);
+    NV3030B_DMA_Transfer((uint8_t*)(grambuff + ramindex * 480), 480 * 2, DMA_MEMINC_ENABLE);
   }
 }
 
@@ -1415,9 +1415,13 @@ void NV3030B_SetColor(const uint16 pen, const uint16 bgcolor)
 // 使用示例     nv3030b_init();
 // 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-void NV3030B_Init(uint16* gram)
+uint8_t* NV3030B_GetBuffer(void)
 {
-  localgram = gram;
+    return (uint8_t*)NV3030B_buffer;
+}
+
+void NV3030B_Init(void)
+{
   NV3030B_RST(0);
   HAL_Delay(200);
   NV3030B_RST(1);
