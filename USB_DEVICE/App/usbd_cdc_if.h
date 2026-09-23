@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-
 #ifndef __USBD_CDC_IF_H__
 #define __USBD_CDC_IF_H__
 
@@ -107,6 +106,10 @@ extern USBD_CDC_ItfTypeDef USBD_Interface_fops_HS;
   */
 
 uint8_t CDC_Transmit_HS(uint8_t* Buf, uint16_t Len);
+
+void CDC_SendString(const char *s);
+
+int cdc_printf(const char *fmt, ...);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
 

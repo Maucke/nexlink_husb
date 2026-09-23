@@ -121,7 +121,7 @@ void EasyUIKeyActionMonitor() //Interrupt trigger, No HAL_Delay(xx)
   {
     dbmsg("keyDown:isHold");
     lv_anim_start(&anim_beep, 2000, 500);
-    dbusbmsg("keyDown:holdTime:%d", keyDown.holdTime);
+//    dbusbmsg("keyDown:holdTime:%d", keyDown.holdTime);
     lv_anim_start(&anim_backlight, 0, 1000);
   }
   else if(keyDown.holdTime > 5000)

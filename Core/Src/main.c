@@ -51,6 +51,8 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "bmp280.h"
 #include "rx8900.h"
+#include "usbd_cdc.h"
+#include "usbd_cdc_if.h"
 //#include "arm_math.h"
 //#include "chipmunkdemo.h"
 /* USER CODE END Includes */
@@ -243,7 +245,9 @@ void external_handle_cmd(nl_packet_t *pkt)
 void MX_USB_DEVICE_Init()
 {
   USBD_Init(&hUSB, &FS_Desc, DEVICE_HS);
-  USBD_RegisterClass(&hUSB, &USBD_NEX_LINK);
+  USBD_CDC_RegisterInterface(&hUSB, &USBD_Interface_fops_HS);
+  USBD_RegisterClassComposite(&hUSB, &USBD_CDC, CLASS_TYPE_CDC, NULL);
+  USBD_RegisterClassComposite(&hUSB, &USBD_NEX_LINK, CLASS_TYPE_NONE, NULL);
   USBD_Start(&hUSB);
 }
 /* USER CODE END 0 */
