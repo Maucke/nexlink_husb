@@ -328,6 +328,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+		/* Hand queued NEX_LINK frames to the USB stack as it becomes free */
+		nexlink_tx_poll();
+
 		/* Process NEX_LINK RX data from USB */
 
 //		EventJump();
@@ -350,7 +353,7 @@ int main(void)
 //		}
 //		BMP280_Test(1000);
 //		RX8900_Test(1000);
-		HAL_Delay(10);
+//		HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }
