@@ -190,8 +190,8 @@ static void handle_frame_start(nl_packet_t *pkt)
     frame_received = 0;
     // nexlink_log("frame_expected_size: %d, frame_width: %d, frame_height: %d",frame_expected_size,frame_width,frame_height);
 
-		NV3030B_SetRegion(0,0,frame_width-1,frame_height-1);
 		usb_stream_active = true;
+		NV3030B_SetRegion(0,0,frame_width-1,frame_height-1);
 
     send_resp_ok(pkt->cmd, pkt->seq, NULL, 0);
 }
@@ -263,7 +263,29 @@ static void handle_frame_end(nl_packet_t *pkt)
         send_resp_err(pkt->cmd, pkt->seq, NL_ERR_INVALID_PARAM);
         return;
     }
+
     send_resp_ok(pkt->cmd, pkt->seq, NULL, 0);
+
+    /* ---- FPS ---- */
+    static uint64_t fps_count = 0;
+    static uint64_t fps_last_ms = 0;
+
+    fps_count++;
+
+    uint64_t now = mcu_time_ms();
+    if (fps_last_ms == 0)
+        fps_last_ms = now;
+
+    if ((now - fps_last_ms) >= 1000)
+    {
+        uint64_t elapsed = now - fps_last_ms;
+        uint32_t fps = (uint32_t)(fps_count * 1000 / elapsed);
+
+        dbusbmsg("fps: %lu", (unsigned long)fps);
+
+        fps_count = 0;
+        fps_last_ms = now;
+    }
 }
 
 static uint8_t uploadframeflag = 0;
@@ -382,6 +404,7 @@ static void handle_cmd(nl_packet_t *pkt)
     }
 
     case CMD_KEY:
+        dbusbmsg("CMD_KEY: %lu", (unsigned long)CMD_KEY);
         switch (pkt->payload[0])
         {
         case UpArrow:

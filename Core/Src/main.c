@@ -330,27 +330,27 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		/* Process NEX_LINK RX data from USB */
 
-
-		EventJump();
+//		EventJump();
 		lv_anim_run();
-		EasyUIEvent(5);
-		extern __IO bool usb_stream_active;
-		if (!usb_stream_active)
-			upload_frame_upload();
-		MPU_CRL(10);
-		extern bool mpu_debug_en;
-		if(mpu_debug_en)
-			MPU_Test(1000);
+//		EasyUIEvent(5);
+//		extern __IO bool usb_stream_active;
+//		if (!usb_stream_active)
+//			upload_frame_upload();
+//		MPU_CRL(10);
+//		extern bool mpu_debug_en;
+//		if(mpu_debug_en)
+//			MPU_Test(1000);
 		HAL_IWDG_Refresh(&hiwdg);
 
-		/* Battery check (triggered from TIM14 interrupt) */
-		if (battery_check_pending)
-		{
-			battery_check_pending = false;
-			lowBatteryAction();
-		}
+//		/* Battery check (triggered from TIM14 interrupt) */
+//		if (battery_check_pending)
+//		{
+//			battery_check_pending = false;
+//			lowBatteryAction();
+//		}
 //		BMP280_Test(1000);
 //		RX8900_Test(1000);
+		HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
